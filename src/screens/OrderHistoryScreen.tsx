@@ -50,7 +50,7 @@ interface OrderDetail {
   REQUESTED_QTY: number;
   AVAILABLE_QTY: number;
   STATUS: string;
-  MARK: string;
+  // MARK: string;
   REMARK: string;
   UNIT_NAME?: string;
   NET_QUANTITY?: number;
@@ -249,10 +249,10 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
                     label="Net Quantity"
                     value={String(item.NET_QUANTITY || '')}
                   />
-                  <DetailRow label="Mark" value={item.MARK} />
+                  {/* <DetailRow label="Mark" value={item.MARK} />
                   {item.REMARK && (
                     <DetailRow label="Remark" value={item.REMARK} />
-                  )}
+                  )} */}
                 </View>
               </View>
             )}

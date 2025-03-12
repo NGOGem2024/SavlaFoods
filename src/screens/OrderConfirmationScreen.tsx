@@ -319,7 +319,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
                 <Ionicons
                   name="checkmark-circle-outline"
                   size={24}
-                  style={{color:"#FFFFFF"}}
+                  style={{color: '#FFFFFF'}}
                 />
               </>
             )}

@@ -26,7 +26,6 @@ import {
 } from '../utils/imageRegistry';
 import {API_BASE_URL} from '../config/api.config';
 
-
 type MainStackParamList = {
   SubCategory: {
     category: string;
@@ -113,6 +112,67 @@ const SubCategory: React.FC = () => {
     }
   }, [CustomerID, route.params.categoryId]);
 
+  // const fetchSubCategories = useCallback(async () => {
+  //   if (!CustomerID || !route.params.categoryId) {
+  //     console.log('Waiting for CustomerID or categoryId...');
+  //     return;
+  //   }
+
+  //   try {
+  //     setLoading(true);
+  //     setError(null);
+
+  //     const response = await axios.post(
+  //       `${API_BASE_URL}/sf/getItemCatSubCat`,
+  //       {
+  //         CustomerID: CustomerID,
+  //       },
+  //       {
+  //         timeout: 10000,
+  //       },
+  //     );
+
+  //     if (response.data && response.data.output) {
+  //       const filteredSubCategories = response.data.output.filter(
+  //         (item: SubCategoryItem) => item.CATID === route.params.categoryId,
+  //       );
+
+  //       const uniqueSubCategories = filteredSubCategories.map(
+  //         (item: SubCategoryItem) => ({
+  //           ...item,
+  //           CustomerID: CustomerID || '',
+  //           subcategoryImage: formatImageName(item.SUBCATID, false),
+  //           imageUrl: getSubcategoryImage(item.SUBCATID),
+  //         }),
+  //       );
+
+  //       setSubCategories(uniqueSubCategories);
+  //       setFilteredSubCategories(uniqueSubCategories);
+  //     } else {
+  //       setError('No data received from server');
+  //     }
+  //   } catch (err) {
+  //     console.error('Error fetching subcategories:', err);
+  //     if (axios.isAxiosError(err)) {
+  //       if (err.response) {
+  //         setError(`Server error: ${err.response.status}`);
+  //       } else if (err.request) {
+  //         setError('Network error. Please check your connection.');
+  //       } else {
+  //         setError('An unexpected error occurred');
+  //       }
+  //     } else {
+  //       setError('Failed to load subcategories');
+  //     }
+  //     Alert.alert('Error', 'Failed to load subcategories. Please try again.', [
+  //       {text: 'OK'},
+  //     ]);
+  //   } finally {
+  //     setLoading(false);
+  //     setRefreshing(false);
+  //   }
+  // }, [CustomerID, route.params.categoryId]);
+
   const fetchSubCategories = useCallback(async () => {
     if (!CustomerID || !route.params.categoryId) {
       console.log('Waiting for CustomerID or categoryId...');
@@ -147,8 +207,13 @@ const SubCategory: React.FC = () => {
           }),
         );
 
-        setSubCategories(uniqueSubCategories);
-        setFilteredSubCategories(uniqueSubCategories);
+        // Sort subcategories alphabetically by SUBCATDESC
+        const sortedSubCategories = [...uniqueSubCategories].sort((a, b) =>
+          a.SUBCATDESC.localeCompare(b.SUBCATDESC),
+        );
+
+        setSubCategories(sortedSubCategories);
+        setFilteredSubCategories(sortedSubCategories);
       } else {
         setError('No data received from server');
       }
@@ -256,7 +321,7 @@ const SubCategory: React.FC = () => {
           onChangeText={handleSearch}
         />
         <TouchableOpacity style={styles.searchButton}>
-          <MaterialIcons name="search" size={24} style={{color:"#000"}} />
+          <MaterialIcons name="search" size={24} style={{color: '#000'}} />
         </TouchableOpacity>
       </View>
 

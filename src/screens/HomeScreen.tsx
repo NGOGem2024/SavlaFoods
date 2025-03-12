@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   Alert,
   Dimensions,
@@ -10,20 +10,25 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NavigationProp } from '@react-navigation/native';
+import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
+import {NavigationProp} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { MainStackParamList, RootStackParamList } from '../type/type';
-import { API_ENDPOINTS, BASE_IMAGE_PATH } from '../config/api.config';
-import { fetchImageMappings, formatImageName, getCategoryImage, ImageMapping } from '../utils/imageRegistry';
+import {MainStackParamList, RootStackParamList} from '../type/type';
+import {API_ENDPOINTS, BASE_IMAGE_PATH} from '../config/api.config';
+import {
+  fetchImageMappings,
+  formatImageName,
+  getCategoryImage,
+  ImageMapping,
+} from '../utils/imageRegistry';
 import Carousel from '../components/Carousel';
 import Header from '../components/Header';
-import { useCart } from '../contexts/CartContext';
-import { useDisplayName } from '../contexts/DisplayNameContext';
+import {useCart} from '../contexts/CartContext';
+import {useDisplayName} from '../contexts/DisplayNameContext';
 import {LayoutWrapper} from '../components/AppLayout';
 // import { TabBar } from '../components/BottomTabNavigator';
 
@@ -44,23 +49,25 @@ type CategoryItem = {
   subcategoryImage: string;
 };
 
-const { width } = Dimensions.get('window');
+const {width} = Dimensions.get('window');
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp<MainStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'HomeScreen'>>();
   const [CustomerID, setCustomerID] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const { displayName, setDisplayName } = useDisplayName();
+  const {displayName, setDisplayName} = useDisplayName();
   const [categories, setCategories] = useState<CategoryItem[]>([]);
-  const [filteredCategories, setFilteredCategories] = useState<CategoryItem[]>([]);
+  const [filteredCategories, setFilteredCategories] = useState<CategoryItem[]>(
+    [],
+  );
   const [showAllCards, setShowAllCards] = useState(false);
   const [imageMappings, setImageMappings] = useState<{
     categories: ImageMapping[];
     subcategories: ImageMapping[];
-  }>({ categories: [], subcategories: [] });
+  }>({categories: [], subcategories: []});
 
-  const { cartItems , clearCart } = useCart() || {};
+  const {cartItems, clearCart} = useCart() || {};
   const cartItemCount = cartItems?.length || 0;
 
   const handleAccountSwitch = useCallback(() => {
@@ -69,17 +76,16 @@ const HomeScreen: React.FC = () => {
     fetchCustomerID();
   }, []);
 
-   
   const fetchCustomerID = useCallback(async () => {
     try {
       const storedId = await AsyncStorage.getItem('customerID');
       // Also get the stored display name
       const storedDisplayName = await AsyncStorage.getItem('displayName');
-      
+
       if (storedDisplayName) {
         setDisplayName(storedDisplayName);
       }
-  
+
       if (storedId) {
         setCustomerID(storedId);
         fetchCategories(storedId);
@@ -90,10 +96,13 @@ const HomeScreen: React.FC = () => {
           await AsyncStorage.setItem('customerID', newId);
           setCustomerID(newId);
           fetchCategories(newId);
-          
+
           // If there's a display name in the response, save and set it
           if (response.data.displayName) {
-            await AsyncStorage.setItem('displayName', response.data.displayName);
+            await AsyncStorage.setItem(
+              'displayName',
+              response.data.displayName,
+            );
             setDisplayName(response.data.displayName);
           }
         }
@@ -106,51 +115,95 @@ const HomeScreen: React.FC = () => {
 
   const fetchDisplayName = useCallback(async () => {
     try {
-      let name = await AsyncStorage.getItem("Disp_name");
+      let name = await AsyncStorage.getItem('Disp_name');
       if (name) {
         setDisplayName(name);
       } else {
         const response = await axios.get(API_ENDPOINTS.GET_CUSTOMER_INFO);
         name = response.data.Disp_name;
         setDisplayName(name);
-        await AsyncStorage.setItem("Disp_name", name || "");
+        await AsyncStorage.setItem('Disp_name', name || '');
       }
     } catch (error) {
-      console.error("Error fetching Display Name:", error);
+      console.error('Error fetching Display Name:', error);
     }
   }, [setDisplayName]);
-  
+
   // Add this useEffect
   useEffect(() => {
     fetchDisplayName();
   }, [route.params]);
 
+  // const fetchCategories = useCallback(async (customerId: string) => {
+  //   try {
+  //     const response = await axios.post(
+  //       API_ENDPOINTS.ITEM_CATEGORIES,
+  //       {CustomerID: customerId},
+  //       {timeout: 10000},
+  //     );
+
+  //     if (response.data?.output) {
+  //       const uniqueCategories = response.data.output.reduce(
+  //         (acc: CategoryItem[], current: CategoryItem) => {
+  //           const exists = acc.find(item => item.CATID === current.CATID);
+  //           if (!exists) {
+  //             return [
+  //               ...acc,
+  //               {
+  //                 ...current,
+  //                 categoryImage: formatImageName(current.CATID, true),
+  //                 imageUrl: getCategoryImage(current.CATID),
+  //               },
+  //             ];
+  //           }
+  //           return acc;
+  //         },
+  //         [],
+  //       );
+
+  //       setCategories(uniqueCategories);
+  //       setFilteredCategories(uniqueCategories);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching categories:', error);
+  //     Alert.alert('Error', 'Failed to fetch categories');
+  //   }
+  // }, []);
+
   const fetchCategories = useCallback(async (customerId: string) => {
     try {
       const response = await axios.post(
         API_ENDPOINTS.ITEM_CATEGORIES,
-        { CustomerID: customerId },
-        { timeout: 10000 }
+        {CustomerID: customerId},
+        {timeout: 10000},
       );
 
       if (response.data?.output) {
         const uniqueCategories = response.data.output.reduce(
           (acc: CategoryItem[], current: CategoryItem) => {
-            const exists = acc.find((item) => item.CATID === current.CATID);
+            const exists = acc.find(item => item.CATID === current.CATID);
             if (!exists) {
-              return [...acc, {
-                ...current,
-                categoryImage: formatImageName(current.CATID, true),
-                imageUrl: getCategoryImage(current.CATID)
-              }];
+              return [
+                ...acc,
+                {
+                  ...current,
+                  categoryImage: formatImageName(current.CATID, true),
+                  imageUrl: getCategoryImage(current.CATID),
+                },
+              ];
             }
             return acc;
           },
-          []
+          [],
         );
 
-        setCategories(uniqueCategories);
-        setFilteredCategories(uniqueCategories);
+        // Sort categories alphabetically by CATDESC
+        const sortedCategories = [...uniqueCategories].sort((a, b) =>
+          a.CATDESC.localeCompare(b.CATDESC),
+        );
+
+        setCategories(sortedCategories);
+        setFilteredCategories(sortedCategories);
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -161,17 +214,17 @@ const HomeScreen: React.FC = () => {
   const handleCartPress = useCallback(() => {
     if (CustomerID) {
       navigation.navigate('PlaceOrderScreen', {
-        selectedItems: [], 
+        selectedItems: [],
         shouldRefresh: true,
-        customerID: CustomerID // This must be a string, not null
+        customerID: CustomerID, // This must be a string, not null
       });
     } else {
       Alert.alert('Error', 'Customer ID not available');
     }
   }, [CustomerID, navigation]);
-  
+
   const renderCardItem = useCallback(
-    ({ item }: { item: CategoryItem }) => {
+    ({item}: {item: CategoryItem}) => {
       return (
         <TouchableOpacity
           style={styles.card}
@@ -180,10 +233,9 @@ const HomeScreen: React.FC = () => {
               category: item.CATDESC,
               categoryId: item.CATID,
               customerID: CustomerID || item.customerID,
-              subcategoryImage: item.subcategoryImage
+              subcategoryImage: item.subcategoryImage,
             })
-          }
-        >
+          }>
           <View style={styles.imageContainer}>
             <Image
               source={item.imageUrl}
@@ -195,18 +247,18 @@ const HomeScreen: React.FC = () => {
         </TouchableOpacity>
       );
     },
-    [navigation, CustomerID]
+    [navigation, CustomerID],
   );
 
   const handleSearch = useCallback(
     (text: string) => {
       setSearchQuery(text);
-      const filtered = categories.filter((category) =>
-        category.CATDESC.toLowerCase().includes(text.toLowerCase())
+      const filtered = categories.filter(category =>
+        category.CATDESC.toLowerCase().includes(text.toLowerCase()),
       );
       setFilteredCategories(filtered);
     },
-    [categories]
+    [categories],
   );
   useEffect(() => {
     const initializeData = async () => {
@@ -231,17 +283,17 @@ const HomeScreen: React.FC = () => {
           fetchCategories(id);
         }
       } catch (error) {
-        console.error("Error initializing data:", error);
-        Alert.alert("Error", "Failed to initialize data");
+        console.error('Error initializing data:', error);
+        Alert.alert('Error', 'Failed to initialize data');
       }
     };
 
     initializeData();
   }, [
-    route.params?.switchedAccount, 
+    route.params?.switchedAccount,
     route.params?.newCustomerId,
     fetchCustomerID,
-    fetchCategories
+    fetchCategories,
   ]);
 
   useEffect(() => {
@@ -274,7 +326,7 @@ const HomeScreen: React.FC = () => {
           onChangeText={handleSearch}
         />
         <TouchableOpacity style={styles.searchButton}>
-          <Icon name="search" size={24} style={{color:"#000"}} />
+          <Icon name="search" size={24} style={{color: '#000'}} />
         </TouchableOpacity>
       </View>
 
@@ -290,12 +342,14 @@ const HomeScreen: React.FC = () => {
       </View>
 
       <FlatList
-        data={showAllCards ? filteredCategories : filteredCategories.slice(0, 6)}
+        data={
+          showAllCards ? filteredCategories : filteredCategories.slice(0, 6)
+        }
         renderItem={renderCardItem}
         numColumns={2}
-
-        keyExtractor={(item) => item.CATID}
-        contentContainerStyle={[styles.cardContainer,
+        keyExtractor={item => item.CATID}
+        contentContainerStyle={[
+          styles.cardContainer,
           filteredCategories.length === 0 && styles.emptyContainer,
         ]}
         scrollEnabled={true}

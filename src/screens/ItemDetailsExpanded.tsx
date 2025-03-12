@@ -121,10 +121,12 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
     customerID?: number | string;
     item_marks: string;
   } | null>(null);
-  
+
   // Reference to highlighted item
   const highlightedItemRef = useRef<ScrollView>(null);
-  const [highlightedLotNoIndex, setHighlightedLotNoIndex] = useState<number | null>(null);
+  const [highlightedLotNoIndex, setHighlightedLotNoIndex] = useState<
+    number | null
+  >(null);
 
   const handleAddToCart = (lotNo: string | null) => {
     if (!lotNo) {
@@ -193,7 +195,7 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
           setStockDetails([]);
         } else {
           setItemDetails(itemDetails);
-          
+
           // Sort stockDetails to prioritize the searched lot number if exists
           if (searchedLotNo) {
             const sortedStockDetails = [...stockDetails].sort((a, b) => {
@@ -202,16 +204,18 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
               return 0;
             });
             setStockDetails(sortedStockDetails);
-            
+
             // Find the index of the searched lot number for highlighting
-            const index = sortedStockDetails.findIndex(item => item.LOT_NO === searchedLotNo);
+            const index = sortedStockDetails.findIndex(
+              item => item.LOT_NO === searchedLotNo,
+            );
             if (index !== -1) {
               setHighlightedLotNoIndex(index);
             }
           } else {
             setStockDetails(stockDetails);
           }
-          
+
           setError(null);
         }
       } else {
@@ -266,7 +270,7 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
       setTimeout(() => {
         highlightedItemRef.current?.scrollTo({
           y: highlightedLotNoIndex * 180, // Approximate height of a card
-          animated: true
+          animated: true,
         });
       }, 500);
     }
@@ -340,7 +344,7 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
       }>
       {filteredStockDetails.map((stock, index) => {
         const isHighlighted = searchedLotNo && stock.LOT_NO === searchedLotNo;
-        
+
         return (
           <Animated.View
             key={index}
@@ -367,7 +371,11 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
                   style={styles.lotNoValueContainer}
                   // onPress={() => navigation.navigate('LotReportScreen')}
                 >
-                  <Text style={[styles.lotNoValue, isHighlighted && styles.highlightedText]}>
+                  <Text
+                    style={[
+                      styles.lotNoValue,
+                      isHighlighted && styles.highlightedText,
+                    ]}>
                     {stock.LOT_NO || 'N/A'}
                   </Text>
                 </TouchableOpacity>
@@ -401,7 +409,9 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
               <View style={styles.detailRow}>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Unit Name</Text>
-                  <Text style={styles.detailValue}>{stock.UNIT_NAME || ''}</Text>
+                  <Text style={styles.detailValue}>
+                    {stock.UNIT_NAME || ''}
+                  </Text>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Vakal No:</Text>
@@ -411,7 +421,9 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
               <View style={styles.detailRow}>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Item Marks</Text>
-                  <Text style={styles.detailValue}>{stock.ITEM_MARKS || ''}</Text>
+                  <Text style={styles.detailValue}>
+                    {stock.ITEM_MARKS || ''}
+                  </Text>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Batch No</Text>
@@ -458,7 +470,7 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
       <View>
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderCell, {width: 120}]}>Lot No</Text>
-          <Text style={[styles.tableHeaderCell, {width: 100}]}>Quantity</Text>
+          {/* <Text style={[styles.tableHeaderCell, {width: 100}]}>Quantity</Text> */}
           <Text style={[styles.tableHeaderCell, {width: 100}]}>Unit Name</Text>
           <Text style={[styles.tableHeaderCell, {width: 100}]}>Vakal No</Text>
           <Text style={[styles.tableHeaderCell, {width: 100}]}>Item Marks</Text>
@@ -466,33 +478,48 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
           <Text style={[styles.tableHeaderCell, {width: 100}]}>
             Available Qty
           </Text>
-          <Text style={[styles.tableHeaderCell, {width: 100}]}>Box Qty</Text>
-          <Text style={[styles.tableHeaderCell, {width: 150}]}>
+          {/* <Text style={[styles.tableHeaderCell, {width: 100}]}>Box Qty</Text> */}
+          {/* <Text style={[styles.tableHeaderCell, {width: 150}]}>
             Expiry Date
-          </Text>
+          </Text> */}
           <Text style={[styles.tableHeaderCell, {width: 100}]}>Remarks</Text>
         </View>
         <ScrollView>
           {filteredStockDetails.map((stock, index) => {
-            const isHighlighted = searchedLotNo && stock.LOT_NO === searchedLotNo;
-            
+            const isHighlighted =
+              searchedLotNo && stock.LOT_NO === searchedLotNo;
+
             return (
-              <View key={index} style={[styles.tableRow, isHighlighted && styles.highlightedTableRow]}>
+              <View
+                key={index}
+                style={[
+                  styles.tableRow,
+                  isHighlighted && styles.highlightedTableRow,
+                ]}>
                 <View style={[styles.tableCellContainer, {width: 120}]}>
-                  <Text style={[styles.tableCell, styles.lotNoTableCell, isHighlighted && styles.highlightedText]}>
+                  <Text
+                    style={[
+                      styles.tableCell,
+                      styles.lotNoTableCell,
+                      isHighlighted && styles.highlightedText,
+                    ]}>
                     {stock.LOT_NO || 'N/A'}
                   </Text>
                 </View>
-                <View style={[styles.tableCellContainer, {width: 100}]}>
+                {/* <View style={[styles.tableCellContainer, {width: 100}]}>
                   <Text style={[styles.tableCell, styles.quantityTableCell]}>
                     {formatQuantity(stock.AVAILABLE_QTY)}
                   </Text>
+                </View> */}
+                <View style={[styles.tableCellContainer, {width: 100}]}>
+                  <Text style={styles.tableCell}>
+                    {stock.UNIT_NAME || 'N/A'}
+                  </Text>
                 </View>
                 <View style={[styles.tableCellContainer, {width: 100}]}>
-                  <Text style={styles.tableCell}>{stock.UNIT_NAME || 'N/A'}</Text>
-                </View>
-                <View style={[styles.tableCellContainer, {width: 100}]}>
-                  <Text style={styles.tableCell}>{stock.VAKAL_NO || 'N/A'}</Text>
+                  <Text style={styles.tableCell}>
+                    {stock.VAKAL_NO || 'N/A'}
+                  </Text>
                 </View>
                 <View style={[styles.tableCellContainer, {width: 100}]}>
                   <Text style={styles.tableCell}>
@@ -500,23 +527,25 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
                   </Text>
                 </View>
                 <View style={[styles.tableCellContainer, {width: 120}]}>
-                  <Text style={styles.tableCell}>{stock.BATCH_NO || 'N/A'}</Text>
+                  <Text style={styles.tableCell}>
+                    {stock.BATCH_NO || 'N/A'}
+                  </Text>
                 </View>
                 <View style={[styles.tableCellContainer, {width: 100}]}>
                   <Text style={styles.tableCell}>
                     {formatQuantity(stock.AVAILABLE_QTY)}
                   </Text>
                 </View>
-                <View style={[styles.tableCellContainer, {width: 100}]}>
+                {/* <View style={[styles.tableCellContainer, {width: 100}]}>
                   <Text style={styles.tableCell}>
                     {formatQuantity(stock.BOX_QUANTITY)}
                   </Text>
-                </View>
-                <View style={[styles.tableCellContainer, {width: 150}]}>
+                </View> */}
+                {/* <View style={[styles.tableCellContainer, {width: 150}]}>
                   <Text style={styles.tableCell}>
                     {formatDate(stock.EXPIRY_DATE)}
                   </Text>
-                </View>
+                </View> */}
                 <View style={[styles.tableCellContainer, {width: 100}]}>
                   <Text style={styles.tableCell}>{stock.REMARKS || 'N/A'}</Text>
                 </View>
@@ -549,7 +578,7 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
       <View style={styles.mainContainer}>
         <View style={styles.headerContainer}>
           <View style={styles.searchContainer}>
-            <Icon name="search" size={24} style={{color:"#000"}} />
+            <Icon name="search" size={24} style={{color: '#000'}} />
             <TextInput
               style={styles.searchInput}
               placeholder="Search by LotNo..."
@@ -569,8 +598,7 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
                 <Icon
                   name="credit-card" // Change to the appropriate icon name
                   size={23}
-                  style={{ color: !isTableView ? '#F48221' : '#F48221' }}
-
+                  style={{color: !isTableView ? '#F48221' : '#F48221'}}
                 />
               </TouchableOpacity>
               <TouchableOpacity
@@ -582,7 +610,7 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
                 <Icon
                   name="grid-on" // Change to the appropriate icon name
                   size={23}
-                 style={{ color:isTableView ? '#007bff' : '#007bff'}}
+                  style={{color: isTableView ? '#007bff' : '#007bff'}}
                 />
               </TouchableOpacity>
             </View>

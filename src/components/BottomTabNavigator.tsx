@@ -242,8 +242,6 @@
 
 // export default BottomTabNavigator;
 
-
-
 import React, {createContext, useContext, useState} from 'react';
 import {StyleSheet, View, TouchableOpacity, Text} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
@@ -358,7 +356,6 @@ export const TabBar = (props: any) => {
     {name: 'Search', icon: 'search', label: 'Search'},
     {name: 'Alert', icon: 'notifications', label: 'Alerts'},
     {name: 'Orders', icon: 'list-alt', label: 'Orders'},
-   
   ];
 
   // Enhanced tab press handler with route history
@@ -372,7 +369,9 @@ export const TabBar = (props: any) => {
       addToHistory(props.route.name);
     }
 
-    if (['Home', 'Announcement', 'Alert', 'Search', 'Orders'].includes(routeName)) {
+    if (
+      ['Home', 'Announcement', 'Alert', 'Search', 'Orders'].includes(routeName)
+    ) {
       const currentParams = props.route?.params;
       const navigationParams: any = {
         screen: routeName,
@@ -440,7 +439,7 @@ const BottomTabNavigator: React.FC = () => {
         return 'home';
       case 'Search':
         return 'search';
-      
+
       case 'Alert':
         return focused ? 'notifications' : 'notifications-none';
       case 'Orders':
@@ -475,12 +474,9 @@ const BottomTabNavigator: React.FC = () => {
               headerShown: false,
             }}
           />
-          
+
           <Tab.Screen name="Alert" component={AlertScreen} />
-          <Tab.Screen 
-            name="Orders" 
-            component={OrdersStackNavigator} 
-          />
+          <Tab.Screen name="Orders" component={OrdersStackNavigator} />
         </Tab.Navigator>
       </NavigationHistoryProvider>
     </CustomerProvider>
