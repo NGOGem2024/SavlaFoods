@@ -34,6 +34,7 @@ interface OrderHeader {
   ORDER_DATE: string;
   DELIVERY_DATE: string;
   TRANSPORTER_NAME: string;
+  deliveryAdress: string;
   REMARK: string;
   ORDER_MODE: string;
 }
@@ -90,8 +91,15 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
   route,
   navigation,
 }) => {
-  const {orderId, orderNo, transporterName, deliveryDate, orderDate, items} =
-    route.params;
+  const {
+    orderId,
+    orderNo,
+    transporterName,
+    deliveryDate,
+    deliveryAddress,
+    orderDate,
+    items,
+  } = route.params;
   const [orderData, setOrderData] = useState<OrderResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -113,6 +121,7 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
           DELIVERY_DATE: deliveryDate,
           ORDER_DATE: orderDate || new Date().toISOString(), // Add fallback value
           TRANSPORTER_NAME: transporterName,
+          deliveryAdress: deliveryAddress,
           STATUS: 'NEW',
           FK_CUSTOMER_ID: 0,
           FK_USER_SUPERVISOR_ID: '',
@@ -312,7 +321,9 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
       </View>
 
       <View style={styles.headerCard}>
-        <Text style={styles.orderNo}>Order ID : {orderData?.header.ID}</Text>
+        <Text style={styles.orderNo}>
+          Order No : {orderData?.header.ORDER_NO}
+        </Text>
         <View style={styles.dateContainer}>
           <View style={styles.dateBox}>
             <Text style={styles.dateLabel}>Order Date</Text>
@@ -333,6 +344,11 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
           <Text style={styles.transporterValue}>
             {orderData?.header.TRANSPORTER_NAME}
           </Text>
+        </View>
+        {/* New Delivery Address Section */}
+        <View style={styles.deliveryContainer}>
+          <Text style={styles.deliveryLabel}>Delivery Location</Text>
+          <Text style={styles.deliveryValue}>{deliveryAddress || 'N/A'}</Text>
         </View>
       </View>
 
@@ -360,6 +376,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f3f4f6',
   },
+  deliveryContainer: {
+    marginTop: 8,
+    backgroundColor: '#F1F5F9',
+    padding: 12,
+    borderRadius: 8,
+  },
+  deliveryLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 2,
+  },
+  deliveryValue: {
+    fontSize: 15,
+    color: '#111827',
+    fontWeight: '500',
+  },
+
   titleContainer: {
     alignItems: 'center',
     paddingVertical: 16,

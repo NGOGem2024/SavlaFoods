@@ -239,6 +239,10 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
     fetchStockDetails();
   }, [route.params.ItemID, customerID]);
 
+  // Add this new function here
+  const handleBack = () => {
+    navigation.goBack();
+  };
   const onRefresh = () => {
     setRefreshing(true);
     fetchStockDetails(false);
@@ -567,9 +571,15 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
 
   if (error) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-      </View>
+      <LayoutWrapper showHeader={true} showTabBar={true} route={route}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <Icon name="arrow-back" size={24} color="#007bff" />
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </LayoutWrapper>
     );
   }
 
@@ -624,6 +634,24 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
 };
 
 const styles = StyleSheet.create({
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  highlightedTableRow: {},
+  highlightedText: {},
+  highlightedCard: {},
+  backButtonText: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: '#007bff',
+    fontWeight: '500',
+  },
   mainContainer: {
     flex: 1,
     backgroundColor: '#f8f9fa',
@@ -712,10 +740,14 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   lotNoValueContainer: {
+    // backgroundColor: 'rgba(244, 130, 33, 0.2)',
     backgroundColor: '#F48221',
-    borderRadius: 4,
+    borderRadius: 7,
     padding: 6,
     width: '30%',
+    // color: 'F48221',
+    // borderWidth: 1,
+    // borderColor: '#F48221',
   },
   lotNoValue: {
     color: '#FFFFFF',

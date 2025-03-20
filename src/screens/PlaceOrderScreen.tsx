@@ -257,7 +257,7 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
         customerID: route.params.customerID,
         userSupervisorId: route.params.userSupervisorId,
         userMukadamId: route.params.userMukadamId,
-        stockLotLocationId: route.params.stockLotLocationId || 882698,
+        stockLotLocationId: route.params.stockLotLocationId,
         unitId: route.params.unitId || 3,
         finYearId: route.params.finYearId || 15,
       });
@@ -295,7 +295,7 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
               ],
             );
           }}>
-          <Ionicons name="trash-outline" size={20} style={{color:"#FF6B6B" }}/>
+          <Ionicons name="trash-outline" size={20} style={{color: '#FF6B6B'}} />
         </TouchableOpacity>
       </View>
       <View style={styles.orderItemDetails}>
@@ -383,7 +383,11 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={{marginLeft: 15}}>
-            <MaterialIcons name="arrow-back" size={24} style={{color:"#663399"}} />
+            <MaterialIcons
+              name="arrow-back"
+              size={24}
+              style={{color: '#663399'}}
+            />
           </TouchableOpacity>
           <Text style={styles.headerText}>Place Your Order</Text>
           {renderGroupedItems()}
@@ -402,7 +406,11 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
             ) : (
               <>
                 <Text style={styles.confirmButtonText}>Place Order</Text>
-                <Ionicons name="arrow-forward" size={20} style={{color:"#FFFFFF"}} />
+                <Ionicons
+                  name="arrow-forward"
+                  size={20}
+                  style={{color: '#FFFFFF'}}
+                />
               </>
             )}
           </TouchableOpacity>

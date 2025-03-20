@@ -20,6 +20,7 @@ export const API_ENDPOINTS = {
   SEARCH_STOCK_SUBCATEGORIES: `${API_BASE_URL}/search/searchItemsAndSubCategories`,
   SEARCH_STOCK_CATEGORIES: `${API_BASE_URL}/search/searchCategories`,
   SEARCH_BY_LOT_NUMBER: `${API_BASE_URL}/search/searchByLotNumber`,
+  SEARCH_ITEMS: `${API_BASE_URL}/search/SearchItems`,
 };
 
 export const BASE_IMAGE_PATH = `${API_BASE_URL}/assets/images`;

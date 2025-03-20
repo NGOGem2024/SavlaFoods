@@ -70,6 +70,8 @@ const SubCategory: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
   const [imageMappings, setImageMappings] = useState<{
     categories: ImageMapping[];
     subcategories: ImageMapping[];
@@ -111,67 +113,6 @@ const SubCategory: React.FC = () => {
       fetchSubCategories();
     }
   }, [CustomerID, route.params.categoryId]);
-
-  // const fetchSubCategories = useCallback(async () => {
-  //   if (!CustomerID || !route.params.categoryId) {
-  //     console.log('Waiting for CustomerID or categoryId...');
-  //     return;
-  //   }
-
-  //   try {
-  //     setLoading(true);
-  //     setError(null);
-
-  //     const response = await axios.post(
-  //       `${API_BASE_URL}/sf/getItemCatSubCat`,
-  //       {
-  //         CustomerID: CustomerID,
-  //       },
-  //       {
-  //         timeout: 10000,
-  //       },
-  //     );
-
-  //     if (response.data && response.data.output) {
-  //       const filteredSubCategories = response.data.output.filter(
-  //         (item: SubCategoryItem) => item.CATID === route.params.categoryId,
-  //       );
-
-  //       const uniqueSubCategories = filteredSubCategories.map(
-  //         (item: SubCategoryItem) => ({
-  //           ...item,
-  //           CustomerID: CustomerID || '',
-  //           subcategoryImage: formatImageName(item.SUBCATID, false),
-  //           imageUrl: getSubcategoryImage(item.SUBCATID),
-  //         }),
-  //       );
-
-  //       setSubCategories(uniqueSubCategories);
-  //       setFilteredSubCategories(uniqueSubCategories);
-  //     } else {
-  //       setError('No data received from server');
-  //     }
-  //   } catch (err) {
-  //     console.error('Error fetching subcategories:', err);
-  //     if (axios.isAxiosError(err)) {
-  //       if (err.response) {
-  //         setError(`Server error: ${err.response.status}`);
-  //       } else if (err.request) {
-  //         setError('Network error. Please check your connection.');
-  //       } else {
-  //         setError('An unexpected error occurred');
-  //       }
-  //     } else {
-  //       setError('Failed to load subcategories');
-  //     }
-  //     Alert.alert('Error', 'Failed to load subcategories. Please try again.', [
-  //       {text: 'OK'},
-  //     ]);
-  //   } finally {
-  //     setLoading(false);
-  //     setRefreshing(false);
-  //   }
-  // }, [CustomerID, route.params.categoryId]);
 
   const fetchSubCategories = useCallback(async () => {
     if (!CustomerID || !route.params.categoryId) {
@@ -250,6 +191,21 @@ const SubCategory: React.FC = () => {
     [subCategories],
   );
 
+  const handleSort = useCallback(
+    (order: 'asc' | 'desc') => {
+      setSortOrder(order);
+      const sorted = [...filteredSubCategories].sort((a, b) => {
+        if (order === 'asc') {
+          return a.SUBCATDESC.localeCompare(b.SUBCATDESC);
+        } else {
+          return b.SUBCATDESC.localeCompare(a.SUBCATDESC);
+        }
+      });
+      setFilteredSubCategories(sorted);
+    },
+    [filteredSubCategories],
+  );
+
   const handleSubCategoryPress = useCallback(
     (item: SubCategoryItem) => {
       console.log('Navigating to ItemDetailScreen with:', {
@@ -320,11 +276,35 @@ const SubCategory: React.FC = () => {
           value={searchQuery}
           onChangeText={handleSearch}
         />
-        <TouchableOpacity style={styles.searchButton}>
-          <MaterialIcons name="search" size={24} style={{color: '#000'}} />
+
+        {/* <TouchableOpacity style={styles.searchButton}>
+          <MaterialIcons name="search" size={20} style={{color: '#FF8C00'}} />
+        </TouchableOpacity> */}
+        <TouchableOpacity
+          style={[
+            styles.sortButton,
+            sortOrder === 'asc' ? styles.activeSort : null,
+          ]}
+          onPress={() => handleSort('asc')}>
+          <MaterialIcons
+            name="arrow-upward"
+            size={18}
+            style={{color: '#007BFA'}}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.sortButton,
+            sortOrder === 'desc' ? styles.activeSort : null,
+          ]}
+          onPress={() => handleSort('desc')}>
+          <MaterialIcons
+            name="arrow-downward"
+            size={18}
+            style={{color: '#007BFA'}}
+          />
         </TouchableOpacity>
       </View>
-
       <FlatList
         data={filteredSubCategories}
         renderItem={renderSubCategoryItem}
@@ -363,22 +343,43 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    // width: '90%',
   },
   searchInput: {
     flex: 1,
-    height: 40,
+    height: 36,
     backgroundColor: '#f5f5f5',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    marginRight: 10,
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    fontSize: 13,
+    width: '20%',
   },
   searchButton: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f5f5f5',
-    borderRadius: 20,
+    borderRadius: 18,
+    marginRight: 8,
+  },
+  sortButton: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 18,
+    marginLeft: 0,
+    fontWeight: 500,
+  },
+  activeSort: {
+    backgroundColor: '#FFF3E0',
+    borderWidth: 1,
+    borderColor: '#F48221',
   },
   listContainer: {
     padding: 10,
@@ -424,5 +425,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
 export default SubCategory;

@@ -353,7 +353,7 @@ export const TabBar = (props: any) => {
 
   const tabs = [
     {name: 'Home', icon: 'home', label: 'Home'},
-    {name: 'Search', icon: 'search', label: 'Search'},
+    // {name: 'Search', icon: 'search', label: 'Search'},
     {name: 'Alert', icon: 'notifications', label: 'Alerts'},
     {name: 'Orders', icon: 'list-alt', label: 'Orders'},
   ];
@@ -467,13 +467,13 @@ const BottomTabNavigator: React.FC = () => {
             tabBarHideOnKeyboard: true,
           })}>
           <Tab.Screen name="Home" component={HomeScreen} />
-          <Tab.Screen
+          {/* <Tab.Screen
             name="Search"
             component={SearchScreen}
             options={{
               headerShown: false,
             }}
-          />
+          /> */}
 
           <Tab.Screen name="Alert" component={AlertScreen} />
           <Tab.Screen name="Orders" component={OrdersStackNavigator} />
