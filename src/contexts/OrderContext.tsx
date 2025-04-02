@@ -1,5 +1,5 @@
 // OrderContext.tsx
-import React, { createContext, useState, useEffect } from 'react';
+import React, {createContext, useState, useEffect} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface OrderDetail {
@@ -55,7 +55,9 @@ export const OrderContext = createContext<OrderContextType>({
   clearHistory: async () => {},
 });
 
-export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const OrderProvider: React.FC<{children: React.ReactNode}> = ({
+  children,
+}) => {
   const [orderHistory, setOrderHistory] = useState<OrderData[]>([]);
 
   useEffect(() => {
@@ -76,7 +78,10 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const addOrder = async (order: OrderData) => {
     try {
       const updatedHistory = [...orderHistory, order];
-      await AsyncStorage.setItem('orderHistory', JSON.stringify(updatedHistory));
+      await AsyncStorage.setItem(
+        'orderHistory',
+        JSON.stringify(updatedHistory),
+      );
       setOrderHistory(updatedHistory);
     } catch (error) {
       console.error('Error saving order:', error);
@@ -93,7 +98,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   return (
-    <OrderContext.Provider value={{ orderHistory, addOrder, clearHistory }}>
+    <OrderContext.Provider value={{orderHistory, addOrder, clearHistory}}>
       {children}
     </OrderContext.Provider>
   );
