@@ -1,6 +1,6 @@
- // src/types/types.ts
+// src/types/types.ts
 
-import type { StackScreenProps } from '@react-navigation/stack';
+import type {StackScreenProps} from '@react-navigation/stack';
 // import { OrderContext } from '../contexts/orderContext';
 
 export interface Item {
@@ -14,12 +14,29 @@ export interface Item {
   quantity?: number;
 }
 
+export type OrderHistoryParams = {
+  customerID: string;
+  orderId: number;
+  orderNo: string;
+  transporterName: string;
+  deliveryDate: string;
+  deliveryAddress: string;
+  orderDate: string;
+  items: Array<{
+    ITEM_ID: number;
+    LOT_NO: string;
+    ORDERED_QUANTITY: number;
+    AVAILABLE_QTY: number;
+    ITEM_MARKS: string;
+    VAKAL_NO: string;
+  }>;
+};
 
 export type RootStackParamList = {
   SplashScreen: undefined;
   OtpVerificationScreen: undefined;
-    // customerID?: string | null;
-  
+  // customerID?: string | null;
+
   Main: {
     screen: string;
     params?: {
@@ -33,7 +50,7 @@ export type RootStackParamList = {
     timestamp?: number;
     initialLogin?: boolean;
     customerID?: string;
-    displayName?: string; 
+    displayName?: string;
   };
 };
 
@@ -49,13 +66,51 @@ export type MainStackParamList = {
       };
     };
   };
- OrderHistoryScreen: {
-  customerID:string;
+  PendingOrdersScreen: {
+    customerID: string;
+    orderId: number;
+    orderNo: string;
+    transporterName: string;
+    orderDate: string;
+    deliveryDate: string;
+    deliveryAddress: string;
+    items: Array<{
+      ITEM_ID: number;
+      LOT_NO: string;
+      ORDERED_QUANTITY: number;
+      AVAILABLE_QTY: number;
+      ITEM_MARKS: string;
+      VAKAL_NO: string;
+    }>;
+  };
+  OrderHistoryScreen: {
+    customerID: string;
     orderId: number;
     orderNo: string;
     transporterName: string;
     deliveryDate: string;
-    orderDate:string;
+    deliveryAddress: string;
+    orderDate: string;
+    items: Array<{
+      ITEM_NAME: string;
+      NET_QUANTITY: any;
+      UNIT_NAME: any;
+      REMARK: string;
+      ITEM_ID: number;
+      LOT_NO: string;
+      ORDERED_QUANTITY: number;
+      AVAILABLE_QTY: number;
+      ITEM_MARKS: string;
+      VAKAL_NO: string;
+    }>;
+  };
+  OrderDetailsScreen: {
+    customerID: string;
+    orderId: number;
+    orderNo: string;
+    transporterName: string;
+    deliveryDate: string;
+    orderDate: string;
     items: Array<{
       ITEM_ID: number;
       LOT_NO: string;
@@ -78,7 +133,7 @@ export type MainStackParamList = {
     };
   };
   PlaceOrderScreen: {
-    selectedItems: {       
+    selectedItems: {
       UPDATED_QTY(UPDATED_QTY: any): unknown;
       LOT_NO: string;
       VAKAL_NO: string;
@@ -98,6 +153,7 @@ export type MainStackParamList = {
     userSupervisorId?: number;
     userMukadamId?: number;
     stockLotLocationId?: number;
+    deliveryAddress?: string;
     unitId?: number;
     finYearId?: number;
     shouldRefresh: boolean;
@@ -115,11 +171,11 @@ export type MainStackParamList = {
       NET_QUANTITY: number;
       ORDERED_QUANTITY: number;
     }>;
-     
     customerID: string;
     userSupervisorId?: number;
     userMukadamId?: number;
     stockLotLocationId?: number;
+    deliveryAddress?: string;
     unitId?: number;
     finYearId?: number;
   };
@@ -135,6 +191,18 @@ export type MainStackParamList = {
     subcategoryName: string;
     subcategoryImage: string;
     customerID: string;
+  };
+  OrdersScreen: {
+    newOrderData?: {
+      customerID: string;
+      orderId: number;
+      orderNo: string;
+      transporterName: string;
+      deliveryDate: string;
+      deliveryAddress: string;
+      orderDate: string;
+      items: Array<any>;
+    };
   };
   ItemDetailsExpanded: {
     ItemID: number;
@@ -156,21 +224,18 @@ export type MainStackParamList = {
   LotReportScreen: undefined;
 };
 
-export type MainStackScreenProps<T extends keyof MainStackParamList> = StackScreenProps<
-  MainStackParamList,
-  T
->;
+export type MainStackScreenProps<T extends keyof MainStackParamList> =
+  StackScreenProps<MainStackParamList, T>;
 
-export type RootStackScreenProps<T extends keyof RootStackParamList> = StackScreenProps<
-  RootStackParamList,
-  T
->;
+export type RootStackScreenProps<T extends keyof RootStackParamList> =
+  StackScreenProps<RootStackParamList, T>;
 
-export type SearchType = 'searchCategories' | 'searchItemsAndSubCategories' | 'searchByLotNumber';
+export type SearchType =
+  | 'searchCategories'
+  | 'searchItemsAndSubCategories'
+  | 'searchByLotNumber';
 
 export interface SearchData {
   searchType: SearchType;
   searchQuery: string;
 }
-
-

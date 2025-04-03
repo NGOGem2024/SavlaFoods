@@ -1,14 +1,16 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
-import { useNotification } from '../contexts/NotificationContext';
+import {View, Text, FlatList, StyleSheet, TouchableOpacity} from 'react-native';
+import {useNotification} from '../contexts/NotificationContext';
 
 const Alerts = () => {
-  const { notifications, clearNotifications } = useNotification();
+  const {notifications, clearNotifications} = useNotification();
 
-  const renderNotification = ({ item } : { item: any }) => (
+  const renderNotification = ({item}: {item: any}) => (
     <View style={styles.notificationItem}>
       <Text style={styles.notificationMessage}>{item.message}</Text>
-      <Text style={styles.notificationTimestamp}>{new Date(item.timestamp).toLocaleString()}</Text>
+      <Text style={styles.notificationTimestamp}>
+        {new Date(item.timestamp).toLocaleString()}
+      </Text>
     </View>
   );
 
@@ -20,9 +22,11 @@ const Alerts = () => {
           <FlatList
             data={notifications}
             renderItem={renderNotification}
-            keyExtractor={(item) => item.id}
+            keyExtractor={item => item.id}
           />
-          <TouchableOpacity onPress={clearNotifications} style={styles.clearButton}>
+          <TouchableOpacity
+            onPress={clearNotifications}
+            style={styles.clearButton}>
             <Text style={styles.clearButtonText}>Clear All Notifications</Text>
           </TouchableOpacity>
         </>
@@ -41,7 +45,9 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
+    marginTop: 50,
     fontWeight: 'bold',
+    textAlign: 'center',
     marginBottom: 20,
     color: '#000',
   },
