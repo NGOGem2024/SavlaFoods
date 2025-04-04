@@ -207,7 +207,11 @@ const SearchScreen: React.FC = () => {
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backButton}>
-            <MaterialIcons name="arrow-back" size={28} style={{color:"#007AFF" }}/>
+            <MaterialIcons
+              name="arrow-back"
+              size={28}
+              style={{color: '#007AFF'}}
+            />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Search</Text>
         </View>

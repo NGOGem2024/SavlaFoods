@@ -1,9 +1,7 @@
-// OrderHistoryScreen.tsx
-
-import React, {useEffect, useState} from 'react';
+//Integrated History
+import React, {useEffect, useState, useCallback} from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   RefreshControl,
   StatusBar,
@@ -12,271 +10,523 @@ import {
   TouchableOpacity,
   View,
   SafeAreaView,
-  Animated,
+  Platform,
 } from 'react-native';
-import {RouteProp} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
-import {MainStackParamList} from '../type/type';
 import axios from 'axios';
 import {API_ENDPOINTS} from '../config/api.config';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import {useCustomer} from '../contexts/DisplayNameContext';
+import {MainStackParamList} from '../../src/type/type';
 
-interface OrderHeader {
-  ID: number;
-  FK_CUSTOMER_ID: number;
-  FK_USER_SUPERVISOR_ID: string;
-  STATUS: string;
-  CREATEDBY: string;
-  CREATEDON: string;
-  UPDATEDBY: string;
-  UPDATEDON: string;
-  ORDER_BY: string;
-  ORDER_NO: string;
-  ORDER_DATE: string;
-  DELIVERY_DATE: string;
-  TRANSPORTER_NAME: string;
-  REMARK: string;
-  ORDER_MODE: string;
+interface OrderHistory {
+  orderId: number;
+  orderNo: string;
+  orderDate: string;
+  deliveryDate: string;
+  status: string;
+  transporterName: string;
+  remarks: string;
+  deliveryAddress: string;
+  customerName: string;
+  totalItems: number;
+  totalQuantity: number;
+  createdon: string;
+  closedon: string;
+  items: Array<{
+    FK_ORDER_ID: number;
+    ITEM_NAME: string;
+    REQUESTED_QTY: number;
+    ORDER_DATE: string;
+    STATUS: string;
+    CANCELLEDBY: string;
+    CANCELLEDON: string;
+    CANCELLED_REMARK: string;
+    FK_ITEM_ID: number;
+    LOT_NO: string;
+    [key: string]: any;
+  }>;
 }
 
-interface OrderDetail {
-  ORDERED_QUANTITY: number;
-  ITEM_NAME: string;
-  ID: number;
-  FK_ORDER_ID: number;
-  FK_ITEM_ID: number;
-  LOT_NO: number | string;
-  ITEM_MARKS: string;
-  VAKAL_NO: string;
-  REQUESTED_QTY: number;
-  AVAILABLE_QTY: number;
-  STATUS: string;
-  MARK: string;
-  REMARK: string;
-  UNIT_NAME?: string;
-  NET_QUANTITY?: number;
-}
-
-interface OrderResponse {
+interface OrderHistoryResponse {
   success: boolean;
-  header: OrderHeader;
-  details: OrderDetail[];
+  message: string;
+  data: {
+    orders: any[];
+    pagination: {
+      page: number;
+      limit: number;
+      totalItems: number;
+      totalPages: number;
+    };
+  };
 }
 
-type OrderHistoryScreenRouteProp = RouteProp<
-  MainStackParamList,
-  'OrderHistoryScreen'
->;
-type OrderHistoryScreenNavigationProp = StackNavigationProp<
-  MainStackParamList,
-  'OrderHistoryScreen'
->;
+const OrderHistoryScreen = () => {
+  const navigation = useNavigation<StackNavigationProp<MainStackParamList>>();
+  const route = useRoute();
+  const params = route.params as any;
 
-interface OrderHistoryScreenProps {
-  route: OrderHistoryScreenRouteProp;
-  navigation: OrderHistoryScreenNavigationProp;
-}
-
-const DetailRow: React.FC<{label: string; value: string}> = ({
-  label,
-  value,
-}) => (
-  <View style={styles.detailRow}>
-    <Text style={styles.label}>{label}:</Text>
-    <Text style={styles.value}>{value || 'N/A'}</Text>
-  </View>
-);
-
-const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
-  route,
-  navigation,
-}) => {
-  const {orderId, orderNo, transporterName, deliveryDate, orderDate, items} =
-    route.params;
-  const [orderData, setOrderData] = useState<OrderResponse | null>(null);
+  const [orders, setOrders] = useState<OrderHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [expandedId, setExpandedId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [rotationValues] = useState<{[key: number]: Animated.Value}>({});
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<string | null>("CANCEL");
 
-  const fetchOrderDetails = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  // Get customerID from context or route params
+  const {customerID: contextCustomerID} = useCustomer();
+  const customerID = params?.customerID || contextCustomerID;
 
-      // Create fallback data using route params
-      const fallbackData: OrderResponse = {
-        success: true,
-        header: {
-          ID: orderId,
-          ORDER_NO: orderNo,
-          DELIVERY_DATE: deliveryDate,
-          ORDER_DATE: orderDate || new Date().toISOString(), // Add fallback value
-          TRANSPORTER_NAME: transporterName,
-          STATUS: 'NEW',
-          FK_CUSTOMER_ID: 0,
-          FK_USER_SUPERVISOR_ID: '',
-          CREATEDBY: '',
-          CREATEDON: '',
-          UPDATEDBY: '',
-          UPDATEDON: '',
-          ORDER_BY: '',
-          ORDER_MODE: '',
-          REMARK: '',
-        },
-        details: items.map((item: any, index: number) => ({
-          ID: item.ID || `${orderId}-${index}`,
-          FK_ORDER_ID: orderId,
-          FK_ITEM_ID: item.ITEM_ID,
-          ITEM_NAME: item.ITEM_NAME,
-          LOT_NO: item.LOT_NO,
-          ITEM_MARKS: item.ITEM_MARKS,
-          VAKAL_NO: item.VAKAL_NO,
-          REQUESTED_QTY: item.ORDERED_QUANTITY,
-          AVAILABLE_QTY: item.AVAILABLE_QTY,
-          STATUS: 'NEW',
-          MARK: item.ITEM_MARKS,
-          REMARK: item.REMARK || '',
-          ORDERED_QUANTITY: item.ORDERED_QUANTITY,
-          UNIT_NAME: item.UNIT_NAME,
-          NET_QUANTITY: item.NET_QUANTITY,
-        })),
+  // Check if we have a specific order passed through params
+  const hasSpecificOrder = params?.orderId && params?.orderNo;
+
+  const fetchOrderHistory = useCallback(
+    async (pageNum = 1, refresh = false, status = selectedStatus) => {
+      try {
+        if (!customerID) {
+          setError('Customer ID not found. Please login again.');
+          setIsLoading(false);
+          return;
+        }
+
+        if (refresh) {
+          setIsLoading(true);
+          setPage(1);
+        } else if (pageNum > 1) {
+          setIsLoadingMore(true);
+        }
+
+        setError(null);
+
+        // Configure API parameters
+        const apiParams: any = {
+          customerId: customerID,
+          page: pageNum,
+          limit: 10,
+        };
+
+        // Add status filter if selected
+        if (status) apiParams.status = status;
+
+        console.log('Fetching order history with params:', apiParams);
+
+        const response = await axios.get(`${API_ENDPOINTS.GET_ORDER_HISTORY}`, {
+          params: apiParams,
+        });
+
+        const result = response.data;
+        console.log('Order history response:', result);
+
+        if (result.success) {
+          // Check if data is an array directly (different API format)
+          const ordersData = Array.isArray(result.data) ? result.data : 
+                            (result.data?.orders || []);
+          
+          // Group items by order ID to create order objects
+          const orderMap = new Map();
+          
+          ordersData.forEach((item: any) => {
+            const orderId = item.FK_ORDER_ID;
+            if (!orderMap.has(orderId)) {
+              const orderDate = item.ORDER_DATE ? item.ORDER_DATE.split('T')[0] : '';
+              
+              orderMap.set(orderId, {
+                orderId: orderId,
+                orderNo: `ORD-${orderId}`,
+                orderDate: orderDate,
+                deliveryDate: orderDate, // Using order date as delivery date if not provided
+                status: item.STATUS,
+                transporterName: '',
+                remarks: item.CANCELLED_REMARK || '',
+                deliveryAddress: '',
+                customerName: '',
+                totalItems: 1,
+                totalQuantity: item.REQUESTED_QTY || 0,
+                createdon: orderDate,
+                closedon: item.CANCELLEDON ? item.CANCELLEDON.split('T')[0] : '',
+                items: [item]
+              });
+            } else {
+              // Update existing order
+              const existingOrder = orderMap.get(orderId);
+              existingOrder.totalItems += 1;
+              existingOrder.totalQuantity += (item.REQUESTED_QTY || 0);
+              existingOrder.items.push(item);
+            }
+          });
+          
+          // Convert map to array of orders
+          const normalizedOrders = Array.from(orderMap.values());
+          
+          console.log('Normalized orders:', normalizedOrders);
+
+          if (refresh || pageNum === 1) {
+            setOrders(normalizedOrders);
+          } else {
+            setOrders(prevOrders => [...prevOrders, ...normalizedOrders]);
+          }
+
+          // Handle pagination (use default values if not provided)
+          setTotalPages(result.data?.pagination?.totalPages || 1);
+          setPage(result.data?.pagination?.page || pageNum);
+        } else {
+          setError(result.message || 'Failed to load order history');
+          setOrders([]);
+        }
+      } catch (err: any) {
+        console.error('Error fetching Order History:', err);
+        setError(err.message || 'Server error. Please try again later.');
+        setOrders([]);
+      } finally {
+        setIsLoading(false);
+        setRefreshing(false);
+        setIsLoadingMore(false);
+      }
+    },
+    [customerID, selectedStatus],
+  );
+
+  useEffect(() => {
+    // If we have a specific order from params, create a single order object
+    if (hasSpecificOrder) {
+      const paramOrder = {
+        orderId: params.orderId,
+        orderNo: params.orderNo,
+        orderDate: params.orderDate || '',
+        deliveryDate: params.deliveryDate || '',
+        status: params.status || 'NEW',
+        transporterName: params.transporterName || '',
+        remarks: params.remarks || '',
+        deliveryAddress: params.deliveryAddress || '',
+        customerName: params.customerName || '',
+        totalItems: params.items?.length || 0,
+        totalQuantity:
+          params.items?.reduce(
+            (sum: any, item: {ORDERED_QUANTITY: any}) =>
+              sum + (item.ORDERED_QUANTITY || 0),
+            0,
+          ) || 0,
+        createdon: params.orderDate || '',
+        closedon: params.closedon || '',
+        items: params.items || [],
       };
-
-      setOrderData(fallbackData);
-    } catch (error: any) {
-      console.error('Error handling order details:', error);
-      setError('Failed to load order details');
-    } finally {
+      setOrders([paramOrder]);
       setIsLoading(false);
-      setRefreshing(false);
+    } else {
+      // Otherwise fetch order history as usual
+      fetchOrderHistory();
+    }
+  }, [fetchOrderHistory, hasSpecificOrder, params]);
+
+  const onRefresh = () => {
+    // Don't refresh if we have a specific order from params
+    if (hasSpecificOrder) return;
+
+    setRefreshing(true);
+    fetchOrderHistory(1, true);
+  };
+
+  const loadMoreOrders = () => {
+    // Don't load more if we have a specific order from params
+    if (hasSpecificOrder) return;
+
+    if (!isLoadingMore && page < totalPages) {
+      fetchOrderHistory(page + 1);
     }
   };
 
-  useEffect(() => {
-    if (!orderId || !items) {
-      setError('Order details are missing');
-      return;
-    }
-    fetchOrderDetails();
-  }, [orderId, items]);
-
   const formatDate = (dateString: string) => {
     try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-    } catch {
+      if (!dateString) return '';
+
+      // Extract date parts from string
+      let year, month, day;
+
+      // For YYYY-MM-DD format
+      if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        [year, month, day] = dateString.split('-');
+
+        // Create date parts directly without timezone issues
+        const monthIndex = parseInt(month, 10) - 1;
+        let dayNum = parseInt(day, 10);
+        let yearNum = parseInt(year, 10);
+
+        // Convert month number to month name
+        const monthNames = [
+          'January',
+          'February',
+          'March',
+          'April',
+          'May',
+          'June',
+          'July',
+          'August',
+          'September',
+          'October',
+          'November',
+          'December',
+        ];
+
+        // Format the date manually without creating a Date object
+        return `${monthNames[monthIndex]} ${dayNum}, ${yearNum}`;
+      }
+      // For ISO format with time component
+      else if (dateString.includes('T')) {
+        const [datePart] = dateString.split('T');
+        [year, month, day] = datePart.split('-');
+
+        // Create date parts directly without timezone issues
+        const monthIndex = parseInt(month, 10) - 1;
+        let dayNum = parseInt(day, 10);
+        let yearNum = parseInt(year, 10);
+
+        // Convert month number to month name
+        const monthNames = [
+          'January',
+          'February',
+          'March',
+          'April',
+          'May',
+          'June',
+          'July',
+          'August',
+          'September',
+          'October',
+          'November',
+          'December',
+        ];
+
+        // Format the date manually without creating a Date object
+        return `${monthNames[monthIndex]} ${dayNum}, ${yearNum}`;
+      }
+      // Invalid format
+      else {
+        return dateString;
+      }
+    } catch (error) {
+      console.log('Error formatting date:', error, dateString);
       return dateString;
     }
   };
 
-  const renderOrderDetail = ({item}: {item: OrderDetail}) => {
-    const isExpanded = expandedId === item.ID;
+  const handleStatusFilter = (status: string | null) => {
+    // Don't apply filters if we have a specific order from params
+    if (hasSpecificOrder) return;
 
-    // Initialize rotation value for this item if it doesn't exist
-    if (!rotationValues[item.ID]) {
-      rotationValues[item.ID] = new Animated.Value(isExpanded ? 1 : 0);
+    // Set the status immediately
+    setSelectedStatus(status);
+    
+    // Reset data and fetch with new status
+    setOrders([]);
+    setIsLoading(true);
+    setPage(1);
+    
+    // Small timeout to ensure state is updated before fetch
+    setTimeout(() => {
+      const apiParams: any = {
+        customerId: customerID,
+        page: 1,
+        limit: 10,
+      };
+      
+      if (status) apiParams.status = status;
+      
+      console.log('Filtering with status:', status);
+      
+      axios.get(`${API_ENDPOINTS.GET_ORDER_HISTORY}`, {
+        params: apiParams,
+      })
+      .then(response => {
+        const result = response.data;
+        
+        if (result.success) {
+          // Check if data is an array directly (different API format)
+          const ordersData = Array.isArray(result.data) ? result.data : 
+                          (result.data?.orders || []);
+          
+          // Group items by order ID to create order objects
+          const orderMap = new Map();
+          
+          ordersData.forEach((item: any) => {
+            const orderId = item.FK_ORDER_ID;
+            if (!orderMap.has(orderId)) {
+              const orderDate = item.ORDER_DATE ? item.ORDER_DATE.split('T')[0] : '';
+              
+              orderMap.set(orderId, {
+                orderId: orderId,
+                orderNo: `ORD-${orderId}`,
+                orderDate: orderDate,
+                deliveryDate: orderDate, // Using order date as delivery date if not provided
+                status: item.STATUS,
+                transporterName: '',
+                remarks: item.CANCELLED_REMARK || '',
+                deliveryAddress: '',
+                customerName: '',
+                totalItems: 1,
+                totalQuantity: item.REQUESTED_QTY || 0,
+                createdon: orderDate,
+                closedon: item.CANCELLEDON ? item.CANCELLEDON.split('T')[0] : '',
+                items: [item]
+              });
+            } else {
+              // Update existing order
+              const existingOrder = orderMap.get(orderId);
+              existingOrder.totalItems += 1;
+              existingOrder.totalQuantity += (item.REQUESTED_QTY || 0);
+              existingOrder.items.push(item);
+            }
+          });
+          
+          // Convert map to array of orders
+          const normalizedOrders = Array.from(orderMap.values());
+          
+          setOrders(normalizedOrders);
+          setTotalPages(result.data?.pagination?.totalPages || 1);
+          setPage(result.data?.pagination?.page || 1);
+        } else {
+          setError(result.message || 'Failed to load order history');
+          setOrders([]);
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching filtered orders:', err);
+        setError(err.message || 'Server error. Please try again later.');
+        setOrders([]);
+      })
+      .finally(() => {
+        setIsLoading(false);
+        setRefreshing(false);
+      });
+    }, 50);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'CLOSED':
+        return {bg: '#dcfce7', text: '#16a34a'};
+      case 'CANCEL':
+        return {bg: '#fee2e2', text: '#ef4444'};
+      default:
+        return {bg: '#f3f4f6', text: '#6B7280'};
     }
+  };
 
-    const rotate = rotationValues[item.ID].interpolate({
-      inputRange: [0, 1],
-      outputRange: ['0deg', '180deg'],
-    });
+  const renderStatusFilter = () => {
+    // Don't show filters if we have a specific order from params
+    if (hasSpecificOrder) return null;
 
     return (
-      <TouchableOpacity
-        onPress={() => toggleExpand(item.ID)}
-        activeOpacity={0.9}>
-        <Animated.View style={[styles.card, isExpanded && styles.expandedCard]}>
-          <View style={styles.mainContent}>
-            <View style={styles.cardHeader}>
-              <View style={styles.nameContainer}>
-                <Text style={styles.itemName}>{item.ITEM_NAME}</Text>
-                <View style={styles.lotNoContainer}>
-                  <Text style={styles.lotNo}>Lot No: {item.LOT_NO}</Text>
-                </View>
-              </View>
-              <View style={styles.statusContainer}>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    {
-                      backgroundColor:
-                        item.STATUS === 'NEW' ? '#e0f2fe' : '#f3f4f6',
-                    },
-                  ]}>
-                  <Text
-                    style={[
-                      styles.statusText,
-                      {color: item.STATUS === 'NEW' ? '#0284c7' : '#6B7280'},
-                    ]}>
-                    {item.STATUS}
-                  </Text>
-                </View>
-                <Animated.Text
-                  style={[styles.menuIcon, {transform: [{rotate}]}]}>
-                  ▼
-                </Animated.Text>
-              </View>
-            </View>
-
-            {isExpanded && (
-              <View style={styles.expandedContent}>
-                <View style={styles.divider} />
-                <View style={styles.detailsGrid}>
-                  <DetailRow label="Item Marks" value={item.ITEM_MARKS} />
-                  <DetailRow label="Vakal No" value={item.VAKAL_NO} />
-                  <View style={styles.quantityContainer}>
-                    <View style={styles.quantityBox}>
-                      <Text style={styles.quantityLabel}>Ordered</Text>
-                      <Text style={styles.quantityValue}>
-                        {item.ORDERED_QUANTITY}
-                      </Text>
-                    </View>
-                    <View style={styles.quantityBox}>
-                      <Text style={styles.quantityLabel}>Available</Text>
-                      <Text style={styles.quantityValue}>
-                        {item.AVAILABLE_QTY}
-                      </Text>
-                    </View>
-                  </View>
-                  <DetailRow label="Unit Name" value={item.UNIT_NAME || ''} />
-                  <DetailRow
-                    label="Net Quantity"
-                    value={String(item.NET_QUANTITY || '')}
-                  />
-                  <DetailRow label="Mark" value={item.MARK} />
-                  {item.REMARK && (
-                    <DetailRow label="Remark" value={item.REMARK} />
-                  )}
-                </View>
-              </View>
-            )}
-          </View>
-        </Animated.View>
-      </TouchableOpacity>
+      <View style={styles.filterContainer}>
+        <Text style={styles.filterTitle}>Filter by Status:</Text>
+        <View style={styles.statusButtons}>
+          <TouchableOpacity
+            style={[
+              styles.statusButton,
+              selectedStatus === 'CLOSED' && styles.statusButtonSelected,
+            ]}
+            activeOpacity={0.6}
+            onPress={() => handleStatusFilter('CLOSED')}>
+            <Text
+              style={[
+                styles.statusButtonText,
+                selectedStatus === 'CLOSED' && styles.statusButtonTextSelected,
+              ]}>
+              Closed
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.statusButton,
+              selectedStatus === 'CANCEL' && styles.statusButtonSelected,
+            ]}
+            activeOpacity={0.6}
+            onPress={() => handleStatusFilter('CANCEL')}>
+            <Text
+              style={[
+                styles.statusButtonText,
+                selectedStatus === 'CANCEL' && styles.statusButtonTextSelected,
+              ]}>
+              Cancelled
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     );
   };
 
-  const toggleExpand = (detailId: number) => {
-    // Initialize rotation value for this item if it doesn't exist
-    if (!rotationValues[detailId]) {
-      rotationValues[detailId] = new Animated.Value(0);
-    }
+  const renderOrderCard = ({item}: {item: OrderHistory}) => {
+    const statusColors = getStatusColor(item.status);
+    const cancelledOn = item.closedon ? formatDate(item.closedon) : '';
 
-    const isExpanding = expandedId !== detailId;
+    return (
+      <View style={styles.card}>
+        {item.items && item.items.map((orderItem, index) => (
+          <View key={`item-${index}`}>
+            {index > 0 && <View style={styles.itemDivider} />}
+            <View style={styles.cardHeader}>
+              <View style={styles.itemHeaderContainer}>
+                <Text style={styles.itemHeaderName}>{orderItem.ITEM_NAME || 'Unknown Item'}</Text>
+                <Text style={styles.itemHeaderQuantity}>
+                  Qty: {orderItem.REQUESTED_QTY || 0}
+                </Text>
+              </View>
+              {index === 0 && (
+                <View style={styles.statusContainer}>
+                  <View
+                    style={[styles.statusBadge, {backgroundColor: statusColors.bg}]}>
+                    <Text style={[styles.statusText, {color: statusColors.text}]}>
+                      {item.status}
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </View>
 
-    Animated.timing(rotationValues[detailId], {
-      toValue: isExpanding ? 1 : 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
+            <View style={styles.lotNoContainer}>
+              <Text style={styles.lotNoLabel}>Lot No:</Text>
+              <Text style={styles.lotNoValue}>{orderItem.LOT_NO || 'N/A'}</Text>
+            </View>
+          </View>
+        ))}
 
-    setExpandedId(isExpanding ? detailId : null);
+        <View style={styles.dateContainer}>
+          <View style={styles.dateBox}>
+            <Text style={styles.dateLabel}>Order Date</Text>
+            <Text style={styles.dateValue}>{formatDate(item.orderDate)}</Text>
+          </View>
+        </View>
+
+        {item.status === 'CANCEL' && item.closedon && (
+          <View style={styles.closedDateContainer}>
+            <Text style={styles.closedDateLabel}>Cancelled on:</Text>
+            <Text style={styles.closedDateValue}>{cancelledOn}</Text>
+          </View>
+        )}
+
+        <View style={styles.bottomRow}>
+          {item.remarks && !item.remarks.includes("Cancelled via") ? (
+            <Text style={styles.remarks}>
+              {item.remarks}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+    );
+  };
+
+  const renderFooter = () => {
+    if (!isLoadingMore) return null;
+
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color="#0284C7" />
+        <Text style={styles.loadingMoreText}>Loading more orders...</Text>
+      </View>
+    );
   };
 
   if (isLoading) {
@@ -287,70 +537,56 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
     );
   }
 
-  if (error) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>{error}</Text>
-      </View>
-    );
-  }
-
-  if (!orderData) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>No order data found</Text>
-      </View>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f3f4f6" />
 
-      <View style={styles.titleContainer}>
-        <Text style={styles.screenTitle}>Order History</Text>
-      </View>
+      {renderStatusFilter()}
 
-      <View style={styles.headerCard}>
-        <Text style={styles.orderNo}>Order ID : {orderData?.header.ID}</Text>
-        <View style={styles.dateContainer}>
-          <View style={styles.dateBox}>
-            <Text style={styles.dateLabel}>Order Date</Text>
-            <Text style={styles.dateValue}>
-              {formatDate(orderData?.header.ORDER_DATE || '')}
-            </Text>
-          </View>
-          <View style={styles.dateDivider} />
-          <View style={styles.dateBox}>
-            <Text style={styles.dateLabel}>Delivery Date</Text>
-            <Text style={styles.dateValue}>
-              {formatDate(orderData?.header.DELIVERY_DATE || '')}
-            </Text>
-          </View>
-        </View>
-        <View style={styles.transporterContainer}>
-          <Text style={styles.transporterLabel}>Transporter</Text>
-          <Text style={styles.transporterValue}>
-            {orderData?.header.TRANSPORTER_NAME}
+      {error && orders.length === 0 ? (
+        <View style={styles.centered}>
+          <MaterialIcons name="error-outline" size={64} color="#ef4444" />
+          <Text style={styles.errorTitle}>Server Error</Text>
+          <Text style={styles.errorText}>{error}</Text>
+          <Text style={styles.errorInfo}>
+            The server encountered an issue processing your request. This might be temporary.
           </Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => fetchOrderHistory(1, true)}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
         </View>
-      </View>
-
-      <FlatList
-        data={orderData?.details}
-        keyExtractor={item => `detail-${item.FK_ORDER_ID}${item.ID}`}
-        renderItem={renderOrderDetail}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => {
-              setRefreshing(true);
-              fetchOrderDetails();
-            }}
-          />
-        }
-        contentContainerStyle={styles.list}
-      />
+      ) : (
+        <FlatList
+          data={orders}
+          keyExtractor={item => `order-history-${item.orderId}`}
+          renderItem={renderOrderCard}
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              enabled={!hasSpecificOrder} // Disable pull-to-refresh for specific order
+            />
+          }
+          onEndReached={loadMoreOrders}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={renderFooter}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <MaterialIcons name="history" size={64} color="#d1d5db" />
+              <Text style={styles.emptyText}>No order history found</Text>
+              {selectedStatus && (
+                <Text style={styles.filterInfoText}>
+                  Filter: {selectedStatus}
+                </Text>
+              )}
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -360,191 +596,241 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f3f4f6',
   },
-  titleContainer: {
-    alignItems: 'center',
-    paddingVertical: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  screenTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#7c3aed', // Purple color
-  },
-  headerCard: {
-    backgroundColor: '#ffffff',
-    padding: 16,
-    margin: 16,
-    borderRadius: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
-  orderNo: {
-    fontSize: 18,
+  filterContainer: {
+    backgroundColor: '#ffffff',
+    padding: 16,
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  filterTitle: {
+    fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
-    marginBottom: 16,
-    textAlign: 'center',
+    color: '#374151',
+    marginBottom: 8,
   },
-  dateContainer: {
+  statusButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
     marginBottom: 16,
   },
-  dateBox: {
-    flex: 1,
+  statusButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#f3f4f6',
+    marginRight: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
   },
-  dateLabel: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginBottom: 2,
+  statusButtonSelected: {
+    backgroundColor: '#0284c7',
+    borderColor: '#0284c7',
   },
-  dateValue: {
-    fontSize: 15,
-    color: '#111827',
+  statusButtonText: {
+    color: '#4b5563',
     fontWeight: '500',
+    fontSize: 14,
   },
-  dateDivider: {
-    width: 1,
-    backgroundColor: '#E5E7EB',
-    marginHorizontal: 16,
-  },
-  transporterContainer: {
-    marginTop: 8,
-  },
-  transporterLabel: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginBottom: 2,
-  },
-  transporterValue: {
-    fontSize: 15,
-    color: '#111827',
-    fontWeight: '500',
+  statusButtonTextSelected: {
+    color: '#ffffff',
   },
   list: {
     padding: 16,
+    paddingBottom: 50,
   },
   card: {
     backgroundColor: '#ffffff',
     borderRadius: 16,
-    marginBottom: 8,
+    marginBottom: 16,
+    padding: 16,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
-  expandedCard: {
-    borderColor: '#e0f2fe',
-    borderWidth: 1,
-  },
-  mainContent: {
-    padding: 12,
-  },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
-  nameContainer: {
+  itemHeaderContainer: {
     flex: 1,
-    gap: 4,
   },
-  itemName: {
-    fontSize: 15,
-    fontWeight: '600',
+  itemHeaderName: {
+    fontSize: 16,
     color: '#111827',
+    fontWeight: '600',
+    marginBottom: 4,
   },
-  lotNoContainer: {
-    backgroundColor: '#fff7ed',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-  },
-  lotNo: {
-    fontSize: 13,
-    color: '#ea580c', // Orange color
-    fontWeight: '500',
+  itemHeaderQuantity: {
+    fontSize: 14,
+    color: '#6B7280',
   },
   statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    alignItems: 'flex-end',
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
     borderRadius: 12,
   },
   statusText: {
     fontSize: 13,
     fontWeight: '500',
   },
-  menuIcon: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  expandedContent: {
-    marginTop: 8,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#E5E7EB',
+  additionalItemsContainer: {
+    backgroundColor: '#f3f4f6',
+    padding: 8,
+    borderRadius: 6,
     marginVertical: 8,
   },
-  detailsGrid: {
-    gap: 8,
+  additionalItemsText: {
+    fontSize: 14,
+    color: '#4B5563',
+    fontWeight: '500',
   },
-  detailRow: {
+  dateContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    justifyContent: 'flex-start',
+    marginBottom: 12,
+    backgroundColor: '#f9fafb',
+    padding: 12,
+    borderRadius: 8,
   },
-  label: {
-    fontSize: 13,
-    color: '#6B7280',
+  dateBox: {
+    flex: 1,
   },
-  value: {
-    fontSize: 13,
+  dateLabel: {
+    fontSize: 14,
+    color: '#374151',
+    marginBottom: 4,
+  },
+  dateValue: {
+    fontSize: 14,
     color: '#111827',
     fontWeight: '500',
   },
-  quantityContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#f8fafc',
+  closedDateContainer: {
+    backgroundColor: '#fee2e2',
     padding: 8,
-    borderRadius: 8,
-    marginVertical: 4,
-  },
-  quantityBox: {
+    borderRadius: 6,
+    marginBottom: 8,
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  quantityLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginBottom: 2,
+  closedDateLabel: {
+    fontSize: 13,
+    color: '#ef4444',
+    marginRight: 4,
+    fontWeight: '500',
   },
-  quantityValue: {
+  closedDateValue: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#0284c7',
+    color: '#111827',
+    fontWeight: '500',
+  },
+  bottomRow: {
+    marginTop: 4,
+  },
+  remarks: {
+    fontSize: 14,
+    color: '#6B7280',
+    width: '100%',
+  },
+  footerLoader: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    paddingBottom: 34,
+    marginBottom: 17,
+  },
+  loadingMoreText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#6B7280',
   },
   errorText: {
     fontSize: 16,
     color: '#EF4444',
     textAlign: 'center',
+    padding: 16,
+  },
+  filterInfoText: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#6B7280',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: '#0284C7',
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontWeight: '500',
+    fontSize: 16,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  errorInfo: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 24,
+  },
+  lotNoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    // backgroundColor: '#fef3c7',
+    padding: 8,
+    borderRadius: 6,
+  },
+  lotNoLabel: {
+    fontSize: 14,
+    color: '#d97706',
+    fontWeight: '800',
+    marginRight: 4,
+  },
+  lotNoValue: {
+    fontSize: 16,
+    color: '#d97706',
+    fontWeight: '800',
+  },
+  itemDivider: {
+    height: 1,
+    backgroundColor: '#e5e7eb',
+    marginVertical: 10,
   },
 });
 
