@@ -6,11 +6,14 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
+  BackHandler,
 } from 'react-native';
 // Import Icons from react-native-vector-icons instead of Expo
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import ProfileMenu from '../screens/ProfileMenu';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
 
 const {width} = Dimensions.get('window');
 
@@ -27,17 +30,47 @@ const Header: React.FC<HeaderProps> = ({
   onAccountSwitch,
   onCartPress,
 }) => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
+  const route = useRoute();
+  
+  const handleBackPress = () => {
+    navigation.goBack();
+  };
+
+  const handleLogoPress = () => {
+    // OrdersHome is the actual screen name in OrdersStackNavigator
+    // Orders is the tab name
+    if (route.name === 'Orders' || route.name === 'OrdersHome') {
+      // Navigate to HomeScreen when on Orders screens
+      navigation.navigate('Home');
+    }
+  };
+
+  // Determine if we should show back button
+  // Don't show back button on Home screens or Orders screens
+  const showBackButton = 
+    route.name !== 'HomeScreen' && 
+    route.name !== 'Home' && 
+    route.name !== 'Orders' && 
+    route.name !== 'OrdersHome';
+
   return (
     <View style={styles.header}>
-      <TouchableOpacity
-        onPress={() => navigation.goBack()}
-        style={styles.leftSection}>
-        <Image
-          source={require('../assets/SavlaLogo.jpg')}
-          style={styles.logo}
-        />
-      </TouchableOpacity>
+      <View style={styles.leftSection}>
+        {showBackButton && (
+          <TouchableOpacity
+            onPress={handleBackPress}
+            style={styles.backButton}>
+            <Icon name="arrow-back" size={24} color="#007BFA" />
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity onPress={handleLogoPress}>
+          <Image
+            source={require('../assets/SavlaLogo.jpg')}
+            style={styles.logo}
+          />
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.centerSection}>
         <Text style={styles.headerTitle}>{displayName || 'Loading...'}</Text>
@@ -87,9 +120,14 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
   },
   leftSection: {
-    width: 45,
-    height: 45,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    width: 75,
+  },
+  backButton: {
+    marginRight: 1,
+    padding: 0,
   },
   centerSection: {
     flex: 1,

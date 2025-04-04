@@ -1,3 +1,4 @@
+//with labour
 import React, {useState, useEffect} from 'react';
 import {
   SafeAreaView,
@@ -128,6 +129,9 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
   // State for labor charges modal
   const [isLaborModalVisible, setIsLaborModalVisible] = useState(false);
 
+  // Add state for transporter name validation
+  const [transporterNameError, setTransporterNameError] = useState('');
+
   // Labor charges options
   const [laborCharges, setLaborCharges] = useState<LaborCharge[]>([
     {
@@ -237,9 +241,12 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
 
   // Handle applied quantity change
   const updateAppliedQuantity = (id: number, value: string) => {
+    // Only allow numeric values (no special characters, letters, etc.)
+    const numericOnly = value.replace(/[^0-9]/g, '');
+    
     setLaborCharges(
       laborCharges.map(charge =>
-        charge.id === id ? {...charge, appliedQuantity: value} : charge,
+        charge.id === id ? {...charge, appliedQuantity: numericOnly} : charge,
       ),
     );
   };
@@ -314,6 +321,21 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
     return deliveryDate >= today;
   };
 
+  // Modified function to handle transporter name change with validation
+  const handleTransporterNameChange = (text: string) => {
+    // Only allow letters, spaces, and some common punctuation
+    const letterOnlyRegex = /^[a-zA-Z\s.',-]*$/;
+    
+    // Update the state regardless, but set an error if invalid
+    setTransporterDetails(prev => ({...prev, name: text}));
+    
+    if (!letterOnlyRegex.test(text)) {
+      setTransporterNameError('Only letters, spaces, and common punctuation allowed');
+    } else {
+      setTransporterNameError('');
+    }
+  };
+
   const handleSubmitOrder = async () => {
     // Prevent resubmission if order is already placed
     if (isOrderPlaced) {
@@ -327,6 +349,9 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
 
     if (!transporterDetails.name.trim()) {
       errorMessage += '\nTransporter Name is required';
+      hasError = true;
+    } else if (!/^[a-zA-Z\s.',-]*$/.test(transporterDetails.name)) {
+      errorMessage += '\nTransporter Name can only contain letters, spaces, and common punctuation';
       hasError = true;
     }
 
@@ -492,12 +517,13 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
                 <TextInput
                   style={[styles.fieldInput, styles.inputWithIcon]}
                   value={transporterDetails.name}
-                  onChangeText={text =>
-                    setTransporterDetails(prev => ({...prev, name: text}))
-                  }
+                  onChangeText={handleTransporterNameChange}
                   // placeholder="Enter transporter name"
                 />
               </View>
+              {transporterNameError ? (
+                <Text style={styles.errorText}>{transporterNameError}</Text>
+              ) : null}
             </View>
 
             {/* Vehicle Number */}
@@ -593,30 +619,6 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
                 />
               )}
             </View>
-
-            {/* Labor Heading with Edit button */}
-            <View style={styles.laborHeadingContainer}>
-              <View style={styles.laborTitleContainer}>
-                <MaterialIcons name="engineering" size={24} color="#2C3E50" />
-                <Text style={styles.fieldLabel}>Labour</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.editButton}
-                onPress={() => setIsLaborModalVisible(true)}>
-                <Ionicons name="pencil" size={16} color="#FFFFFF" />
-                <Text style={styles.editButtonText}>Edit</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Display selected labor charges if any */}
-            {orderDetails.laborCharges ? (
-              <View style={styles.selectedLaborContainer}>
-                <MaterialIcons name="check-circle" size={20} color="#6B46C1" />
-                <Text style={styles.selectedLaborText}>
-                  {orderDetails.laborCharges}
-                </Text>
-              </View>
-            ) : null}
 
             {/* Delivery Location Field */}
             <View style={styles.field}>
@@ -719,7 +721,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
         </View>
 
         {/* Labor Modal */}
-        <Modal
+        {/* <Modal
           visible={isLaborModalVisible}
           transparent={true}
           animationType="slide"
@@ -839,7 +841,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
               </View>
             </View>
           </KeyboardAvoidingView>
-        </Modal>
+        </Modal> */}
 
         <Modal
           visible={showDatePicker && Platform.OS === 'ios'}
@@ -1898,6 +1900,12 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  errorText: {
+    color: '#dc3545',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 12,
   },
 });
 

@@ -75,7 +75,7 @@ const OrderHistoryScreen = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<string | null>("CANCEL");
 
   // Get customerID from context or route params
   const {customerID: contextCustomerID} = useCustomer();
@@ -85,7 +85,7 @@ const OrderHistoryScreen = () => {
   const hasSpecificOrder = params?.orderId && params?.orderNo;
 
   const fetchOrderHistory = useCallback(
-    async (pageNum = 1, refresh = false) => {
+    async (pageNum = 1, refresh = false, status = selectedStatus) => {
       try {
         if (!customerID) {
           setError('Customer ID not found. Please login again.');
@@ -110,7 +110,7 @@ const OrderHistoryScreen = () => {
         };
 
         // Add status filter if selected
-        if (selectedStatus) apiParams.status = selectedStatus;
+        if (status) apiParams.status = status;
 
         console.log('Fetching order history with params:', apiParams);
 
@@ -239,10 +239,6 @@ const OrderHistoryScreen = () => {
     }
   };
 
-  const handleOrderPress = (order: OrderHistory) => {
-    navigation.navigate('OrderDetailsScreen' as any, {order});
-  };
-
   const formatDate = (dateString: string) => {
     try {
       if (!dateString) return '';
@@ -321,12 +317,102 @@ const OrderHistoryScreen = () => {
     // Don't apply filters if we have a specific order from params
     if (hasSpecificOrder) return;
 
+    // Set the status immediately
     setSelectedStatus(status);
-    // Reset pagination when filter changes
-    setPage(1);
+    
+    // Reset data and fetch with new status
+    setOrders([]);
     setIsLoading(true);
-    // Fetch data with new filter on next render
-    fetchOrderHistory(1, true);
+    setPage(1);
+    
+    // Small timeout to ensure state is updated before fetch
+    setTimeout(() => {
+      const apiParams: any = {
+        customerId: customerID,
+        page: 1,
+        limit: 10,
+      };
+      
+      if (status) apiParams.status = status;
+      
+      console.log('Filtering with status:', status);
+      
+      axios.get(`${API_ENDPOINTS.GET_ORDER_HISTORY}`, {
+        params: apiParams,
+      })
+      .then(response => {
+        const result = response.data;
+        
+        if (result.success) {
+          // Check if data is an array directly (different API format)
+          const ordersData = Array.isArray(result.data) ? result.data : 
+                          (result.data?.orders || []);
+          
+          // Group items by order ID to create order objects
+          const orderMap = new Map();
+          
+          ordersData.forEach((item: any) => {
+            const orderId = item.FK_ORDER_ID;
+            if (!orderMap.has(orderId)) {
+              const orderDate = item.ORDER_DATE ? item.ORDER_DATE.split('T')[0] : '';
+              
+              orderMap.set(orderId, {
+                orderId: orderId,
+                orderNo: `ORD-${orderId}`,
+                orderDate: orderDate,
+                deliveryDate: orderDate, // Using order date as delivery date if not provided
+                status: item.STATUS,
+                transporterName: '',
+                remarks: item.CANCELLED_REMARK || '',
+                deliveryAddress: '',
+                customerName: '',
+                totalItems: 1,
+                totalQuantity: item.REQUESTED_QTY || 0,
+                createdon: orderDate,
+                closedon: item.CANCELLEDON ? item.CANCELLEDON.split('T')[0] : '',
+                items: [item]
+              });
+            } else {
+              // Update existing order
+              const existingOrder = orderMap.get(orderId);
+              existingOrder.totalItems += 1;
+              existingOrder.totalQuantity += (item.REQUESTED_QTY || 0);
+              existingOrder.items.push(item);
+            }
+          });
+          
+          // Convert map to array of orders
+          const normalizedOrders = Array.from(orderMap.values());
+          
+          setOrders(normalizedOrders);
+          setTotalPages(result.data?.pagination?.totalPages || 1);
+          setPage(result.data?.pagination?.page || 1);
+        } else {
+          setError(result.message || 'Failed to load order history');
+          setOrders([]);
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching filtered orders:', err);
+        setError(err.message || 'Server error. Please try again later.');
+        setOrders([]);
+      })
+      .finally(() => {
+        setIsLoading(false);
+        setRefreshing(false);
+      });
+    }, 50);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'CLOSED':
+        return {bg: '#dcfce7', text: '#16a34a'};
+      case 'CANCEL':
+        return {bg: '#fee2e2', text: '#ef4444'};
+      default:
+        return {bg: '#f3f4f6', text: '#6B7280'};
+    }
   };
 
   const renderStatusFilter = () => {
@@ -342,6 +428,7 @@ const OrderHistoryScreen = () => {
               styles.statusButton,
               selectedStatus === 'CLOSED' && styles.statusButtonSelected,
             ]}
+            activeOpacity={0.6}
             onPress={() => handleStatusFilter('CLOSED')}>
             <Text
               style={[
@@ -356,6 +443,7 @@ const OrderHistoryScreen = () => {
               styles.statusButton,
               selectedStatus === 'CANCEL' && styles.statusButtonSelected,
             ]}
+            activeOpacity={0.6}
             onPress={() => handleStatusFilter('CANCEL')}>
             <Text
               style={[
@@ -370,58 +458,40 @@ const OrderHistoryScreen = () => {
     );
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'CLOSED':
-        return {bg: '#dcfce7', text: '#16a34a'};
-      case 'CANCEL':
-        return {bg: '#fee2e2', text: '#ef4444'};
-      default:
-        return {bg: '#f3f4f6', text: '#6B7280'};
-    }
-  };
-
   const renderOrderCard = ({item}: {item: OrderHistory}) => {
     const statusColors = getStatusColor(item.status);
-    // Get first item name to display
-    const firstItemName = item.items && item.items[0]?.ITEM_NAME || 'Unknown Item';
     const cancelledOn = item.closedon ? formatDate(item.closedon) : '';
-    const lotNo = item.items && item.items[0]?.LOT_NO || 'N/A';
 
     return (
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() => handleOrderPress(item)}
-        activeOpacity={0.7}>
-        <View style={styles.cardHeader}>
-          <View style={styles.itemHeaderContainer}>
-            <Text style={styles.itemHeaderName}>{firstItemName}</Text>
-            <Text style={styles.itemHeaderQuantity}>
-              Qty: {item.items && item.items[0]?.REQUESTED_QTY || 0}
-            </Text>
-          </View>
-          <View style={styles.statusContainer}>
-            <View
-              style={[styles.statusBadge, {backgroundColor: statusColors.bg}]}>
-              <Text style={[styles.statusText, {color: statusColors.text}]}>
-                {item.status}
-              </Text>
+      <View style={styles.card}>
+        {item.items && item.items.map((orderItem, index) => (
+          <View key={`item-${index}`}>
+            {index > 0 && <View style={styles.itemDivider} />}
+            <View style={styles.cardHeader}>
+              <View style={styles.itemHeaderContainer}>
+                <Text style={styles.itemHeaderName}>{orderItem.ITEM_NAME || 'Unknown Item'}</Text>
+                <Text style={styles.itemHeaderQuantity}>
+                  Qty: {orderItem.REQUESTED_QTY || 0}
+                </Text>
+              </View>
+              {index === 0 && (
+                <View style={styles.statusContainer}>
+                  <View
+                    style={[styles.statusBadge, {backgroundColor: statusColors.bg}]}>
+                    <Text style={[styles.statusText, {color: statusColors.text}]}>
+                      {item.status}
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.lotNoContainer}>
+              <Text style={styles.lotNoLabel}>Lot No:</Text>
+              <Text style={styles.lotNoValue}>{orderItem.LOT_NO || 'N/A'}</Text>
             </View>
           </View>
-        </View>
-
-        <View style={styles.lotNoContainer}>
-          <Text style={styles.lotNoLabel}>Lot No:</Text>
-          <Text style={styles.lotNoValue}>{lotNo}</Text>
-        </View>
-
-        {item.totalItems > 1 && (
-          <View style={styles.additionalItemsContainer}>
-            <Text style={styles.additionalItemsText}>
-              +{item.totalItems - 1} more items
-            </Text>
-          </View>
-        )}
+        ))}
 
         <View style={styles.dateContainer}>
           <View style={styles.dateBox}>
@@ -444,7 +514,7 @@ const OrderHistoryScreen = () => {
             </Text>
           ) : null}
         </View>
-      </TouchableOpacity>
+      </View>
     );
   };
 
@@ -756,6 +826,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#d97706',
     fontWeight: '800',
+  },
+  itemDivider: {
+    height: 1,
+    backgroundColor: '#e5e7eb',
+    marginVertical: 10,
   },
 });
 

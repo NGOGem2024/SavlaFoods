@@ -8,10 +8,12 @@ import {
   SafeAreaView,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import { LayoutWrapper } from '../components/AppLayout';
 
 const OrdersScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute();
 
   const menuItems = [
     {
@@ -29,6 +31,7 @@ const OrdersScreen = () => {
   ];
 
   return (
+    <LayoutWrapper showHeader={true} route={route} showTabBar={false}>
     <SafeAreaView style={styles.container}>
       <ScrollView>
         <View style={styles.header}>
@@ -62,6 +65,7 @@ const OrdersScreen = () => {
         </View>
       </ScrollView>
     </SafeAreaView>
+    </LayoutWrapper>
   );
 };
 
@@ -127,7 +131,6 @@ const styles = StyleSheet.create({
 });
 
 export default OrdersScreen;
-
 // import React from 'react';
 // import {
 //   StyleSheet,
@@ -303,3 +306,4 @@ export default OrdersScreen;
 // });
 
 // export default OrdersScreen;
+

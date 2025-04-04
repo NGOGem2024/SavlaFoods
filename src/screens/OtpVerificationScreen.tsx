@@ -341,7 +341,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {RouteProp, useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   Alert,
   Dimensions,
@@ -358,7 +358,9 @@ import {
   View,
   ActivityIndicator,
   PixelRatio,
+  KeyboardEvent,
 } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {RootStackParamList, MainStackParamList} from '../type/type';
 import axios from 'axios';
@@ -416,6 +418,10 @@ const OtpVerificationScreen: React.FC<{
     width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT,
   });
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const usernameInputRef = useRef<TextInput>(null);
+  const passwordInputRef = useRef<TextInput>(null);
   const navigation = useNavigation<OtpVerificationScreenNavigationProp>();
   const {setCustomerID} = useCustomer();
 
@@ -430,14 +436,76 @@ const OtpVerificationScreen: React.FC<{
     return () => subscription.remove();
   }, []);
 
+  // Add keyboard listeners
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e: KeyboardEvent) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      },
+    );
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      },
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
+  }, []);
+
+  // Scroll to focused input when keyboard shows
+  const handleFocus = (inputRef: React.RefObject<TextInput>) => {
+    setTimeout(() => {
+      if (scrollViewRef.current && inputRef.current) {
+        inputRef.current.measureLayout(
+          // @ts-ignore - known type issue but works at runtime
+          scrollViewRef.current,
+          (_left: number, top: number) => {
+            // Always scroll a bit for password field to make it more visible
+            if (inputRef === passwordInputRef) {
+              // Add a fixed small scroll for the password field
+              scrollViewRef.current?.scrollTo({
+                y: top - 320, // This will move it up slightly
+                animated: true,
+              });
+            } else {
+              // For other inputs (username), only scroll if actually hidden
+              const availableHeight = SCREEN_HEIGHT - keyboardHeight;
+              const scrollAmount = Math.max(0, (top + 60) - availableHeight);
+              if (scrollAmount > 0) {
+                scrollViewRef.current?.scrollTo({
+                  y: scrollAmount,
+                  animated: true,
+                });
+              }
+            }
+          },
+          () => {}
+        );
+      }
+    }, 100);
+  };
+
   const loginWithUsernameAndPassword = async () => {
     if (!username || !password) {
       Alert.alert('Please enter both username and password');
       return;
     }
 
-    setIsLoading(true);
+    // Check network connectivity first
     try {
+      const netInfo = await NetInfo.fetch();
+      if (!netInfo.isConnected) {
+        Alert.alert('No Internet Connection', 'Please check your network connection and try again.');
+        return;
+      }
+    
+      setIsLoading(true);
+      
       console.log('🟢 Making login request to:', API_ENDPOINTS.LOGIN);
       console.log('🔹 With data:', {
         sf_userName: username,
@@ -505,8 +573,19 @@ const OtpVerificationScreen: React.FC<{
         console.error('❌ Invalid response format:', response.data);
         Alert.alert('Error', 'Invalid response from server');
       }
-    } catch (error) {
-      Alert.alert('Invalid username or password. Please try again.');
+    } catch (error: any) {
+      // Network related errors
+      if (error.message && (
+          error.message.includes('Network Error') || 
+          error.message.includes('timeout') || 
+          error.message.includes('connection') ||
+          error.code === 'ECONNABORTED' ||
+          !error.response)) {
+        Alert.alert('No Internet Connection', 'Please check your network connection and try again.');
+      } else {
+        // Authentication errors
+        Alert.alert('Invalid username or password. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -523,20 +602,22 @@ const OtpVerificationScreen: React.FC<{
       </View>
 
       {/* Scrollable Content */}
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <KeyboardAvoidingView
-          style={styles.content}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={
-            Platform.OS === 'ios' ? moderateScale(10) : moderateScale(20)
-          }>
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollViewContent}
-            bounces={true}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={true}
-            keyboardDismissMode="on-drag">
+      <KeyboardAvoidingView
+        style={styles.content}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}>
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollViewContent,
+            {paddingBottom: keyboardHeight > 0 ? keyboardHeight/2 : moderateScale(50)},
+          ]}
+          bounces={true}
+          keyboardShouldPersistTaps="always"
+          showsVerticalScrollIndicator={true}
+          keyboardDismissMode="none">
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.contentWrapper}>
               <View style={styles.header}>
                 <Image
@@ -546,7 +627,7 @@ const OtpVerificationScreen: React.FC<{
                 />
                 <Text style={styles.title}>LOGIN</Text>
                 <Text style={styles.subtitle}>
-                  Sign in with your credentials
+                  Login in with your credentials
                 </Text>
               </View>
 
@@ -558,6 +639,7 @@ const OtpVerificationScreen: React.FC<{
                     style={styles.icon}
                   />
                   <TextInput
+                    ref={usernameInputRef}
                     style={styles.input}
                     placeholder="Username"
                     value={username}
@@ -565,6 +647,7 @@ const OtpVerificationScreen: React.FC<{
                     placeholderTextColor="#999"
                     autoCapitalize="none"
                     editable={!isLoading}
+                    onFocus={() => handleFocus(usernameInputRef)}
                   />
                 </View>
 
@@ -575,6 +658,7 @@ const OtpVerificationScreen: React.FC<{
                     style={styles.icon}
                   />
                   <TextInput
+                    ref={passwordInputRef}
                     style={styles.input}
                     placeholder="Password"
                     value={password}
@@ -583,6 +667,7 @@ const OtpVerificationScreen: React.FC<{
                     placeholderTextColor="#999"
                     autoCapitalize="none"
                     editable={!isLoading}
+                    onFocus={() => handleFocus(passwordInputRef)}
                   />
                   <TouchableOpacity
                     onPress={() => setShowPassword(!showPassword)}
@@ -597,7 +682,10 @@ const OtpVerificationScreen: React.FC<{
 
                 <TouchableOpacity
                   style={[styles.button, isLoading && styles.buttonLoading]}
-                  onPress={loginWithUsernameAndPassword}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    loginWithUsernameAndPassword();
+                  }}
                   disabled={isLoading}>
                   {isLoading ? (
                     <ActivityIndicator color="#fff" />
@@ -607,9 +695,9 @@ const OtpVerificationScreen: React.FC<{
                 </TouchableOpacity>
               </View>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
+          </TouchableWithoutFeedback>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 };
@@ -642,16 +730,15 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     flexGrow: 1,
-    minHeight: SCREEN_HEIGHT,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: moderateScale(50),
+    paddingTop: verticalScale(50),
   },
   contentWrapper: {
     width: '100%',
     alignItems: 'center',
-    paddingTop: Platform.OS === 'android' ? moderateScale(20) : 0,
-    marginTop: verticalScale(40),
+    paddingTop: moderateScale(10),
+    marginTop: verticalScale(10),
   },
   header: {
     alignItems: 'center',

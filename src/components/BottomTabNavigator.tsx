@@ -206,7 +206,7 @@ export const TabBar = (props: any) => {
   const tabs = [
     {name: 'Home', icon: 'home', label: 'Home'},
     // {name: 'Search', icon: 'search', label: 'Search'},
-    {name: 'Alert', icon: 'notifications', label: 'Alerts'},
+    {name: 'Alert', icon: props.route?.name === 'Alert' ? 'notifications' : 'notifications-none', label: 'Alerts'},
     {name: 'Orders', icon: 'list-alt', label: 'Orders'},
   ];
 
@@ -290,7 +290,7 @@ const BottomTabNavigator: React.FC = () => {
       case 'Search':
         return 'search';
       case 'Alert':
-        return focused ? 'notifications' : 'notifications-none';
+        return 'notifications-none';
       case 'Orders':
         return 'list-alt';
       default:

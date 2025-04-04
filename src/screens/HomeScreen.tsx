@@ -12,8 +12,9 @@ import {
   View,
   ActivityIndicator,
   Animated,
+  BackHandler,
 } from 'react-native';
-import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
+import {useNavigation, useRoute, RouteProp, useFocusEffect} from '@react-navigation/native';
 import {NavigationProp} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -102,19 +103,52 @@ const HomeScreen: React.FC = () => {
   }>({});
   const [isModalVisible, setModalVisible] = useState(false);
   const [selectedStockItem, setSelectedStockItem] = useState<{
-    item_id: number | string;
+    item_id: number;
     item_name: string;
     lot_no: string;
     available_qty: number;
-    box_quantity?: number;
+    box_quantity: number;
     unit_name: string;
     vakal_no: string;
-    customerID?: number | string;
+    customerID?: string | number;
     item_marks: string;
   } | null>(null);
 
   const {cartItems, clearCart} = useCart() || {};
   const cartItemCount = cartItems?.length || 0;
+
+  // Handle back button press to prevent navigation to login screen
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        // Check if user is authenticated
+        const isAuthenticated = CustomerID !== null;
+        
+        if (isAuthenticated) {
+          // If authenticated, prevent going back to login screen
+          Alert.alert(
+            'Exit App', 
+            'Do you want to exit the app?',
+            [
+              { text: 'Cancel', style: 'cancel', onPress: () => {} },
+              { text: 'Exit', style: 'destructive', onPress: () => BackHandler.exitApp() }
+            ],
+            { cancelable: true }
+          );
+          return true; // Prevent default behavior
+        }
+        
+        // Default behavior (allow back navigation)
+        return false;
+      };
+
+      // Add back button handler
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      // Cleanup function
+      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [CustomerID])
+  );
 
   const handleAccountSwitch = useCallback(() => {
     setCategories([]);
@@ -297,13 +331,13 @@ const HomeScreen: React.FC = () => {
     }).start();
 
     setSelectedStockItem({
-      item_id: item.ITEM_ID,
+      item_id: Number(item.ITEM_ID),
       item_name: item.ITEM_NAME,
       lot_no: item.LOT_NO,
       available_qty: item.AVAILABLE_QTY || 0,
       box_quantity: item.BOX_QUANTITY || 0,
       unit_name: item.UNIT_NAME || '',
-      customerID: CustomerID,
+      customerID: CustomerID || undefined,
       vakal_no: item.VAKAL_NO || '',
       item_marks: item.ITEM_MARKS || '',
     });
@@ -368,14 +402,17 @@ const HomeScreen: React.FC = () => {
 
               <TouchableOpacity
                 style={styles.lotNoValueContainer}
-                onPress={() =>
-                  navigation.navigate('LotReportScreen', {
-                    // Add any necessary params for LotReportScreen
-                    lotNo: item.LOT_NO,
-                    itemId: item.ITEM_ID,
-                    customerID: CustomerID,
-                  })
-                }>
+                onPress={() => {
+                  if (CustomerID) {
+                    navigation.navigate('LotReportScreen' as any, {
+                      lotNo: item.LOT_NO,
+                      itemId: item.ITEM_ID,
+                      customerID: CustomerID,
+                    });
+                  } else {
+                    Alert.alert('Error', 'Customer ID not available');
+                  }
+                }}>
                 <Text style={styles.lotNoValue}>{item.LOT_NO || 'N/A'}</Text>
               </TouchableOpacity>
             </View>
@@ -530,27 +567,28 @@ const HomeScreen: React.FC = () => {
 
   return (
     <LayoutWrapper
-      onCartPress={handleCartPress}
-      onAccountSwitch={handleAccountSwitch}
       showTabBar={false}
       route={route}>
       <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search lot numbers, item marks, vakal numbers..."
-          placeholderTextColor={'#000'}
-          value={searchQuery}
-          onChangeText={handleSearch}
-          onSubmitEditing={handleSearchSubmit}
-          returnKeyType="search"
-        />
-        <TouchableOpacity
-          style={styles.searchButton}
+        <TouchableOpacity 
+          activeOpacity={0.9}
+          style={styles.searchInputContainer}
           onPress={handleSearchSubmit}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search lot numbers, item marks, vakal no.."
+            placeholderTextColor={'#888'}
+            value={searchQuery}
+            onChangeText={handleSearch}
+            onSubmitEditing={handleSearchSubmit}
+            returnKeyType="search"
+            textAlignVertical="center"
+            numberOfLines={1}
+          />
           {isSearching ? (
-            <ActivityIndicator size="small" color="#F48221" />
+            <ActivityIndicator size="small" color="#F48221" style={styles.searchIcon} />
           ) : (
-            <Icon name="search" size={24} style={{color: '#000'}} />
+            <Icon name="search" size={24} color="#555" style={styles.searchIcon} />
           )}
         </TouchableOpacity>
       </View>
@@ -642,25 +680,44 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   searchContainer: {
-    flexDirection: 'row',
     paddingHorizontal: 20,
     paddingVertical: 12,
     marginBottom: 0,
+    width: '100%',
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    paddingRight: 7,
+    width: '100%',
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    paddingLeft: 15,
+    paddingRight: 45,
+    paddingVertical: 0,
+    textAlignVertical: 'center',
+    fontSize: 13,
+    width: '85%',
+  },
+  searchIcon: {
+    padding: 10,
+    marginLeft: 0,
+    width: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 5,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  searchInput: {
-    flex: 1,
-    height: 40,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
   },
   imageContainer: {
     width: '100%',
@@ -670,16 +727,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     borderRadius: 8,
     overflow: 'hidden',
-  },
-  searchButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#ddd',
   },
   cardContainer: {
     paddingHorizontal: 10,

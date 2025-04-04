@@ -441,6 +441,8 @@ import {
   Dimensions,
   FlatList,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
   StatusBar,
   StyleSheet,
@@ -696,76 +698,73 @@ const SubCategory: React.FC = () => {
     );
   }
   return (
-    // <SafeAreaView style={styles.safeArea}>
-    // <StatusBar barStyle="dark-content" backgroundColor="#ddd" />
     <LayoutWrapper showHeader={true} route={route}>
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search subcategories..."
-          placeholderTextColor="#888"
-          value={searchQuery}
-          onChangeText={handleSearch}
-        />
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search subcategories..."
+            placeholderTextColor="#888"
+            value={searchQuery}
+            onChangeText={handleSearch}
+          />
 
-        {/* <TouchableOpacity style={styles.searchButton}>
-          <MaterialIcons name="search" size={20} style={{color: '#FF8C00'}} />
-        </TouchableOpacity> */}
-        <View style={styles.sortButtonsContainer}>
-          <TouchableOpacity
-            style={[
-              styles.sortButton,
-              sortOrder === 'asc' ? styles.activeSort : styles.inactiveSort,
-            ]}
-            onPress={() => handleSort('asc')}>
-            <MaterialIcons
-              name="arrow-upward"
-              size={20}
+          <View style={styles.sortButtonsContainer}>
+            <TouchableOpacity
               style={[
-                styles.sortIcon,
-                sortOrder === 'asc'
-                  ? styles.activeSortIcon
-                  : styles.inactiveSortIcon,
+                styles.sortButton,
+                sortOrder === 'asc' ? styles.activeSort : styles.inactiveSort,
               ]}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.sortButton,
-              sortOrder === 'desc' ? styles.activeSort : styles.inactiveSort,
-            ]}
-            onPress={() => handleSort('desc')}>
-            <MaterialIcons
-              name="arrow-downward"
-              size={20}
+              onPress={() => handleSort('asc')}>
+              <MaterialIcons
+                name="arrow-upward"
+                size={20}
+                style={[
+                  styles.sortIcon,
+                  sortOrder === 'asc'
+                    ? styles.activeSortIcon
+                    : styles.inactiveSortIcon,
+                ]}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
               style={[
-                styles.sortIcon,
-                sortOrder === 'desc'
-                  ? styles.activeSortIcon
-                  : styles.inactiveSortIcon,
+                styles.sortButton,
+                sortOrder === 'desc' ? styles.activeSort : styles.inactiveSort,
               ]}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-      <FlatList
-        data={filteredSubCategories}
-        renderItem={renderSubCategoryItem}
-        keyExtractor={item => item.SUBCATID}
-        numColumns={2}
-        contentContainerStyle={styles.listContainer}
-        onRefresh={fetchSubCategories}
-        refreshing={refreshing}
-        ListEmptyComponent={() => (
-          <View style={styles.centerContainer}>
-            <Text style={styles.emptyText}>
-              {error || 'No subcategories found'}
-            </Text>
+              onPress={() => handleSort('desc')}>
+              <MaterialIcons
+                name="arrow-downward"
+                size={20}
+                style={[
+                  styles.sortIcon,
+                  sortOrder === 'desc'
+                    ? styles.activeSortIcon
+                    : styles.inactiveSortIcon,
+                ]}
+              />
+            </TouchableOpacity>
           </View>
-        )}
-      />
-
-      {/* <TabBar route={{name: route.name}} /> */}
+        </View>
+        <FlatList
+          data={filteredSubCategories}
+          renderItem={renderSubCategoryItem}
+          keyExtractor={item => item.SUBCATID}
+          numColumns={2}
+          contentContainerStyle={styles.listContainer}
+          onRefresh={fetchSubCategories}
+          refreshing={refreshing}
+          ListEmptyComponent={() => (
+            <View style={styles.centerContainer}>
+              <Text style={styles.emptyText}>
+                {error || 'No subcategories found'}
+              </Text>
+            </View>
+          )}
+        />
+      </KeyboardAvoidingView>
     </LayoutWrapper>
   );
 };
@@ -886,6 +885,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
+  },
+  keyboardAvoidView: {
+    flex: 1,
+    width: '100%',
   },
 });
 export default SubCategory;
