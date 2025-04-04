@@ -402,17 +402,18 @@ const HomeScreen: React.FC = () => {
 
               <TouchableOpacity
                 style={styles.lotNoValueContainer}
-                onPress={() => {
-                  if (CustomerID) {
-                    navigation.navigate('LotReportScreen' as any, {
-                      lotNo: item.LOT_NO,
-                      itemId: item.ITEM_ID,
-                      customerID: CustomerID,
-                    });
-                  } else {
-                    Alert.alert('Error', 'Customer ID not available');
-                  }
-                }}>
+                // onPress={() => {
+                //   if (CustomerID) {
+                //     navigation.navigate('LotReportScreen' as any, {
+                //       lotNo: item.LOT_NO,
+                //       itemId: item.ITEM_ID,
+                //       customerID: CustomerID,
+                //     });
+                //   } else {
+                //     Alert.alert('Error', 'Customer ID not available');
+                //   }
+                // }}
+                >
                 <Text style={styles.lotNoValue}>{item.LOT_NO || 'N/A'}</Text>
               </TouchableOpacity>
             </View>

@@ -22,6 +22,7 @@ type HeaderProps = {
   cartItemCount: number;
   onAccountSwitch?: () => void;
   onCartPress?: () => void;
+  appVersion?: string;
 };
 
 const Header: React.FC<HeaderProps> = ({
@@ -29,6 +30,7 @@ const Header: React.FC<HeaderProps> = ({
   cartItemCount,
   onAccountSwitch,
   onCartPress,
+  appVersion = 'v1.2',
 }) => {
   const navigation = useNavigation<any>();
   const route = useRoute();
@@ -64,12 +66,15 @@ const Header: React.FC<HeaderProps> = ({
             <Icon name="arrow-back" size={24} color="#007BFA" />
           </TouchableOpacity>
         )}
-        <TouchableOpacity onPress={handleLogoPress}>
-          <Image
-            source={require('../assets/SavlaLogo.jpg')}
-            style={styles.logo}
-          />
-        </TouchableOpacity>
+        <View style={styles.logoContainer}>
+          <TouchableOpacity onPress={handleLogoPress}>
+            <Image
+              source={require('../assets/SavlaLogo.jpg')}
+              style={styles.logo}
+            />
+          </TouchableOpacity>
+          <Text style={styles.versionText}>{appVersion}</Text>
+        </View>
       </View>
 
       <View style={styles.centerSection}>
@@ -142,10 +147,21 @@ const styles = StyleSheet.create({
     width: 90,
     gap: 12,
   },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
   logo: {
     width: 45,
     height: 45,
     resizeMode: 'contain',
+  },
+  versionText: {
+    fontSize: 10,
+    color: '#007BFA',
+    fontWeight: 'bold',
+    marginLeft: 6,
+    marginBottom: 0,
   },
   headerTitle: {
     fontSize: 16,

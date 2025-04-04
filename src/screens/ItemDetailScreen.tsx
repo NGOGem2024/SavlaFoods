@@ -336,7 +336,7 @@ const ItemDetailScreen: React.FC<ItemDetailScreenProps> = ({
                   style={{color: '#666666'}}
                 />
                 <Text style={styles.statsText}>
-                  {items.length} Items Available
+                  {items.length} {items.length === 0 || items.length === 1 ? 'Item Available' : 'Items Available'}
                 </Text>
               </View>
             </View>

@@ -355,6 +355,12 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
       hasError = true;
     }
 
+    // Delivery Location validation
+    if (!orderDetails.deliveryAddress.trim()) {
+      errorMessage += '\nDelivery Location is required';
+      hasError = true;
+    }
+
     // Date validation
     if (!isValidDateFormat(orderDetails.deliveryDate)) {
       errorMessage += '\nDelivery date must be in YYYY-MM-DD format';
@@ -622,7 +628,10 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
 
             {/* Delivery Location Field */}
             <View style={styles.field}>
-              <Text style={styles.fieldLabel}>Delivery Location</Text>
+              <Text style={styles.fieldLabel}>
+                Delivery Location
+                <Text style={{color: 'red'}}> *</Text>
+              </Text>
               <View style={styles.inputContainer}>
                 <MaterialIcons
                   name="location-on"
@@ -1845,13 +1854,6 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  resubmissionIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   resubmissionTextContainer: {
     alignItems: 'center',
     marginBottom: 32,
@@ -1887,6 +1889,13 @@ const styles = StyleSheet.create({
         elevation: 6,
       },
     }),
+  },
+  resubmissionIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   resubmissionButtonGradient: {
     flexDirection: 'row',
