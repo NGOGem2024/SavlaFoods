@@ -485,7 +485,8 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.mainContainer}>
+        style={styles.mainContainer}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
@@ -703,31 +704,31 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
               </View>
             ))}
           </View>
+          
+          {/* Submit Button */}
+          <View style={styles.submitButtonContainer}>
+            <TouchableOpacity
+              style={[styles.submitButton, isLoading && styles.disabledButton]}
+              onPress={handleSubmitOrder}
+              disabled={isLoading}>
+              {isLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator color="#FFFFFF" />
+                  <Text style={styles.buttonText}>Processing...</Text>
+                </View>
+              ) : (
+                <>
+                  <Text style={styles.buttonText}>Confirm Order</Text>
+                  <Ionicons
+                    name="checkmark-circle-outline"
+                    size={24}
+                    style={{color: '#FFFFFF'}}
+                  />
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         </ScrollView>
-
-        {/* Footer with Submit Button */}
-        <View style={styles.footerContainer}>
-          <TouchableOpacity
-            style={[styles.submitButton, isLoading && styles.disabledButton]}
-            onPress={handleSubmitOrder}
-            disabled={isLoading}>
-            {isLoading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator color="#FFFFFF" />
-                <Text style={styles.buttonText}>Processing...</Text>
-              </View>
-            ) : (
-              <>
-                <Text style={styles.buttonText}>Confirm Order</Text>
-                <Ionicons
-                  name="checkmark-circle-outline"
-                  size={24}
-                  style={{color: '#FFFFFF'}}
-                />
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
 
         {/* Labor Modal */}
         {/* <Modal
@@ -1322,7 +1323,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 20,
-    marginBottom: 120,
+    marginBottom: 20,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -1376,24 +1377,20 @@ const styles = StyleSheet.create({
     color: '#2C3E50',
     fontWeight: '500',
   },
-  footerContainer: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+  submitButtonContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 40,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: {width: 0, height: -2},
+        shadowOffset: {width: 0, height: 4},
         shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowRadius: 8,
       },
       android: {
-        elevation: 4,
+        elevation: 6,
       },
     }),
   },

@@ -522,9 +522,7 @@ const QuantitySelectorModal: React.FC<QuantitySelectorModalProps> = ({
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Quantity</Text>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Icon name="x" size={24} color="#6B7280" />
-              </TouchableOpacity>
+              
             </View>
 
             <View style={styles.itemInfo}>

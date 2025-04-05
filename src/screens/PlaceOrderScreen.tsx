@@ -2,7 +2,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import axios from 'axios';
-import React, {useEffect, useState, useCallback} from 'react';
+import React, {useEffect, useState, useCallback, useRef} from 'react';
 import {
  ActivityIndicator,
  Alert,
@@ -81,6 +81,13 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
  const [errorAlertVisible, setErrorAlertVisible] = useState(false);
  const [errorMessage, setErrorMessage] = useState('');
  const [errorAnimation] = useState(new Animated.Value(0));
+
+ // Toast state similar to OrderDetailsScreen
+ const [toastVisible, setToastVisible] = useState(false);
+ const [toastMessage, setToastMessage] = useState('');
+ const [toastType, setToastType] = useState<'success' | 'error'>('success');
+ const toastOpacity = useRef(new Animated.Value(0)).current;
+ const toastOffset = useRef(new Animated.Value(300)).current;
 
  useEffect(() => {
  if (!isInitialized && (selectedItems.length > 0 || cartItems.length > 0)) {
@@ -201,6 +208,48 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
  ]).start(() => {
  setErrorAlertVisible(false);
  });
+ };
+
+ // New toast method similar to OrderDetailsScreen
+ const showToast = (
+ message: string,
+ type: 'success' | 'error' = 'success',
+ ) => {
+ setToastMessage(message);
+ setToastType(type);
+ setToastVisible(true);
+
+ // Animate toast in
+ Animated.parallel([
+   Animated.timing(toastOpacity, {
+     toValue: 1,
+     duration: 400,
+     useNativeDriver: true,
+   }),
+   Animated.timing(toastOffset, {
+     toValue: 0,
+     duration: 400,
+     useNativeDriver: true,
+   }),
+ ]).start();
+
+ // Hide toast after 2.5 seconds
+ setTimeout(() => {
+   Animated.parallel([
+     Animated.timing(toastOpacity, {
+       toValue: 0,
+       duration: 350,
+       useNativeDriver: true,
+     }),
+     Animated.timing(toastOffset, {
+       toValue: 300,
+       duration: 350,
+       useNativeDriver: true,
+     }),
+   ]).start(() => {
+     setToastVisible(false);
+   });
+ }, 2500);
  };
 
  const handleConfirmOrder = async () => {
@@ -372,6 +421,28 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
  <SafeAreaView style={styles.safeArea}>
  {/* Custom Error Alert */}
  {errorAlertVisible && renderErrorAlert()}
+ 
+ {/* Toast Notification */}
+ {toastVisible && (
+   <Animated.View
+     style={[
+       styles.toast,
+       {
+         opacity: toastOpacity,
+         transform: [{translateX: toastOffset}],
+       },
+       toastType === 'error' ? styles.errorToast : styles.successToast,
+     ]}>
+     <View style={styles.toastContent}>
+       <MaterialIcons
+         name={toastType === 'success' ? 'check-circle' : 'error'}
+         size={24}
+         color={toastType === 'success' ? '#22c55e' : '#ef4444'}
+       />
+       <Text style={styles.toastMessage}>{toastMessage}</Text>
+     </View>
+   </Animated.View>
+ )}
 
  {/* Custom Modal for Item Removal */}
  <Modal
@@ -407,7 +478,8 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
  style={styles.modalConfirmButton}
  onPress={() => {
  if (itemToRemove) {
- handleRemoveItem(itemToRemove);
+   handleRemoveItem(itemToRemove);
+   showToast('Item removed successfully !', 'error');
  }
  setModalVisible(false);
  }}>
@@ -869,6 +941,45 @@ const styles = StyleSheet.create({
  disabledQuantityButton: {
  backgroundColor: '#C8C8C8',
  opacity: 0.7,
+ },
+ // Toast styles - similar to OrderDetailsScreen
+ toast: {
+   position: 'absolute',
+   top: 82,
+   right: 5,
+   width: '74%',
+   maxWidth: 310,
+   backgroundColor: '#ffffff',
+   borderRadius: 12,
+   paddingVertical: 10,
+   paddingHorizontal: 14,
+   shadowColor: '#000',
+   shadowOffset: {
+     width: -2,
+     height: 2,
+   },
+   shadowOpacity: 0.18,
+   shadowRadius: 4.65,
+   elevation: 7,
+   zIndex: 1000,
+   borderLeftWidth: 4,
+   borderLeftColor: '#22c55e',
+ },
+ toastContent: {
+   flexDirection: 'row',
+   alignItems: 'center',
+ },
+ toastMessage: {
+   fontSize: 15,
+   fontWeight: '600',
+   color: '#111827',
+   marginLeft: 10,
+ },
+ errorToast: {
+   borderLeftColor: '#ef4444',
+ },
+ successToast: {
+   borderLeftColor: '#22c55e',
  },
 });
 
