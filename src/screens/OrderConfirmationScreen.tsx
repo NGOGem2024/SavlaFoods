@@ -15,6 +15,8 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Keyboard,
+  TouchableWithoutFeedback,
+  InteractionManager,
 } from 'react-native';
 import {RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -104,6 +106,9 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
   // Get today's date in YYYY-MM-DD format
   const today = new Date();
   const formattedToday = today.toISOString().split('T')[0];
+  
+  // Reference for picker timer
+  const datePickerTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Local state for order details
   const [orderDetails, setOrderDetails] = useState({
@@ -168,6 +173,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
 
   // Add this near other state declarations
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   // Add new state for the resubmission alert modal
   const [showResubmissionModal, setShowResubmissionModal] = useState(false);
@@ -226,6 +232,27 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
     return unsubscribe;
   }, [navigation, isOrderPlaced, formattedToday]);
 
+  // Add keyboard listeners to track keyboard visibility
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
   // Handle labor charge selection
   const toggleLaborChargeSelection = (id: number) => {
     // Prevent unticking the first row (LOADING)
@@ -273,6 +300,18 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
     }
 
     return formattedName;
+  };
+
+  // Update the date field handler to handle keyboard properly
+  const handleDateFieldTap = () => {
+    // Only dismiss keyboard for this specific interaction
+    // This won't affect the keyboard behavior for other interactions
+    Keyboard.dismiss();
+    
+    // Show date picker after ensuring keyboard is dismissed
+    setTimeout(() => {
+      setShowDatePicker(true);
+    }, 10);
   };
 
   // Handle date picker
@@ -481,6 +520,16 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
     }));
   };
 
+  useEffect(() => {
+    // Clean up any timers on unmount
+    return () => {
+      if (datePickerTimerRef.current) {
+        clearTimeout(datePickerTimerRef.current);
+        datePickerTimerRef.current = null;
+      }
+    };
+  }, []);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
@@ -500,7 +549,11 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
           <Text style={styles.headerText}>Order Confirmation</Text>
           <View style={styles.headerSpacer}></View>
         </View>
-        <ScrollView style={styles.scrollContainer}>
+        
+        <ScrollView 
+          style={styles.scrollContainer}
+          keyboardShouldPersistTaps="always"
+          keyboardDismissMode="none">
           <View style={styles.cardContainer}>
             {/* Transporter Details Section */}
             <View style={styles.sectionHeader}>
@@ -595,26 +648,27 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
               </View>
             </View>
 
+            {/* Delivery Date */}
             <View style={styles.field}>
               <Text style={styles.fieldLabel}>
                 Delivery Date
                 <Text style={{color: 'red'}}> *</Text>
               </Text>
-              <TouchableOpacity
-                style={styles.dateInputContainer}
-                onPress={() => setShowDatePicker(true)}>
-                <View style={styles.dateInputContent}>
-                  <MaterialIcons
-                    name="event-available"
-                    size={20}
-                    color="#718096"
-                    style={styles.inputIcon}
-                  />
-                  <Text style={styles.dateText}>
-                    {formatDate(orderDetails.deliveryDate)}
-                  </Text>
+              <TouchableWithoutFeedback onPress={handleDateFieldTap}>
+                <View style={[styles.dateInputContainer, { position: 'relative' }]}>
+                  <View style={styles.dateInputContent}>
+                    <MaterialIcons
+                      name="event-available"
+                      size={20}
+                      color="#718096"
+                      style={styles.inputIcon}
+                    />
+                    <Text style={styles.dateText}>
+                      {formatDate(orderDetails.deliveryDate)}
+                    </Text>
+                  </View>
                 </View>
-              </TouchableOpacity>
+              </TouchableWithoutFeedback>
               {showDatePicker && Platform.OS === 'android' && (
                 <DateTimePicker
                   testID="datePickerAndroid"
@@ -675,7 +729,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
                   }
                   // placeholder="Add any special instructions"
                   multiline
-                  numberOfLines={3}
+                  numberOfLines={100}
                   textAlignVertical="top"
                 />
               </View>
@@ -1175,7 +1229,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 120,
     paddingTop: 12,
-    paddingBottom: 12,
+    paddingBottom: 1,
     paddingRight: 12,
     fontSize: 15,
     color: '#2D3748',
