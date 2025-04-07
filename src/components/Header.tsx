@@ -56,6 +56,9 @@ const Header: React.FC<HeaderProps> = ({
     route.name !== 'Orders' && 
     route.name !== 'OrdersHome';
 
+  // Only show clickable logo on Orders screens
+  const isOnOrdersScreen = route.name === 'Orders' || route.name === 'OrdersHome';
+
   return (
     <View style={styles.header}>
       <View style={styles.leftSection}>
@@ -67,12 +70,19 @@ const Header: React.FC<HeaderProps> = ({
           </TouchableOpacity>
         )}
         <View style={styles.logoContainer}>
-          <TouchableOpacity onPress={handleLogoPress}>
+          {isOnOrdersScreen ? (
+            <TouchableOpacity onPress={handleLogoPress}>
+              <Image
+                source={require('../assets/SavlaLogo.jpg')}
+                style={styles.logo}
+              />
+            </TouchableOpacity>
+          ) : (
             <Image
               source={require('../assets/SavlaLogo.jpg')}
               style={styles.logo}
             />
-          </TouchableOpacity>
+          )}
           <Text style={styles.versionText}>{appVersion}</Text>
         </View>
       </View>
