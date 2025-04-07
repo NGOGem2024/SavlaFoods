@@ -256,7 +256,7 @@ import AnnouncementScreen from '../screens/AnnouncementScreen';
 import AlertScreen from '../screens/AlertScreen';
 import SearchScreen from '../screens/SearchScreen';
 import OrdersScreen from '../screens/OrdersScreen';
-import OrderHistoryScreen from '../screens/OrderHistoryScreen';
+// import OrderHistoryScreen from '../screens/OrderHistoryScreen';
 // import PendingOrdersScreen from '../screens/';
 import InwardOutwardReportScreen from '../screens/InwardOutwardReportScreen';
 import {CustomerProvider} from '../contexts/DisplayNameContext';
@@ -288,7 +288,7 @@ const OrdersStackNavigator = () => {
         headerTintColor: '#F48221',
       }}>
       <OrdersStack.Screen name="Orders" component={OrdersScreen} />
-      <OrdersStack.Screen name="OrderHistory" component={OrderHistoryScreen} />
+      {/* <OrdersStack.Screen name="OrderHistory" component={OrderHistoryScreen} /> */}
       {/* <OrdersStack.Screen name="PendingOrders" component={PendingOrdersScreen} /> */}
       <OrdersStack.Screen
         name="InwardOutwardReport"

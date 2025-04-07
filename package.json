@@ -14,7 +14,7 @@
     "@react-native-community/datetimepicker": "^8.3.0",
     "@react-native-masked-view/masked-view": "^0.3.2",
     "@react-native-picker/picker": "^2.11.0",
-    "@react-native/gradle-plugin": "^0.77.0",
+    "@react-native/gradle-plugin": "^0.78.1",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/core": "^7.3.1",
     "axios": "^1.7.9",

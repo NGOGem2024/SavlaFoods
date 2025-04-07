@@ -171,63 +171,6 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
     [cartItems, removeCartItem],
   );
 
-  // const handleConfirmOrder = async () => {
-  //   setIsLoading(true);
-  //   try {
-  //     const allItems = Object.values(groupedOrderItems).flat();
-
-  //     if (allItems.length === 0) {
-  //       Alert.alert('Error', 'Please add items to your order');
-  //       return;
-  //     }
-
-  //     const invalidItems = allItems.filter(item => !item.ORDERED_QUANTITY || item.ORDERED_QUANTITY <= 0);
-  //     if (invalidItems.length > 0) {
-  //       Alert.alert('Error', 'Please specify valid quantities for all items');
-  //       return;
-  //     }
-
-  //     const orderPayload = {
-  //       CustomerID: route.params?.customerID || "1",
-  //       items: allItems.map(item => ({
-  //         LotNo: item.LOT_NO,
-  //         ItemID: item.ITEM_ID,
-  //         Quantity: item.ORDERED_QUANTITY
-  //       }))
-  //     };
-
-  //     const response = await axios.post(
-  //       API_ENDPOINTS.GET_PLACEORDER_DETAILS,
-  //       orderPayload
-  //     );
-
-  //     if (response.data.success) {
-  //       Alert.alert(
-  //         'Success',
-  //         'Order placed successfully! You will receive an email confirmation shortly.',
-  //         [
-  //           {
-  //             text: 'OK',
-  //             onPress: () => {
-  //               clearCart();
-  //               navigation.navigate('BottomTabNavigator', {
-  //                 shouldRefresh: true,
-  //                 customerID: String(route.params?.customerID || ''),
-  //               });
-  //             }
-  //           }
-  //         ]
-  //       );
-  //     } else {
-  //       Alert.alert('Error', response.data.message || 'Failed to place order');
-  //     }
-  //   } catch (error: any) {
-  //     const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
-  //     Alert.alert('Error', `Failed to place order: ${errorMessage}`);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
 
   const handleConfirmOrder = async () => {
     setIsLoading(true);
@@ -380,16 +323,19 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.mainContainer}>
         <ScrollView style={styles.scrollContainer}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={{marginLeft: 15}}>
-            <MaterialIcons
-              name="arrow-back"
-              size={24}
-              style={{color: '#663399'}}
-            />
-          </TouchableOpacity>
-          <Text style={styles.headerText}>Place Your Order</Text>
+        <View style={styles.headerContainer}>
+  <TouchableOpacity
+    onPress={() => navigation.goBack()}
+    style={styles.backButton}>
+    <MaterialIcons
+      name="arrow-back"
+      size={24}
+      style={{color: '#663399'}}
+    />
+  </TouchableOpacity>
+  <Text style={styles.headerText}>Place Your Order</Text>
+  <View style={styles.emptySpace} />
+</View>
           {renderGroupedItems()}
           <View style={styles.scrollPadding} />
         </ScrollView>
@@ -425,6 +371,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  backButton: {
+    padding: 5,
+  },
+  headerText: {
+    flex: 1,
+    fontSize: 22,
+    
+    
+    fontWeight: 'bold',
+    color: '#663399',
+    textAlign: 'center',
+  },
+  emptySpace: {
+    width: 34, // Same width as the back button area for balanced centering
+  },
   mainContainer: {
     flex: 1,
     backgroundColor: '#FFFAFA',
@@ -441,14 +409,14 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
   },
-  headerText: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginTop: 5,
-    marginBottom: 16,
-    textAlign: 'center',
-    color: '#663399',
-  },
+  // headerText: {
+  //   fontSize: 22,
+  //   fontWeight: 'bold',
+  //   marginTop: 5,
+  //   marginBottom: 16,
+  //   textAlign: 'center',
+  //   color: '#663399',
+  // },
   groupContainer: {
     marginBottom: 20,
   },
