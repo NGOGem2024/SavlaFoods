@@ -124,6 +124,15 @@ const HomeScreen: React.FC = () => {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
+        // Check if there's a search query active
+        if (searchQuery.trim()) {
+          // Clear the search query to return to home screen view
+          setSearchQuery('');
+          setSearchResults([]);
+          return true; // Prevent default behavior
+        }
+        
+        // If no search is active, show exit app dialog
         // Check if user is authenticated
         const isAuthenticated = CustomerID !== null;
         
@@ -150,7 +159,7 @@ const HomeScreen: React.FC = () => {
 
       // Cleanup function
       return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [CustomerID])
+    }, [CustomerID, searchQuery])
   );
 
   const handleAccountSwitch = useCallback(() => {
@@ -498,12 +507,9 @@ const HomeScreen: React.FC = () => {
       setSearchQuery(text);
 
       if (text.trim() === '') {
-        // When search is cleared, show categories
+        // When search is cleared, show all categories
         setSearchResults([]);
-        const filtered = categories.filter(category =>
-          category.CATDESC.toLowerCase().includes(text.toLowerCase()),
-        );
-        setFilteredCategories(filtered);
+        setFilteredCategories(categories); // Reset to show all categories
       } else {
         // When searching, call the API
         searchItems(text);
