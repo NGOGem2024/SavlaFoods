@@ -28,24 +28,27 @@ interface OrderHistory {
   status: string;
   transporterName: string;
   remarks: string;
-  deliveryAddress: string;
+  createdOn: string;
   customerName: string;
+  customerMobile: number;
+  customerEmail: string | null;
   totalItems: number;
   totalQuantity: number;
-  createdon: string;
-  closedon: string;
   items: Array<{
-    FK_ORDER_ID: number;
-    ITEM_NAME: string;
-    REQUESTED_QTY: number;
-    ORDER_DATE: string;
-    STATUS: string;
-    CANCELLEDBY: string;
-    CANCELLEDON: string;
-    CANCELLED_REMARK: string;
-    FK_ITEM_ID: number;
-    LOT_NO: string;
-    [key: string]: any;
+    detailId: number;
+    itemId: number;
+    itemName: string;
+    lotNo: number;
+    itemMarks: string;
+    vakalNo: string;
+    batchNo: string | null;
+    requestedQty: number;
+    availableQty: number;
+    status: string;
+    supervisorName: string | null;
+    mukadamName: string | null;
+    cancelledRemark: string | null;
+    cancelledDate: string | null;
   }>;
 }
 
@@ -53,7 +56,7 @@ interface OrderHistoryResponse {
   success: boolean;
   message: string;
   data: {
-    orders: any[];
+    orders: OrderHistory[];
     pagination: {
       page: number;
       limit: number;
@@ -114,7 +117,7 @@ const OrderHistoryScreen = () => {
 
         console.log('Fetching order history with params:', apiParams);
 
-        const response = await axios.get(`${API_ENDPOINTS.GET_ORDER_HISTORY}`, {
+        const response = await axios.get<OrderHistoryResponse>(`${API_ENDPOINTS.GET_ORDER_HISTORY}`, {
           params: apiParams,
         });
 
@@ -122,57 +125,16 @@ const OrderHistoryScreen = () => {
         console.log('Order history response:', result);
 
         if (result.success) {
-          // Check if data is an array directly (different API format)
-          const ordersData = Array.isArray(result.data) ? result.data : 
-                            (result.data?.orders || []);
+          const ordersData = result.data.orders;
           
-          // Group items by order ID to create order objects
-          const orderMap = new Map();
-          
-          ordersData.forEach((item: any) => {
-            const orderId = item.FK_ORDER_ID;
-            if (!orderMap.has(orderId)) {
-              const orderDate = item.ORDER_DATE ? item.ORDER_DATE.split('T')[0] : '';
-              
-              orderMap.set(orderId, {
-                orderId: orderId,
-                orderNo: `ORD-${orderId}`,
-                orderDate: orderDate,
-                deliveryDate: orderDate, // Using order date as delivery date if not provided
-                status: item.STATUS,
-                transporterName: '',
-                remarks: item.CANCELLED_REMARK || '',
-                deliveryAddress: '',
-                customerName: '',
-                totalItems: 1,
-                totalQuantity: item.REQUESTED_QTY || 0,
-                createdon: orderDate,
-                closedon: item.CANCELLEDON ? item.CANCELLEDON.split('T')[0] : '',
-                items: [item]
-              });
-            } else {
-              // Update existing order
-              const existingOrder = orderMap.get(orderId);
-              existingOrder.totalItems += 1;
-              existingOrder.totalQuantity += (item.REQUESTED_QTY || 0);
-              existingOrder.items.push(item);
-            }
-          });
-          
-          // Convert map to array of orders
-          const normalizedOrders = Array.from(orderMap.values());
-          
-          console.log('Normalized orders:', normalizedOrders);
-
           if (refresh || pageNum === 1) {
-            setOrders(normalizedOrders);
+            setOrders(ordersData);
           } else {
-            setOrders(prevOrders => [...prevOrders, ...normalizedOrders]);
+            setOrders(prevOrders => [...prevOrders, ...ordersData]);
           }
 
-          // Handle pagination (use default values if not provided)
-          setTotalPages(result.data?.pagination?.totalPages || 1);
-          setPage(result.data?.pagination?.page || pageNum);
+          setTotalPages(result.data.pagination.totalPages);
+          setPage(result.data.pagination.page);
         } else {
           setError(result.message || 'Failed to load order history');
           setOrders([]);
@@ -201,17 +163,17 @@ const OrderHistoryScreen = () => {
         status: params.status || 'NEW',
         transporterName: params.transporterName || '',
         remarks: params.remarks || '',
-        deliveryAddress: params.deliveryAddress || '',
+        createdOn: params.createdOn || '',
         customerName: params.customerName || '',
+        customerMobile: params.customerMobile || 0,
+        customerEmail: params.customerEmail || null,
         totalItems: params.items?.length || 0,
         totalQuantity:
           params.items?.reduce(
-            (sum: any, item: {ORDERED_QUANTITY: any}) =>
-              sum + (item.ORDERED_QUANTITY || 0),
+            (sum: any, item: {requestedQty: any}) =>
+              sum + (item.requestedQty || 0),
             0,
           ) || 0,
-        createdon: params.orderDate || '',
-        closedon: params.closedon || '',
         items: params.items || [],
       };
       setOrders([paramOrder]);
@@ -337,56 +299,18 @@ const OrderHistoryScreen = () => {
       
       console.log('Filtering with status:', status);
       
-      axios.get(`${API_ENDPOINTS.GET_ORDER_HISTORY}`, {
+      axios.get<OrderHistoryResponse>(`${API_ENDPOINTS.GET_ORDER_HISTORY}`, {
         params: apiParams,
       })
       .then(response => {
         const result = response.data;
         
         if (result.success) {
-          // Check if data is an array directly (different API format)
-          const ordersData = Array.isArray(result.data) ? result.data : 
-                          (result.data?.orders || []);
+          const ordersData = result.data.orders;
           
-          // Group items by order ID to create order objects
-          const orderMap = new Map();
-          
-          ordersData.forEach((item: any) => {
-            const orderId = item.FK_ORDER_ID;
-            if (!orderMap.has(orderId)) {
-              const orderDate = item.ORDER_DATE ? item.ORDER_DATE.split('T')[0] : '';
-              
-              orderMap.set(orderId, {
-                orderId: orderId,
-                orderNo: `ORD-${orderId}`,
-                orderDate: orderDate,
-                deliveryDate: orderDate, // Using order date as delivery date if not provided
-                status: item.STATUS,
-                transporterName: '',
-                remarks: item.CANCELLED_REMARK || '',
-                deliveryAddress: '',
-                customerName: '',
-                totalItems: 1,
-                totalQuantity: item.REQUESTED_QTY || 0,
-                createdon: orderDate,
-                closedon: item.CANCELLEDON ? item.CANCELLEDON.split('T')[0] : '',
-                items: [item]
-              });
-            } else {
-              // Update existing order
-              const existingOrder = orderMap.get(orderId);
-              existingOrder.totalItems += 1;
-              existingOrder.totalQuantity += (item.REQUESTED_QTY || 0);
-              existingOrder.items.push(item);
-            }
-          });
-          
-          // Convert map to array of orders
-          const normalizedOrders = Array.from(orderMap.values());
-          
-          setOrders(normalizedOrders);
-          setTotalPages(result.data?.pagination?.totalPages || 1);
-          setPage(result.data?.pagination?.page || 1);
+          setOrders(ordersData);
+          setTotalPages(result.data.pagination.totalPages);
+          setPage(result.data.pagination.page);
         } else {
           setError(result.message || 'Failed to load order history');
           setOrders([]);
@@ -460,59 +384,128 @@ const OrderHistoryScreen = () => {
 
   const renderOrderCard = ({item}: {item: OrderHistory}) => {
     const statusColors = getStatusColor(item.status);
-    const cancelledOn = item.closedon ? formatDate(item.closedon) : '';
 
     return (
       <View style={styles.card}>
-        {item.items && item.items.map((orderItem, index) => (
-          <View key={`item-${index}`}>
-            {index > 0 && <View style={styles.itemDivider} />}
-            <View style={styles.cardHeader}>
-              <View style={styles.itemHeaderContainer}>
-                <Text style={styles.itemHeaderName}>{orderItem.ITEM_NAME || 'Unknown Item'}</Text>
-                <Text style={styles.itemHeaderQuantity}>
-                  Qty: {orderItem.REQUESTED_QTY || 0}
-                </Text>
-              </View>
-              {index === 0 && (
-                <View style={styles.statusContainer}>
-                  <View
-                    style={[styles.statusBadge, {backgroundColor: statusColors.bg}]}>
-                    <Text style={[styles.statusText, {color: statusColors.text}]}>
-                      {item.status}
-                    </Text>
-                  </View>
-                </View>
-              )}
-            </View>
-
-            <View style={styles.lotNoContainer}>
-              <Text style={styles.lotNoLabel}>Lot No:</Text>
-              <Text style={styles.lotNoValue}>{orderItem.LOT_NO || 'N/A'}</Text>
-            </View>
+        {/* Order Number and Status */}
+        <View style={styles.orderHeaderTop}>
+          <View style={styles.orderNumberContainer}>
+            <MaterialIcons name="receipt" size={20} color="#0284C7" style={styles.orderIcon} />
+            <Text style={styles.orderNumberLabel}>Order No:</Text>
+            <Text style={styles.orderNumberValue}>{item.orderNo}</Text>
           </View>
-        ))}
-
-        <View style={styles.dateContainer}>
-          <View style={styles.dateBox}>
-            <Text style={styles.dateLabel}>Order Date</Text>
-            <Text style={styles.dateValue}>{formatDate(item.orderDate)}</Text>
+          <View style={styles.statusContainer}>
+            <View style={[styles.statusBadge, {backgroundColor: statusColors.bg}]}>
+              {/* <MaterialIcons 
+                name={item.status === 'CLOSED' ? 'check-circle' : item.status === 'CANCEL' ? 'cancel' : 'pending'} 
+                size={16} 
+                color={statusColors.text} 
+                style={styles.statusIcon}
+              /> */}
+              <Text style={[styles.statusText, {color: statusColors.text}]}>
+                {item.status}
+              </Text>
+            </View>
           </View>
         </View>
 
-        {item.status === 'CANCEL' && item.closedon && (
-          <View style={styles.closedDateContainer}>
-            <Text style={styles.closedDateLabel}>Cancelled on:</Text>
-            <Text style={styles.closedDateValue}>{cancelledOn}</Text>
+        {/* Items List */}
+        <View style={styles.itemsList}>
+          <View style={styles.itemsListHeader}>
+            <MaterialIcons name="inventory" size={20} color="#0284C7" style={styles.itemsIcon} />
+            <Text style={styles.itemsListTitle}>Items ({item.totalItems})</Text>
           </View>
-        )}
+          {item.items && item.items.map((orderItem, index) => (
+            <View key={`item-${index}`} style={styles.itemContainer}>
+              {index > 0 && <View style={styles.itemDivider} />}
+              <View style={styles.itemHeader}>
+                <View style={styles.itemHeaderContainer}>
+                  <Text style={styles.itemHeaderName}>{orderItem.itemName}</Text>
+                  <View style={styles.quantityContainer}>
+                    <MaterialIcons name="shopping-cart" size={16} color="#6B7280" style={styles.quantityIcon} />
+                    <Text style={styles.itemHeaderQuantity}>
+                      Qty: {orderItem.requestedQty}
+                    </Text>
+                  </View>
+                </View>
+              </View>
 
-        <View style={styles.bottomRow}>
-          {item.remarks && !item.remarks.includes("Cancelled via") ? (
-            <Text style={styles.remarks}>
-              {item.remarks}
-            </Text>
-          ) : null}
+              <View style={styles.lotNoContainer}>
+                <MaterialIcons name="label" size={16} color="#d97706" style={styles.lotNoIcon} />
+                <Text style={styles.lotNoLabel}>Lot No:</Text>
+                <Text style={styles.lotNoValue}>{orderItem.lotNo}</Text>
+              </View>
+
+              {orderItem.itemMarks && (
+                <View style={styles.itemMarksContainer}>
+                  <MaterialIcons name="description" size={16} color="#4B5563" style={styles.itemMarksIcon} />
+                  <Text style={styles.itemMarksLabel}>Item Marks:</Text>
+                  <Text style={styles.itemMarksValue}>{orderItem.itemMarks}</Text>
+                </View>
+              )}
+
+              {orderItem.vakalNo && (
+                <View style={styles.vakalNoContainer}>
+                  <MaterialIcons name="receipt-long" size={16} color="#4B5563" style={styles.vakalNoIcon} />
+                  <Text style={styles.vakalNoLabel}>Vakal No:</Text>
+                  <Text style={styles.vakalNoValue}>{orderItem.vakalNo}</Text>
+                </View>
+              )}
+            </View>
+          ))}
+        </View>
+
+        {/* Common Order Details at the bottom */}
+        <View style={styles.orderDetailsSection}>
+          <View style={styles.orderDetailsHeader}>
+            <MaterialIcons name="info" size={20} color="#0284C7" style={styles.orderDetailsIcon} />
+            <Text style={styles.orderDetailsTitle}>Order Details</Text>
+          </View>
+          
+          <View style={styles.dateContainer}>
+            <View style={styles.dateBox}>
+              <View style={styles.dateLabelContainer}>
+                <MaterialIcons name="event" size={16} color="#374151" style={styles.dateIcon} />
+                <Text style={styles.dateLabel}>Order Date</Text>
+              </View>
+              <Text style={styles.dateValue}>{formatDate(item.orderDate)}</Text>
+            </View>
+            <View style={styles.dateBox}>
+              <View style={styles.dateLabelContainer}>
+                <MaterialIcons name="local-shipping" size={16} color="#374151" style={styles.dateIcon} />
+                <Text style={styles.dateLabel}>Delivery Date</Text>
+              </View>
+              <Text style={styles.dateValue}>{formatDate(item.deliveryDate)}</Text>
+            </View>
+          </View>
+
+          {item.status === 'CANCEL' && (
+            <View style={styles.closedDateContainer}>
+              <MaterialIcons name="block" size={16} color="#ef4444" style={styles.closedDateIcon} />
+              <Text style={styles.closedDateLabel}>Cancelled on:</Text>
+              <Text style={styles.closedDateValue}>{formatDate(item.createdOn)}</Text>
+            </View>
+          )}
+
+          {item.remarks && (
+            <View style={styles.remarksContainer}>
+              <View style={styles.remarksHeader}>
+                <MaterialIcons name="comment" size={16} color="#4B5563" style={styles.remarksIcon} />
+                <Text style={styles.remarksTitle}>Remarks: </Text>
+              </View>
+              <Text style={styles.remarksValue}>{item.remarks}</Text>
+            </View>
+          )}
+
+          {item.transporterName && (
+            <View style={styles.transporterContainer}>
+              <View style={styles.transporterHeader}>
+                <MaterialIcons name="local-shipping" size={16} color="#4B5563" style={styles.transporterIcon} />
+                <Text style={styles.transporterTitle}>Transporter: </Text>
+              </View>
+              <Text style={styles.transporterValue}>{item.transporterName}</Text>
+            </View>
+          )}
         </View>
       </View>
     );
@@ -648,104 +641,299 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#ffffff',
-    borderRadius: 16,
-    marginBottom: 16,
-    padding: 16,
+    borderRadius: 12,
+    marginHorizontal: 8,
+    marginVertical: 6,
+    padding: 14,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
-  cardHeader: {
+  orderHeaderTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+    alignItems: 'center',
+    marginBottom: 6,
   },
-  itemHeaderContainer: {
-    flex: 1,
+  orderNumberContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  itemHeaderName: {
-    fontSize: 16,
+  orderIcon: {
+    marginRight: 8,
+    color: '#0284C7',
+  },
+  orderNumberLabel: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  orderNumberValue: {
+    fontSize: 14,
     color: '#111827',
     fontWeight: '600',
-    marginBottom: 4,
-  },
-  itemHeaderQuantity: {
-    fontSize: 14,
-    color: '#6B7280',
+    marginLeft: 4,
   },
   statusContainer: {
     alignItems: 'flex-end',
   },
   statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#fee2e2',
+  },
+  statusIcon: {
+    marginRight: 6,
+    color: '#ef4444',
   },
   statusText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 14,
+    color: '#ef4444',
+    fontWeight: '600',
   },
-  additionalItemsContainer: {
-    backgroundColor: '#f3f4f6',
-    padding: 8,
-    borderRadius: 6,
-    marginVertical: 8,
+  itemsList: {
+    marginTop: 0,
   },
-  additionalItemsText: {
+  itemsListHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  itemsIcon: {
+    marginRight: 8,
+    color: '#0284C7',
+  },
+  itemsListTitle: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '600',
+  },
+  itemContainer: {
+    marginBottom: 12,
+  },
+  itemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  itemHeaderContainer: {
+    flex: 1,
+  },
+  itemHeaderName: {
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  quantityIcon: {
+    marginRight: 6,
+    color: '#6B7280',
+  },
+  itemHeaderQuantity: {
+    fontSize: 15,
+    color: '#6B7280',
+  },
+  lotNoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  lotNoIcon: {
+    marginRight: 3,
+    color: '#d97706',
+  },
+  lotNoLabel: {
+    fontSize: 14,
+    color: '#d97706',
+    fontWeight: '600',
+    marginRight: 4,
+  },
+  lotNoValue: {
+    fontSize: 14,
+    color: '#d97706',
+    fontWeight: '600',
+  },
+  itemDivider: {
+    height: 1,
+    backgroundColor: '#e5e7eb',
+    marginVertical: 9,
+  },
+  itemMarksContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  itemMarksIcon: {
+    marginRight: 6,
+    color: '#4B5563',
+  },
+  itemMarksLabel: {
     fontSize: 14,
     color: '#4B5563',
     fontWeight: '500',
+    marginRight: 4,
   },
-  dateContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    marginBottom: 12,
-    backgroundColor: '#f9fafb',
-    padding: 12,
-    borderRadius: 8,
-  },
-  dateBox: {
+  itemMarksValue: {
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '500',
     flex: 1,
   },
-  dateLabel: {
-    fontSize: 14,
-    color: '#374151',
-    marginBottom: 4,
+  vakalNoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  dateValue: {
+  vakalNoIcon: {
+    marginRight: 6,
+    color: '#4B5563',
+  },
+  vakalNoLabel: {
+    fontSize: 14,
+    color: '#4B5563',
+    fontWeight: '500',
+    marginRight: 4,
+  },
+  vakalNoValue: {
     fontSize: 14,
     color: '#111827',
     fontWeight: '500',
   },
-  closedDateContainer: {
-    backgroundColor: '#fee2e2',
-    padding: 8,
-    borderRadius: 6,
-    marginBottom: 8,
+  orderDetailsSection: {
+    marginTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+    paddingTop: 16,
+  },
+  orderDetailsHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 16,
+  },
+  orderDetailsIcon: {
+    marginRight: 8,
+    color: '#0284C7',
+  },
+  orderDetailsTitle: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '600',
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#f8fafc',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  dateBox: {
+    flex: 1,
+  },
+  dateLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  dateIcon: {
+    marginRight: 6,
+    color: '#374151',
+  },
+  dateLabel: {
+    fontSize: 14,
+    color: '#374151',
+  },
+  dateValue: {
+    fontSize: 14,
+    marginLeft:10,
+    color: '#111827',
+    fontWeight: '500',
+  },
+  closedDateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fee2e2',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  closedDateIcon: {
+    marginRight: 6,
+    color: '#ef4444',
   },
   closedDateLabel: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#ef4444',
+    fontWeight: '600',
     marginRight: 4,
-    fontWeight: '500',
   },
   closedDateValue: {
     fontSize: 14,
     color: '#111827',
     fontWeight: '500',
   },
-  bottomRow: {
-    marginTop: 4,
+  remarksContainer: {
+    backgroundColor: '#f8fafc',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
   },
-  remarks: {
+  remarksHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  remarksIcon: {
+    marginRight: 4,
+    color: '#4B5563',
+  },
+  remarksTitle: {
     fontSize: 14,
-    color: '#6B7280',
-    width: '100%',
+    color: '#4B5563',
+    fontWeight: '500',
+  },
+  remarksValue: {
+    fontSize: 15,
+    color: '#111827',
+    lineHeight: 20,
+    paddingLeft: 22,
+  },
+  transporterContainer: {
+    backgroundColor: '#f8fafc',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  transporterHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  transporterIcon: {
+    marginRight: 4,
+    color: '#4B5563',
+  },
+  transporterTitle: {
+    fontSize: 14,
+    color: '#4B5563',
+    fontWeight: '500',
+  },
+  transporterValue: {
+    fontSize: 15,
+    color: '#111827',
+    lineHeight: 20,
+    paddingLeft: 22,
   },
   footerLoader: {
     flexDirection: 'row',
@@ -807,30 +995,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 16,
     paddingHorizontal: 24,
-  },
-  lotNoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    // backgroundColor: '#fef3c7',
-    padding: 8,
-    borderRadius: 6,
-  },
-  lotNoLabel: {
-    fontSize: 14,
-    color: '#d97706',
-    fontWeight: '800',
-    marginRight: 4,
-  },
-  lotNoValue: {
-    fontSize: 16,
-    color: '#d97706',
-    fontWeight: '800',
-  },
-  itemDivider: {
-    height: 1,
-    backgroundColor: '#e5e7eb',
-    marginVertical: 10,
   },
 });
 

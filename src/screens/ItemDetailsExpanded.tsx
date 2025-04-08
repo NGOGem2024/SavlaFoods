@@ -2,6 +2,7 @@ import {NavigationProp, RouteProp} from '@react-navigation/native';
 import axios from 'axios';
 import React, {useEffect, useState, useRef} from 'react';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import {MainStackScreenProps} from '../type/type';
 
 import {API_ENDPOINTS, DEFAULT_HEADERS} from '../config/api.config';
 import {
@@ -89,10 +90,7 @@ type ItemDetailsExpandedRouteProp = RouteProp<
 >;
 type ItemDetailsExpandedNavigationProp = NavigationProp<MainStackParamList>;
 
-interface ItemDetailsExpandedProps {
-  route: ItemDetailsExpandedRouteProp;
-  navigation: ItemDetailsExpandedNavigationProp;
-}
+type ItemDetailsExpandedProps = MainStackScreenProps<'ItemDetailsExpanded'>;
 
 const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
   route,
