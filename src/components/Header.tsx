@@ -30,7 +30,7 @@ const Header: React.FC<HeaderProps> = ({
   cartItemCount,
   onAccountSwitch,
   onCartPress,
-  appVersion = 'v1.3',
+  appVersion = 'v1.4',
 }) => {
   const navigation = useNavigation<any>();
   const route = useRoute();

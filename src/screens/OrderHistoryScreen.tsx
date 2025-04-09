@@ -345,7 +345,10 @@ const OrderHistoryScreen = () => {
 
     return (
       <View style={styles.filterContainer}>
-        <Text style={styles.filterTitle}>Filter by Status:</Text>
+        <View style={styles.filterHeader}>
+          <MaterialIcons name="tune" size={20} color="#0284c7" />
+          <Text style={styles.filterTitle}>Filter Orders</Text>
+        </View>
         <View style={styles.statusButtons}>
           <TouchableOpacity
             style={[
@@ -598,20 +601,24 @@ const styles = StyleSheet.create({
   filterContainer: {
     backgroundColor: '#ffffff',
     padding: 16,
-    marginBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
+  },
+  filterHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   filterTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
+    color: '#0284c7',
+    marginLeft: 8,
   },
   statusButtons: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 16,
+    marginBottom: 0,
   },
   statusButton: {
     paddingHorizontal: 12,
@@ -619,7 +626,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#f3f4f6',
     marginRight: 8,
-    marginBottom: 8,
+    marginBottom: 3,
     borderWidth: 1,
     borderColor: '#e5e7eb',
   },
@@ -636,7 +643,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   list: {
-    padding: 16,
+    padding: 14,
     paddingBottom: 50,
   },
   card: {
@@ -697,7 +704,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   itemsList: {
-    marginTop: 0,
+    marginTop: -4,
   },
   itemsListHeader: {
     flexDirection: 'row',
