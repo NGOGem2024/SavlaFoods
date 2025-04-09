@@ -115,14 +115,16 @@ const OrderHistoryScreen = () => {
         // Add status filter if selected
         if (status) apiParams.status = status;
 
-        console.log('Fetching order history with params:', apiParams);
+        console.log('Fetching order history with params:', JSON.stringify(apiParams, null, 2));
 
         const response = await axios.get<OrderHistoryResponse>(`${API_ENDPOINTS.GET_ORDER_HISTORY}`, {
           params: apiParams,
         });
 
         const result = response.data;
-        console.log('Order history response:', result);
+        console.log('Order history response:', JSON.stringify(result, null, 2));
+        console.log('Orders Count:', result.data.orders.length);
+        console.log('Pagination Info:', JSON.stringify(result.data.pagination, null, 2));
 
         if (result.success) {
           const ordersData = result.data.orders;
@@ -386,7 +388,14 @@ const OrderHistoryScreen = () => {
   };
 
   const renderOrderCard = ({item}: {item: OrderHistory}) => {
-    const statusColors = getStatusColor(item.status);
+    // Check if any items have CANCEL status
+    const hasAnyCancelledItem = item.items && item.items.some(orderItem => orderItem.status === 'CANCEL');
+    
+    // If any item is cancelled, override the order status for display purposes
+    const displayStatus = hasAnyCancelledItem ? 'CANCEL' : item.status;
+    
+    // Get the appropriate colors for the status
+    const statusColors = getStatusColor(displayStatus);
 
     return (
       <View style={styles.card}>
@@ -399,14 +408,8 @@ const OrderHistoryScreen = () => {
           </View>
           <View style={styles.statusContainer}>
             <View style={[styles.statusBadge, {backgroundColor: statusColors.bg}]}>
-              {/* <MaterialIcons 
-                name={item.status === 'CLOSED' ? 'check-circle' : item.status === 'CANCEL' ? 'cancel' : 'pending'} 
-                size={16} 
-                color={statusColors.text} 
-                style={styles.statusIcon}
-              /> */}
               <Text style={[styles.statusText, {color: statusColors.text}]}>
-                {item.status}
+                {displayStatus}
               </Text>
             </View>
           </View>
@@ -482,7 +485,7 @@ const OrderHistoryScreen = () => {
             </View>
           </View>
 
-          {item.status === 'CANCEL' && (
+          {displayStatus === 'CANCEL' && (
             <View style={styles.closedDateContainer}>
               <MaterialIcons name="block" size={16} color="#ef4444" style={styles.closedDateIcon} />
               <Text style={styles.closedDateLabel}>Cancelled on:</Text>
