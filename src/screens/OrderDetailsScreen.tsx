@@ -284,7 +284,7 @@ const OrderDetailsScreen = ({
  {formatDate(
  new Date(
  new Date(order.orderDate).setDate(
- new Date(order.orderDate).getDate() + 1,
+ new Date(order.orderDate).getDate(),
  ),
  )
  .toISOString()
@@ -309,7 +309,7 @@ const OrderDetailsScreen = ({
  {formatDate(
  new Date(
  new Date(order.deliveryDate).setDate(
- new Date(order.deliveryDate).getDate() + 1,
+ new Date(order.deliveryDate).getDate(),
  ),
  )
  .toISOString()
