@@ -64,7 +64,7 @@ interface OrderResponse {
     deliveryDate?: string;
     itemCount?: number;
     transporterName?: string;
-    deliveryAddress?: string; // Add this field
+    CUST_DELIVERY_ADD?: string; // Add this field
   };
 }
 
@@ -96,7 +96,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
     orderItems,
     customerID,
     userSupervisorId,
-    deliveryAddress,
+    CUST_DELIVERY_ADD,
     userMukadamId,
     stockLotLocationId,
     unitId = 3,
@@ -114,7 +114,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
   const [orderDetails, setOrderDetails] = useState({
     orderDate: formattedToday,
     deliveryDate: formattedToday,
-    deliveryAddress: '',
+    CUST_DELIVERY_ADD: CUST_DELIVERY_ADD || '',
     // deliveryLocation: '',
     remarks: '',
     laborCharges: '',
@@ -186,7 +186,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
         setOrderDetails({
           orderDate: formattedToday,
           deliveryDate: formattedToday,
-          deliveryAddress: '',
+          CUST_DELIVERY_ADD: '',
           remarks: '',
           laborCharges: '',
         });
@@ -395,7 +395,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
     }
 
     // Delivery Location validation
-    if (!orderDetails.deliveryAddress.trim()) {
+    if (!orderDetails.CUST_DELIVERY_ADD.trim()) {
       errorMessage += '\nDelivery Location is required';
       hasError = true;
     }
@@ -444,7 +444,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
         orderDate: orderDetails.orderDate,
         deliveryDate: orderDetails.deliveryDate,
         transporterName: formattedTransporterName,
-        deliveryAddress: orderDetails.deliveryAddress,
+        CUST_DELIVERY_ADD: orderDetails.CUST_DELIVERY_ADD,
         remarks: orderDetails.remarks,
         userSupervisorId,
         userMukadamId,
@@ -696,11 +696,11 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
                 />
                 <TextInput
                   style={[styles.fieldInput, styles.inputWithIcon]}
-                  value={orderDetails.deliveryAddress}
+                  value={orderDetails.CUST_DELIVERY_ADD}
                   onChangeText={text =>
                     setOrderDetails(prev => ({
                       ...prev,
-                      deliveryAddress: text,
+                      CUST_DELIVERY_ADD: text,
                     }))
                   }
                   // placeholder="Enter delivery location"
@@ -1000,7 +1000,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
                         orderNo: successData.orderNo,
                         transporterName: successData.formattedTransporterName,
                         deliveryDate: orderDetails.deliveryDate,
-                        deliveryAddress: orderDetails.deliveryAddress,
+                        deliveryAddress: orderDetails.CUST_DELIVERY_ADD,
                         orderDate: orderDetails.orderDate,
                         items: successData.processedItems,
                         customerID: customerID,

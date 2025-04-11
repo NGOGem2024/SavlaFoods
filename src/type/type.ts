@@ -170,12 +170,14 @@ export type MainStackParamList = {
       AVAILABLE_QTY: number;
       NET_QUANTITY: number;
       ORDERED_QUANTITY: number;
+      BatchNo?: string | null;
     }>;
     customerID: string;
-    userSupervisorId?: number;
-    userMukadamId?: number;
-    stockLotLocationId?: number;
+    userSupervisorId: string;
+    CUST_DELIVERY_ADD?: string;
     deliveryAddress?: string;
+    userMukadamId: string;
+    stockLotLocationId: string;
     unitId?: number;
     finYearId?: number;
   };

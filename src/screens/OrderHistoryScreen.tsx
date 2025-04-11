@@ -50,6 +50,8 @@ interface OrderHistory {
     cancelledRemark: string | null;
     cancelledDate: string | null;
   }>;
+  // deliveryAddress?: string;
+  deliveryAddress?: string;
 }
 
 interface OrderHistoryResponse {
@@ -177,6 +179,7 @@ const OrderHistoryScreen = () => {
             0,
           ) || 0,
         items: params.items || [],
+        deliveryAddress: params.deliveryAddress || '',
       };
       setOrders([paramOrder]);
       setIsLoading(false);
@@ -507,11 +510,20 @@ const OrderHistoryScreen = () => {
             <View style={styles.transporterContainer}>
               <View style={styles.transporterHeader}>
                 <MaterialIcons name="local-shipping" size={16} color="#4B5563" style={styles.transporterIcon} />
-                <Text style={styles.transporterTitle}>Transporter: </Text>
+                <Text style={styles.transporterTitle}>Transporter Name : </Text>
               </View>
               <Text style={styles.transporterValue}>{item.transporterName}</Text>
             </View>
           )}
+
+          {/* Delivery Location Field */}
+          <View style={styles.locationContainer}>
+            <View style={styles.locationHeader}>
+              <MaterialIcons name="location-on" size={16} color="#4B5563" style={styles.locationIcon} />
+              <Text style={styles.locationTitle}>Delivery Location : </Text>
+            </View>
+            <Text style={styles.locationValue}>{item.deliveryAddress || "Not specified"}</Text>
+          </View>
         </View>
       </View>
     );
@@ -940,6 +952,32 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   transporterValue: {
+    fontSize: 15,
+    color: '#111827',
+    lineHeight: 20,
+    paddingLeft: 22,
+  },
+  locationContainer: {
+    backgroundColor: '#f8fafc',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  locationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  locationIcon: {
+    marginRight: 4,
+    color: '#4B5563',
+  },
+  locationTitle: {
+    fontSize: 14,
+    color: '#4B5563',
+    fontWeight: '500',
+  },
+  locationValue: {
     fontSize: 15,
     color: '#111827',
     lineHeight: 20,

@@ -23,6 +23,8 @@ export const API_ENDPOINTS = {
 
   GET_CANCEL_ORDER: `${API_BASE_URL}/order/cancelOrder`,
   SEARCH_ITEMS: `${API_BASE_URL}/search/SearchItems`,
+  GET_ACCOUNTS_BY_GROUP: `${API_BASE_URL}/sf/getAccountsByGroup`,
+  SWITCH_ACCOUNT: `${API_BASE_URL}/sf/switchAccount`
 };
 
 export const BASE_IMAGE_PATH = `${API_BASE_URL}/assets/images`;

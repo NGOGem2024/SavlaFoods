@@ -1,4 +1,6 @@
-// import Icon from 'react-native-vector-icons/MaterialIcons'; // Replace Expo icon import
+
+
+// import Icon from 'react-native-vector-icons/MaterialIcons';
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 // import {useNavigation} from '@react-navigation/native';
 // import {StackNavigationProp} from '@react-navigation/stack';
@@ -12,13 +14,13 @@
 //   Text,
 //   TouchableOpacity,
 //   View,
+//   ToastAndroid, // Import ToastAndroid for Android toast messages
+//   Platform,
 // } from 'react-native';
-// import DropDownPicker from 'react-native-dropdown-picker'; // Ensure it works with React Native CLI
+// import DropDownPicker from 'react-native-dropdown-picker';
 // import {RootStackParamList} from '../type/type';
 // import {useDisplayName} from '../contexts/DisplayNameContext';
 // import {API_ENDPOINTS} from '../config/api.config';
-
-// // const BACKEND_URL = "http://192.168.43.4:3000"; // Update with your actual backend URL
 
 // interface ProfileMenuProps {
 //   displayName: string | null;
@@ -39,6 +41,7 @@
 // }) => {
 //   const [showMenu, setShowMenu] = useState(false);
 //   const [showSwitchModal, setShowSwitchModal] = useState(false);
+//   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 //   const [open, setOpen] = useState(false);
 //   const [value, setValue] = useState<string | null>(null);
 //   const [items, setItems] = useState<AccountItem[]>([]);
@@ -48,6 +51,25 @@
 
 //   const {setDisplayName} = useDisplayName();
 //   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+
+//   // Function to show toast message
+//   const showToast = (message: string) => {
+//     if (Platform.OS === 'android') {
+//       ToastAndroid.showWithGravityAndOffset(
+//         message,
+//         ToastAndroid.LONG,
+//         ToastAndroid.BOTTOM,
+//         0,
+//         50,
+//       );
+//     } else {
+//       // For iOS - use Alert as a temporary solution
+//       // This will be replaced by the more elegant toast UI in a subsequent version
+//       Alert.alert('', message, [{text: 'OK', style: 'cancel'}], {
+//         cancelable: true,
+//       });
+//     }
+//   };
 
 //   const fetchCustomerGroups = async () => {
 //     try {
@@ -69,7 +91,6 @@
 
 //       const response = await axios.post(
 //         API_ENDPOINTS.GET_LIST_ACCOUNT,
-//         // { FK_CUST_GROUP_ID: parseInt(groupId) }
 //         payload,
 //       );
 
@@ -129,6 +150,7 @@
 //         'customerID',
 //       ]);
 //       setShowMenu(false);
+//       setShowLogoutConfirm(false);
 //       navigation.reset({
 //         index: 0,
 //         routes: [{name: 'OtpVerificationScreen'}],
@@ -171,6 +193,10 @@
 //       setDisplayName(selectedAccount.label);
 //       setShowSwitchModal(false);
 
+//       // Show toast message before navigation
+//       const accountName = selectedAccount.label.trim();
+//       showToast(`Switched to ${accountName}`);
+
 //       navigation.reset({
 //         index: 0,
 //         routes: [
@@ -202,6 +228,7 @@
 //         <Icon name="account-circle" size={28} style={{color: '#007BFA'}} />
 //       </TouchableOpacity>
 
+//       {/* Profile Menu Modal */}
 //       <Modal
 //         visible={showMenu}
 //         transparent
@@ -234,7 +261,12 @@
 //                 <Icon name="chevron-right" size={24} style={{color: '#666'}} />
 //               </TouchableOpacity>
 
-//               <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+//               <TouchableOpacity
+//                 style={styles.menuItem}
+//                 onPress={() => {
+//                   setShowMenu(false);
+//                   setShowLogoutConfirm(true);
+//                 }}>
 //                 <Icon name="logout" size={24} style={{color: '#333'}} />
 //                 <Text style={styles.menuText}>Logout</Text>
 //                 <Icon name="chevron-right" size={24} style={{color: '#666'}} />
@@ -244,6 +276,7 @@
 //         </TouchableOpacity>
 //       </Modal>
 
+//       {/* Switch Account Modal */}
 //       <Modal
 //         visible={showSwitchModal}
 //         transparent
@@ -283,6 +316,36 @@
 //               onPress={() => setShowSwitchModal(false)}>
 //               <Text style={styles.cancelButtonText}>Cancel</Text>
 //             </TouchableOpacity>
+//           </View>
+//         </View>
+//       </Modal>
+
+//       {/* Logout Confirmation Modal */}
+//       <Modal
+//         visible={showLogoutConfirm}
+//         transparent
+//         animationType="fade"
+//         onRequestClose={() => setShowLogoutConfirm(false)}>
+//         <View style={styles.modalContainer}>
+//           <View style={styles.confirmModalContent}>
+//             <Text style={styles.confirmTitle}>Logout</Text>
+//             <Text style={styles.confirmMessage}>
+//               Are you sure you want to logout?
+//             </Text>
+
+//             <View style={styles.confirmButtonsContainer}>
+//               <TouchableOpacity
+//                 style={styles.cancelConfirmButton}
+//                 onPress={() => setShowLogoutConfirm(false)}>
+//                 <Text style={styles.cancelConfirmText}>Cancel</Text>
+//               </TouchableOpacity>
+
+//               <TouchableOpacity
+//                 style={styles.logoutConfirmButton}
+//                 onPress={handleLogout}>
+//                 <Text style={styles.logoutConfirmText}>Logout</Text>
+//               </TouchableOpacity>
+//             </View>
 //           </View>
 //         </View>
 //       </Modal>
@@ -397,6 +460,59 @@
 //     color: '#333',
 //     fontSize: 16,
 //   },
+//   // Logout confirmation styles
+//   confirmModalContent: {
+//     width: '80%',
+//     backgroundColor: '#fff',
+//     borderRadius: 8,
+//     padding: 20,
+//     elevation: 5,
+//     alignItems: 'center',
+//   },
+//   confirmTitle: {
+//     fontSize: 20,
+//     fontWeight: 'bold',
+//     marginBottom: 10,
+//   },
+//   confirmMessage: {
+//     fontSize: 16,
+//     marginBottom: 20,
+//     textAlign: 'center',
+//     color: '#333',
+//   },
+//   confirmButtonsContainer: {
+//     flexDirection: 'row',
+//     justifyContent: 'space-between',
+//     width: '100%',
+//   },
+//   cancelConfirmButton: {
+//     backgroundColor: '#ccc',
+//     paddingVertical: 10,
+//     paddingHorizontal: 20,
+//     borderRadius: 8,
+//     alignItems: 'center',
+//     flex: 1,
+//     marginRight: 10,
+//   },
+//   cancelConfirmText: {
+//     color: '#333',
+//     fontSize: 16,
+//     fontWeight: 'bold',
+//   },
+//   logoutConfirmButton: {
+//     backgroundColor: '#dc3545',
+//     paddingVertical: 10,
+//     paddingHorizontal: 20,
+//     borderRadius: 8,
+//     alignItems: 'center',
+//     flex: 1,
+//     marginLeft: 10,
+//   },
+//   logoutConfirmText: {
+//     color: '#fff',
+//     fontSize: 16,
+//     fontWeight: 'bold',
+//   },
 // });
 
 // export default ProfileMenu;
@@ -415,7 +531,7 @@ import {
   Text,
   TouchableOpacity,
   View,
-  ToastAndroid, // Import ToastAndroid for Android toast messages
+  ToastAndroid,
   Platform,
 } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
@@ -431,7 +547,6 @@ interface ProfileMenuProps {
 interface AccountItem {
   label: string;
   value: string;
-  default?: boolean;
   customerId: number;
   groupId: number;
 }
@@ -449,6 +564,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
+  const [customerId, setCustomerId] = useState<string | null>(null);
 
   const {setDisplayName} = useDisplayName();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -465,7 +581,6 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
       );
     } else {
       // For iOS - use Alert as a temporary solution
-      // This will be replaced by the more elegant toast UI in a subsequent version
       Alert.alert('', message, [{text: 'OK', style: 'cancel'}], {
         cancelable: true,
       });
@@ -479,9 +594,11 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
       setDebugInfo(null);
 
       const groupId = await AsyncStorage.getItem('FK_CUST_GROUP_ID');
-      console.log('Stored FK_CUST_GROUP_ID:', groupId);
+      const storedCustomerId = await AsyncStorage.getItem('customerID');
 
-      console.log('API Endpoint:', API_ENDPOINTS.GET_LIST_ACCOUNT);
+      setCustomerId(storedCustomerId);
+      console.log('Stored FK_CUST_GROUP_ID:', groupId);
+      console.log('API Endpoint:', API_ENDPOINTS.GET_ACCOUNTS_BY_GROUP);
 
       if (!groupId) {
         throw new Error('No customer group ID found');
@@ -490,41 +607,41 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
       setDebugInfo(`Fetching accounts for group ID: ${groupId}`);
       const payload = {FK_CUST_GROUP_ID: parseInt(groupId)};
 
+      // Updated to use the correct API endpoint and handle the response format
       const response = await axios.post(
-        API_ENDPOINTS.GET_LIST_ACCOUNT,
+        API_ENDPOINTS.GET_ACCOUNTS_BY_GROUP,
         payload,
       );
 
-      if (!response.data.output || response.data.output.count === 0) {
-        throw new Error('No customer groups found');
+      if (
+        !response.data.output ||
+        !response.data.output.accounts ||
+        response.data.output.accounts.length === 0
+      ) {
+        throw new Error('No accounts found for this group');
       }
 
-      const accountItems: AccountItem[] = response.data.output.groups.map(
-        (group: {
-          DISP_NAME: any;
-          CUSTOMER_NAME: any;
-          FK_CUSTOMER_ID: any;
-          FK_CUST_GROUP_ID: any;
-          DEF: number;
+      // Map the accounts to dropdown items using the correct response structure
+      const accountItems: AccountItem[] = response.data.output.accounts.map(
+        (account: {
+          CustomerID: number;
+          PhoneNo: string | null;
+          DisplayName: string;
+          CustomerGroupID: number;
+          CustomerName: string;
         }) => ({
-          label: `${group.DISP_NAME} `,
-          value: group.DISP_NAME,
-          customerId: group.FK_CUSTOMER_ID,
-          groupId: group.FK_CUST_GROUP_ID,
-          default: group.DEF === 1,
+          label: account.DisplayName,
+          value: account.CustomerID.toString(), // Use CustomerID as the value
+          customerId: account.CustomerID,
+          groupId: account.CustomerGroupID,
         }),
       );
 
       setItems(accountItems);
 
-      // Set initial value to current display name or default account
-      const currentAccount =
-        accountItems.find(item => item.value === displayName) ||
-        accountItems.find(item => item.default) ||
-        accountItems[0];
-
-      if (currentAccount) {
-        setValue(currentAccount.value);
+      // Set initial value to current customer ID
+      if (storedCustomerId) {
+        setValue(storedCustomerId);
       }
     } catch (error: any) {
       console.error('Error fetching customer groups:', error);
@@ -569,21 +686,44 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
     }
 
     try {
+      setLoading(true);
+
       const selectedAccount = items.find(item => item.value === value);
       if (!selectedAccount) {
         throw new Error('Invalid account selected');
       }
 
+      const groupId = await AsyncStorage.getItem('FK_CUST_GROUP_ID');
+      if (!groupId) {
+        throw new Error('No customer group ID found');
+      }
+
+      // Call the switchAccount API
+      const payload = {
+        FK_CUSTOMER_ID: selectedAccount.customerId,
+        FK_CUST_GROUP_ID: parseInt(groupId),
+      };
+
+      const response = await axios.post(API_ENDPOINTS.SWITCH_ACCOUNT, payload);
+
+      if (!response.data.output || !response.data.output.currentAccount) {
+        throw new Error('Failed to switch account');
+      }
+
+      const currentAccount = response.data.output.currentAccount;
+
+      // Store the new account information
       await Promise.all([
         AsyncStorage.setItem(
           'customerID',
-          selectedAccount.customerId.toString(),
+          currentAccount.CustomerID.toString(),
         ),
-        AsyncStorage.setItem('Disp_name', selectedAccount.label),
+        AsyncStorage.setItem('Disp_name', currentAccount.DisplayName),
         AsyncStorage.setItem(
           'FK_CUST_GROUP_ID',
-          selectedAccount.groupId.toString(),
+          currentAccount.CustomerGroupID.toString(),
         ),
+        AsyncStorage.setItem('userToken', currentAccount.token), // Store the new token
       ]);
 
       // Call the onAccountSwitch callback if provided
@@ -591,12 +731,11 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
         onAccountSwitch();
       }
 
-      setDisplayName(selectedAccount.label);
+      setDisplayName(currentAccount.DisplayName);
       setShowSwitchModal(false);
 
       // Show toast message before navigation
-      const accountName = selectedAccount.label.trim();
-      showToast(`Switched to ${accountName}`);
+      showToast(`Switched to ${currentAccount.DisplayName}`);
 
       navigation.reset({
         index: 0,
@@ -605,7 +744,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
             name: 'HomeScreen',
             params: {
               switchedAccount: true,
-              newCustomerId: selectedAccount.customerId.toString(),
+              newCustomerId: currentAccount.CustomerID.toString(),
               timestamp: Date.now(), // Force refresh
             },
           },
@@ -613,7 +752,14 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
       });
     } catch (error: any) {
       console.error('Error switching account:', error);
-      Alert.alert('Error', error.message || 'Failed to switch account');
+      Alert.alert(
+        'Error',
+        error.response?.data?.message ||
+          error.message ||
+          'Failed to switch account',
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -704,6 +850,8 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 containerStyle={{marginBottom: 20}}
                 selectedItemContainerStyle={styles.selectedItemContainer}
                 selectedItemLabelStyle={styles.selectedItemLabel}
+                // Update zIndex to ensure dropdown appears above other elements
+                zIndex={1000}
               />
             )}
             <TouchableOpacity
