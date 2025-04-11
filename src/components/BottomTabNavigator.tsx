@@ -571,12 +571,13 @@ export const NavigationHistoryProvider: React.FC<{
 };
 
 export const TabBar = (props: any) => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const {getPreviousRoute, addToHistory} = useContext(NavigationHistoryContext);
 
   const tabs = [
     {name: 'Home', icon: 'home', label: 'Home'},
     // {name: 'Search', icon: 'search', label: 'Search'},
+    {name: 'Reports', icon: 'assessment', label: 'Reports'},
     {
       name: 'Alert',
       icon:
@@ -597,9 +598,9 @@ export const TabBar = (props: any) => {
       addToHistory(props.route.name);
     }
 
-    if (['Home', 'Alert', 'Orders'].includes(routeName)) {
+    if (['Home', 'Alert', 'Orders', 'Reports'].includes(routeName)) {
       const currentParams = props.route?.params;
-      const navigationParams: any = {
+      const navigationParams = {
         screen: routeName,
         params: {
           previousRoute: props.route?.name,
@@ -615,7 +616,7 @@ export const TabBar = (props: any) => {
     ) {
       props.customTabNavigation[routeName]();
     } else {
-      navigation.navigate(routeName as never);
+      navigation.navigate(routeName);
     }
   };
 
@@ -669,6 +670,8 @@ const BottomTabNavigator: React.FC = () => {
         return 'notifications-none';
       case 'Orders':
         return 'list-alt';
+      case 'Reports':
+        return 'assessment';
       default:
         return 'circle';
     }
