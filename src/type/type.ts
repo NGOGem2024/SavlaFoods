@@ -74,6 +74,8 @@ export type MainStackParamList = {
     orderDate: string;
     deliveryDate: string;
     deliveryAddress: string;
+    refreshData?: boolean;
+    updatedOrder?: any;
     items: Array<{
       ITEM_ID: number;
       LOT_NO: string;
@@ -105,6 +107,22 @@ export type MainStackParamList = {
     }>;
   };
   OrderDetailsScreen: {
+    customerID: string;
+    orderId: number;
+    orderNo: string;
+    transporterName: string;
+    deliveryDate: string;
+    orderDate: string;
+    items: Array<{
+      ITEM_ID: number;
+      LOT_NO: string;
+      ORDERED_QUANTITY: number;
+      AVAILABLE_QTY: number;
+      ITEM_MARKS: string;
+      VAKAL_NO: string;
+    }>;
+  };
+  EditOrderScreen: {
     customerID: string;
     orderId: number;
     orderNo: string;

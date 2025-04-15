@@ -10,16 +10,14 @@ import {
  Modal,
  Image,
  Animated,
+ TextInput,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import {useNavigation} from '@react-navigation/native';
 import {RouteProp} from '@react-navigation/native';
+import {API_ENDPOINTS, DEFAULT_HEADERS} from '../config/api.config';
 import axios from 'axios';
-import {
- useNavigation,
- ParamListBase,
- NavigationProp,
- useFocusEffect,
-} from '@react-navigation/native';
+import {useCustomer} from '../contexts/DisplayNameContext'; // Import the customer context
 
 interface OrderItem {
  detailId?: number;
@@ -47,6 +45,7 @@ interface Order {
  customerName: string;
  totalItems: number;
  totalQuantity: number;
+ customerId?: number;
  items: OrderItem[];
 }
 
@@ -59,20 +58,10 @@ const OrderDetailsScreen = ({
 }: {
  route: RouteProp<{params: RouteParams}, 'params'>;
 }) => {
- const navigation = useNavigation<NavigationProp<ParamListBase>>();
- const {order} = route.params;
-
- // Initialize state with order items from the route params
- const [orderItems, setOrderItems] = React.useState<OrderItem[]>(
- order.items || [],
- );
-
- // Update orderItems when the order prop changes
- React.useEffect(() => {
- if (order && order.items) {
- setOrderItems(order.items);
- }
- }, [order]);
+ const navigation = useNavigation();
+ const {order: initialOrder} = route.params;
+ const [order, setOrder] = React.useState<Order>(initialOrder);
+ const [orderItems, setOrderItems] = React.useState<OrderItem[]>(order.items);
  const [modalVisible, setModalVisible] = React.useState(false);
  const [selectedItem, setSelectedItem] = React.useState<OrderItem | null>(
  null,
@@ -88,15 +77,33 @@ const OrderDetailsScreen = ({
  const toastOpacity = React.useRef(new Animated.Value(0)).current;
  const toastOffset = React.useRef(new Animated.Value(300)).current;
 
+ // Add state variables for editing
+ const [isEditing, setIsEditing] = React.useState(false);
+ const [editedOrder, setEditedOrder] = React.useState<Order>({...order});
+ const [isSaving, setIsSaving] = React.useState(false);
+
+ const {customerID} = useCustomer();
+
  // Format date for display
  const formatDate = (dateString: string) => {
  try {
- if (!dateString) return 'N/A';
+ if (!dateString) return '';
 
- // Handle invalid date strings
- const date = new Date(dateString);
- if (isNaN(date.getTime())) {
- return dateString; // Return original string if it can't be parsed
+ // Extract date parts from string
+ let year, month, day;
+
+ // For YYYY-MM-DD format
+ if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+ [year, month, day] = dateString.split('-');
+ }
+ // For ISO format with time component
+ else if (dateString.includes('T')) {
+ const [datePart] = dateString.split('T');
+ [year, month, day] = datePart.split('-');
+ }
+ // Invalid format
+ else {
+ return dateString;
  }
 
  // Convert month number to month name
@@ -115,15 +122,14 @@ const OrderDetailsScreen = ({
  'December',
  ];
 
- const year = date.getFullYear();
- const month = monthNames[date.getMonth()];
- const day = date.getDate();
+ // Remove leading zeros and convert to numbers
+ const monthIndex = parseInt(month, 10) - 1;
+ const dayNum = parseInt(day, 10);
 
  // Format the date manually
- return `${month} ${day}, ${year}`;
- } catch (error) {
- console.error('Error formatting date:', error, dateString);
- return dateString; // Return original string on error
+ return `${monthNames[monthIndex]} ${dayNum}, ${year}`;
+ } catch {
+ return dateString;
  }
  };
 
@@ -183,7 +189,32 @@ const OrderDetailsScreen = ({
  setIsLoading(true);
 
  try {
- // Simulate a successful cancellation without API call
+ // Log request details for debugging
+ console.log('Making API request to:', API_ENDPOINTS.GET_CANCEL_ORDER);
+ console.log('Request payload:', {
+ detailId: selectedItem.detailId,
+ cancelRemark: 'Cancelled via mobile app',
+ cancelledBy: 'MOBILE_USER',
+ });
+
+ // Add a timeout to the axios request
+ const response = await axios.post(
+ API_ENDPOINTS.GET_CANCEL_ORDER,
+ {
+ detailId: selectedItem.detailId,
+ cancelRemark: 'Cancelled via mobile app',
+ cancelledBy: 'MOBILE_USER',
+ },
+ {
+ headers: DEFAULT_HEADERS,
+ timeout: 10000, // 10 second timeout
+ },
+ );
+
+ // With axios, we directly get the data from the response
+ const result = response.data;
+
+ if (result.success) {
  // Remove the cancelled item from the order items list
  if (selectedItem && selectedItem.detailId) {
  // Filter out the cancelled item
@@ -193,49 +224,163 @@ const OrderDetailsScreen = ({
  }
 
  showToast('Order cancelled successfully!', 'success');
+ } else {
+ showToast(result.message || 'Failed to cancel order', 'error');
+ }
  } catch (error: any) {
  console.error('Error cancelling order:', error);
- showToast('Error cancelling order', 'error');
+
+ // Provide more specific error messages based on the error type
+ if (axios.isAxiosError(error)) {
+ if (error.code === 'ECONNABORTED') {
+ showToast('Request timed out. Please try again.', 'error');
+ } else if (error.code === 'ERR_NETWORK') {
+ showToast(
+ 'Cannot connect to server. Please check your network connection.',
+ 'error',
+ );
+ } else if (error.response) {
+ // The request was made and the server responded with a status code outside of 2xx range
+ showToast(`Server error: ${error.response.status}`, 'error');
+ } else if (error.request) {
+ // The request was made but no response was received
+ showToast('No response from server. Please try again.', 'error');
+ } else {
+ showToast(`Error: ${error.message}`, 'error');
+ }
+ } else {
+ showToast(
+ `Error: ${error.message || 'Unknown error occurred'}`,
+ 'error',
+ );
+ }
  } finally {
  setIsLoading(false);
  setModalVisible(false);
  }
  };
 
- // Handle going back to previous screen
- const handleGoBack = () => {
-   // Simply go back to the previous screen without passing parameters
-   navigation.goBack();
+ // Function to handle saving the edited order
+ const handleSaveOrder = async () => {
+   if (!editedOrder) return;
+   
+   if (!customerID) {
+     showToast('Customer ID not found. Please login again.', 'error');
+     return;
+   }
+   
+   setIsSaving(true);
+   
+   try {
+     // Prepare the data to be sent to the API
+     const orderData = {
+       orderId: editedOrder.orderId,
+       customerId: customerID, // Use customerID from context
+       deliveryDate: editedOrder.deliveryDate.split('T')[0],
+       transporterName: editedOrder.transporterName,
+       remarks: editedOrder.remarks,
+       deliveryAddress: editedOrder.deliveryAddress,
+       items: editedOrder.items.map(item => ({
+         detailId: item.detailId,
+         requestedQty: item.requestedQty
+       }))
+     };
+     
+     console.log('Updating order with data:', orderData);
+     
+     // Call the API to update the order
+     const response = await axios.post(
+       API_ENDPOINTS.UPDATE_PENDING_ORDER,
+       orderData,
+       {
+         headers: DEFAULT_HEADERS,
+         timeout: 15000, // 15 second timeout
+       }
+     );
+     
+     const result = response.data;
+     
+     if (result.success) {
+       // Update the local order data with the response
+       setOrder({...result.data.order});
+       setOrderItems(result.data.order.items);
+       setIsEditing(false);
+       showToast('Order updated successfully!', 'success');
+     } else {
+       showToast(result.message || 'Failed to update order', 'error');
+     }
+   } catch (error: any) {
+     console.error('Error updating order:', error);
+     
+     if (axios.isAxiosError(error)) {
+       if (error.code === 'ECONNABORTED') {
+         showToast('Request timed out. Please try again.', 'error');
+       } else if (error.code === 'ERR_NETWORK') {
+         showToast(
+           'Cannot connect to server. Please check your network connection.',
+           'error'
+         );
+       } else if (error.response) {
+         showToast(`Server error: ${error.response.status}`, 'error');
+       } else if (error.request) {
+         showToast('No response from server. Please try again.', 'error');
+       } else {
+         showToast(`Error: ${error.message}`, 'error');
+       }
+     } else {
+       showToast(
+         `Error: ${error.message || 'Unknown error occurred'}`,
+         'error'
+       );
+     }
+   } finally {
+     setIsSaving(false);
+   }
+ };
+
+ // Function to toggle edit mode
+ const toggleEditMode = () => {
+   if (isEditing) {
+     // If we're exiting edit mode, reset the edited order to the original
+     setEditedOrder({...order});
+   }
+   setIsEditing(!isEditing);
+ };
+
+ // Function to handle changes to the order fields
+ const handleOrderChange = (field: keyof Order, value: any) => {
+   setEditedOrder(prev => ({...prev, [field]: value}));
+ };
+
+ // Function to handle changes to item quantities
+ const handleItemChange = (detailId: number | undefined, requestedQty: number) => {
+   if (!detailId) return;
+   
+   setEditedOrder(prev => ({
+     ...prev,
+     items: prev.items.map(item => 
+       item.detailId === detailId ? {...item, requestedQty} : item
+     )
+   }));
  };
 
  return (
  <SafeAreaView style={styles.container}>
- {/* <View style={styles.header}>
+ <View style={styles.header}>
  <TouchableOpacity
  style={styles.backButton}
  onPress={() => navigation.goBack()}>
  <MaterialIcons name="arrow-back" size={24} color="#111827" />
  </TouchableOpacity>
  <Text style={styles.headerTitle}>Order Details</Text>
- <View style={styles.placeholder} />
- </View> */}
-
- <View style={styles.header}>
- <TouchableOpacity
- style={styles.backButton}
- onPress={handleGoBack}>
- <MaterialIcons name="arrow-back" size={24} color="#111827" />
- </TouchableOpacity>
- <Text style={styles.headerTitle}>Order Details</Text>
  {order.status === 'NEW' && (
- <TouchableOpacity
- style={styles.editButton}
- onPress={() => {
- navigation.navigate('EditOrderScreen', {order: order});
- }}>
- <MaterialIcons name="edit" size={24} color="#0284c7" />
- </TouchableOpacity>
+   <TouchableOpacity
+     style={styles.editButton}
+     onPress={toggleEditMode}>
+     <MaterialIcons name={isEditing ? "close" : "edit"} size={24} color="#111827" />
+   </TouchableOpacity>
  )}
+ {!isEditing && <View style={styles.placeholder} />}
  </View>
 
  <ScrollView style={styles.scrollView}>
@@ -250,102 +395,148 @@ const OrderDetailsScreen = ({
  </View>
 
  <View style={styles.whiteCardContent}>
- <View style={styles.infoRow}>
- <View style={styles.infoItem}>
- <View style={styles.infoIcon}>
- <MaterialIcons name="event" size={16} color="#7c3aed" />
- </View>
- <View>
- <Text style={styles.infoLabelNew}>Order Date</Text>
- <Text style={styles.infoValueNew}>
- {formatDate(
- new Date(
- new Date(order.deliveryDate).setDate(
- new Date(order.deliveryDate).getDate(),
- ),
- )
- .toISOString()
- .split('T')[0],
- )}
- </Text>
- </View>
- </View>
+   <View style={styles.infoRow}>
+     <View style={styles.infoItem}>
+       <View style={styles.infoIcon}>
+         <MaterialIcons name="event" size={16} color="#7c3aed" />
+       </View>
+       <View>
+         <Text style={styles.infoLabelNew}>Order Date</Text>
+         <Text style={styles.infoValueNew}>
+           {formatDate(
+             new Date(
+               new Date(order.orderDate).setDate(
+                 new Date(order.orderDate).getDate(),
+               ),
+             )
+             .toISOString()
+             .split('T')[0],
+           )}
+         </Text>
+       </View>
+     </View>
 
- <View style={styles.infoItem}>
- <View style={styles.infoIcon}>
- <MaterialIcons
- name="local-shipping"
- size={16}
- color="#7c3aed"
- />
- </View>
- <View>
- <Text style={styles.infoLabelNew}>Delivery Date</Text>
- {/* <Text style={styles.infoValueNew}>{formatDate(order.deliveryDate)}</Text> */}
- <Text style={styles.infoValueNew}>
- {formatDate(
- new Date(
- new Date(order.deliveryDate).setDate(
- new Date(order.deliveryDate).getDate(),
- ),
- )
- .toISOString()
- .split('T')[0],
- )}
- </Text>
- </View>
- </View>
- </View>
+     <View style={styles.infoItem}>
+       <View style={styles.infoIcon}>
+         <MaterialIcons
+           name="local-shipping"
+           size={16}
+           color="#7c3aed"
+         />
+       </View>
+       <View>
+         <Text style={styles.infoLabelNew}>Delivery Date</Text>
+         {isEditing ? (
+           <TextInput 
+             style={styles.editInput}
+             value={editedOrder.deliveryDate.split('T')[0]}
+             onChangeText={(text) => handleOrderChange('deliveryDate', text)}
+             placeholder="YYYY-MM-DD"
+           />
+         ) : (
+           <Text style={styles.infoValueNew}>
+           {formatDate(
+             new Date(
+               new Date(order.deliveryDate).setDate(
+                 new Date(order.deliveryDate).getDate(),
+               ),
+             )
+             .toISOString()
+             .split('T')[0],
+           )}
+           </Text>
+         )}
+       </View>
+     </View>
+   </View>
 
- <View style={styles.dividerHorizontal} />
+   <View style={styles.dividerHorizontal} />
 
- <View style={styles.infoRow}>
- <View style={styles.infoItem}>
- <View style={styles.infoIcon}>
- <MaterialIcons
- name="directions-bus"
- size={16}
- color="#7c3aed"
- />
- </View>
- <View style={{flex: 1}}>
- <Text style={styles.infoLabelNew}>Transporter</Text>
- <Text
- style={[styles.infoValueNew, styles.transporterText]}
- numberOfLines={3}>
- {order.transporterName || 'Qqq'}
- </Text>
- </View>
- </View>
- </View>
+   <View style={styles.infoRow}>
+     <View style={styles.infoItem}>
+       <View style={styles.infoIcon}>
+         <MaterialIcons
+           name="directions-bus"
+           size={16}
+           color="#7c3aed"
+         />
+       </View>
+       <View style={{flex: 1}}>
+         <Text style={styles.infoLabelNew}>Transporter</Text>
+         {isEditing ? (
+           <TextInput 
+             style={styles.editInput}
+             value={editedOrder.transporterName}
+             onChangeText={(text) => handleOrderChange('transporterName', text)}
+             placeholder="Enter transporter name"
+           />
+         ) : (
+           <Text style={[styles.infoValueNew, styles.transporterText]} numberOfLines={3}>
+           {order.transporterName || 'Qqq'}
+           </Text>
+         )}
+       </View>
+     </View>
+   </View>
 
- <View style={styles.dividerHorizontal} />
+   <View style={styles.dividerHorizontal} />
 
- <View style={styles.infoRow}>
- <View style={styles.infoItem}>
- <View style={styles.infoIcon}>
- <MaterialIcons name="location-on" size={16} color="#7c3aed" />
- </View>
- <View>
- <Text style={styles.infoLabelNew}>Delivery Location</Text>
- <View style={styles.locationBox}>
- <Text style={styles.locationText}>
- {order.deliveryAddress || 'N/A'}
- </Text>
- </View>
- </View>
- </View>
- </View>
+   <View style={styles.infoRow}>
+     <View style={styles.infoItem}>
+       <View style={styles.infoIcon}>
+         <MaterialIcons name="location-on" size={16} color="#7c3aed" />
+       </View>
+       <View>
+         <Text style={styles.infoLabelNew}>Delivery Location</Text>
+         {isEditing ? (
+           <TextInput 
+             style={styles.editInput}
+             value={editedOrder.deliveryAddress}
+             onChangeText={(text) => handleOrderChange('deliveryAddress', text)}
+             placeholder="Enter delivery address"
+             multiline={true}
+             numberOfLines={3}
+           />
+         ) : (
+           <View style={styles.locationBox}>
+           <Text style={styles.locationText}>
+           {order.deliveryAddress || 'N/A'}
+           </Text>
+           </View>
+         )}
+       </View>
+     </View>
+   </View>
 
- {/* <View style={styles.dividerHorizontal} /> */}
+   <View style={styles.dividerHorizontal} />
 
- {/* <View style={styles.orderStatus}>
- <View style={styles.statusDot}></View>
- <Text style={styles.orderStatusText}>Order Processing</Text>
- <TouchableOpacity>
- <Text style={styles.trackOrderLink}>Track Order</Text>
- </TouchableOpacity>
- </View> */}
+   <View style={styles.infoRow}>
+     <View style={styles.infoItem}>
+       <View style={styles.infoIcon}>
+         <MaterialIcons name="note" size={16} color="#7c3aed" />
+       </View>
+       <View>
+         <Text style={styles.infoLabelNew}>Remarks</Text>
+         {isEditing ? (
+           <TextInput 
+             style={styles.editInput}
+             value={editedOrder.remarks}
+             onChangeText={(text) => handleOrderChange('remarks', text)}
+             placeholder="Enter remarks"
+             multiline={true}
+             numberOfLines={2}
+           />
+         ) : (
+           <View style={styles.locationBox}>
+           <Text style={styles.locationText}>
+           {order.remarks || 'N/A'}
+           </Text>
+           </View>
+         )}
+       </View>
+     </View>
+   </View>
+ </View>
  </View>
  </View>
 
@@ -399,7 +590,23 @@ const OrderDetailsScreen = ({
  />
  <Text style={styles.quantityLabel}>Ordered</Text>
  </View>
- <Text style={styles.quantityValue}>{item.requestedQty}</Text>
+ {isEditing ? (
+   <TextInput 
+     style={styles.quantityEditInput}
+     value={String(isEditing 
+       ? editedOrder.items.find(i => i.detailId === item.detailId)?.requestedQty || item.requestedQty 
+       : item.requestedQty)}
+     onChangeText={(text) => {
+       const qty = parseFloat(text);
+       if (!isNaN(qty) && item.detailId) {
+         handleItemChange(item.detailId, qty);
+       }
+     }}
+     keyboardType="numeric"
+   />
+ ) : (
+   <Text style={styles.quantityValue}>{item.requestedQty}</Text>
+ )}
  </View>
  <View style={styles.quantityDivider} />
  <View style={styles.quantityColumn}>
@@ -448,9 +655,9 @@ const OrderDetailsScreen = ({
  </View>
 
  <TouchableOpacity
- style={styles.cancelButton}
+ style={[styles.cancelButton, isEditing && styles.disabledButton]}
  onPress={() => showCancelConfirmation(item)}
- disabled={isLoading}>
+ disabled={isLoading || isEditing}>
  <MaterialIcons name="cancel" size={16} color="#fff" />
  <Text style={styles.cancelButtonText}>
  {isLoading ? 'Processing...' : 'Cancel Order'}
@@ -473,6 +680,20 @@ const OrderDetailsScreen = ({
  </View>
  )}
  </ScrollView>
+
+ {isEditing && (
+   <View style={styles.saveButtonContainer}>
+     <TouchableOpacity
+       style={styles.saveButton}
+       onPress={handleSaveOrder}
+       disabled={isSaving}>
+       <MaterialIcons name="save" size={20} color="#fff" />
+       <Text style={styles.saveButtonText}>
+         {isSaving ? 'Saving...' : 'Save Changes'}
+       </Text>
+     </TouchableOpacity>
+   </View>
+ )}
 
  {/* Custom Cancel Alert Modal */}
  <Modal
@@ -569,9 +790,6 @@ const styles = StyleSheet.create({
  borderBottomWidth: 1,
  borderBottomColor: '#e5e7eb',
  elevation: 2,
- },
- editButton: {
- padding: 8,
  },
  backButton: {
  padding: 8,
@@ -1067,6 +1285,65 @@ const styles = StyleSheet.create({
  },
  successToast: {
  borderLeftColor: '#22c55e',
+ },
+ editInput: {
+   fontSize: 14,
+   fontWeight: '500',
+   color: '#111827',
+   backgroundColor: '#f9fafb',
+   borderWidth: 1,
+   borderColor: '#e5e7eb',
+   borderRadius: 6,
+   padding: 8,
+   marginTop: 4,
+   minWidth: 120,
+ },
+ quantityEditInput: {
+   fontSize: 18,
+   fontWeight: '700',
+   color: '#0369a1',
+   backgroundColor: '#ffffff',
+   borderWidth: 1,
+   borderColor: '#bae6fd',
+   borderRadius: 6,
+   padding: 8,
+   textAlign: 'center',
+   marginTop: 4,
+   minWidth: 70,
+ },
+ saveButtonContainer: {
+   position: 'absolute',
+   bottom: 0,
+   left: 0,
+   right: 0,
+   backgroundColor: '#ffffff',
+   paddingVertical: 12,
+   paddingHorizontal: 16,
+   borderTopWidth: 1,
+   borderTopColor: '#e5e7eb',
+   elevation: 10,
+ },
+ saveButton: {
+   backgroundColor: '#10b981',
+   borderRadius: 8,
+   flexDirection: 'row',
+   alignItems: 'center',
+   justifyContent: 'center',
+   paddingVertical: 12,
+   paddingHorizontal: 16,
+ },
+ saveButtonText: {
+   color: '#ffffff',
+   fontWeight: '600',
+   fontSize: 16,
+   marginLeft: 8,
+ },
+ editButton: {
+   padding: 8,
+ },
+ disabledButton: {
+   backgroundColor: '#9ca3af',
+   opacity: 0.7,
  },
 });
 

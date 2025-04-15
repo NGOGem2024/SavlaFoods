@@ -1,4 +1,3 @@
-
 import React, {useEffect, useState, useCallback} from 'react';
 import {
  ActivityIndicator,
@@ -11,7 +10,7 @@ import {
  View,
  SafeAreaView,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import axios from 'axios';
 import {API_ENDPOINTS} from '../config/api.config';
@@ -160,6 +159,20 @@ const PendingOrdersScreen = () => {
  setRefreshing(true);
  fetchPendingOrder(1, true);
  };
+
+ // Add useFocusEffect to refresh data when screen is focused
+ useFocusEffect(
+  useCallback(() => {
+    console.log("PendingOrdersScreen focused");
+    // Fetch data immediately every time the screen is focused
+    fetchPendingOrder(1, true);
+    
+    // No need for the additional navigation listener since we're refreshing immediately
+    return () => {
+      // Cleanup if needed
+    };
+  }, [fetchPendingOrder])
+ );
 
  const loadMoreOrders = () => {
  if (!isLoadingMore && page < totalPages) {

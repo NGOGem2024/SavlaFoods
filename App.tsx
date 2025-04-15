@@ -37,6 +37,7 @@ import OrderHistoryScreen from './src/screens/OrderHistoryScreen';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import OrderDetailsScreen from './src/screens/OrderDetailsScreen';
 import PendingOrdersScreen from './src/screens/PendingOrdersScreen';
+import EditOrderScreen from './src/components/EditOrderScreen';
 
 const RootStack = createStackNavigator<RootStackParamList>();
 const MainStack = createStackNavigator<MainStackParamList>();
@@ -129,6 +130,15 @@ const MainStackNavigator: React.FC = () => {
           options={{
             presentation: 'modal',
             title: 'Select Quantity',
+          }}
+        />
+        <MainStack.Screen
+          name="EditOrderScreen"
+          component={EditOrderScreen}
+          options={{
+            presentation: 'modal',
+            title: 'Edit Order',
+            headerShown:false
           }}
         />
       </MainStack.Navigator>
