@@ -91,39 +91,46 @@ const OrderDetailsScreen = ({
  // Format date for display
  const formatDate = (dateString: string) => {
  try {
- if (!dateString) return 'N/A';
+   if (!dateString) return 'N/A';
 
- // Handle invalid date strings
- const date = new Date(dateString);
- if (isNaN(date.getTime())) {
- return dateString; // Return original string if it can't be parsed
- }
+   // For YYYY-MM-DD format with or without time component
+   if (dateString.match(/^\d{4}-\d{2}-\d{2}/) || dateString.includes('T')) {
+     // Extract date part only if there's a time component
+     const datePart = dateString.split('T')[0];
+     const [year, month, day] = datePart.split('-');
+     
+     // Add 1 to day to compensate for timezone shift
+     let dayNum = parseInt(day, 10) + 1;
+     let monthIndex = parseInt(month, 10) - 1;
+     let yearNum = parseInt(year, 10);
+     
+     // Handle month/year rollover if day exceeds month length
+     const daysInMonth = new Date(yearNum, monthIndex + 1, 0).getDate();
+     if (dayNum > daysInMonth) {
+       dayNum = 1;
+       if (monthIndex === 11) {
+         monthIndex = 0;
+         yearNum++;
+       } else {
+         monthIndex++;
+       }
+     }
+     
+     // Convert month number to month name
+     const monthNames = [
+       'January', 'February', 'March', 'April', 'May', 'June',
+       'July', 'August', 'September', 'October', 'November', 'December'
+     ];
 
- // Convert month number to month name
- const monthNames = [
- 'January',
- 'February',
- 'March',
- 'April',
- 'May',
- 'June',
- 'July',
- 'August',
- 'September',
- 'October',
- 'November',
- 'December',
- ];
+     // Format the date manually
+     return `${monthNames[monthIndex]} ${dayNum}, ${yearNum}`;
+   }
 
- const year = date.getFullYear();
- const month = monthNames[date.getMonth()];
- const day = date.getDate();
-
- // Format the date manually
- return `${month} ${day}, ${year}`;
+   // For other formats or already formatted strings
+   return dateString;
  } catch (error) {
- console.error('Error formatting date:', error, dateString);
- return dateString; // Return original string on error
+   console.error('Error formatting date:', error, dateString);
+   return dateString; // Return original string on error
  }
  };
 
@@ -210,346 +217,309 @@ const OrderDetailsScreen = ({
 
  return (
  <SafeAreaView style={styles.container}>
- {/* <View style={styles.header}>
- <TouchableOpacity
- style={styles.backButton}
- onPress={() => navigation.goBack()}>
- <MaterialIcons name="arrow-back" size={24} color="#111827" />
- </TouchableOpacity>
- <Text style={styles.headerTitle}>Order Details</Text>
- <View style={styles.placeholder} />
- </View> */}
+   <View style={styles.header}>
+     <TouchableOpacity
+       style={styles.backButton}
+       onPress={handleGoBack}>
+       <MaterialIcons name="arrow-back" size={24} color="#111827" />
+     </TouchableOpacity>
+     <Text style={styles.headerTitle}>Order Details</Text>
+     {order.status === 'NEW' && (
+       <TouchableOpacity
+         style={styles.editButton}
+         onPress={() => {
+           navigation.navigate('EditOrderScreen', {order: order});
+         }}>
+         <MaterialIcons name="edit" size={24} color="#0284c7" />
+       </TouchableOpacity>
+     )}
+   </View>
 
- <View style={styles.header}>
- <TouchableOpacity
- style={styles.backButton}
- onPress={handleGoBack}>
- <MaterialIcons name="arrow-back" size={24} color="#111827" />
- </TouchableOpacity>
- <Text style={styles.headerTitle}>Order Details</Text>
- {order.status === 'NEW' && (
- <TouchableOpacity
- style={styles.editButton}
- onPress={() => {
- navigation.navigate('EditOrderScreen', {order: order});
- }}>
- <MaterialIcons name="edit" size={24} color="#0284c7" />
- </TouchableOpacity>
- )}
- </View>
+   <ScrollView style={styles.scrollView}>
+     <View style={styles.purpleHeaderCard}>
+       <View style={styles.purpleHeader}>
+         <View style={styles.headerContent}>
+           <MaterialIcons name="shopping-bag" size={24} color="#ffffff" />
+           <Text style={styles.purpleHeaderText}>
+             Order #{order.orderNo}
+           </Text>
+         </View>
+       </View>
 
- <ScrollView style={styles.scrollView}>
- <View style={styles.purpleHeaderCard}>
- <View style={styles.purpleHeader}>
- <View style={styles.headerContent}>
- <MaterialIcons name="shopping-bag" size={24} color="#ffffff" />
- <Text style={styles.purpleHeaderText}>
- Order #{order.orderNo}
- </Text>
- </View>
- </View>
+       <View style={styles.whiteCardContent}>
+         <View style={styles.infoRow}>
+           <View style={styles.infoItem}>
+             <View style={styles.infoIcon}>
+               <MaterialIcons name="event" size={16} color="#7c3aed" />
+             </View>
+             <View>
+               <Text style={styles.infoLabelNew}>Order Date</Text>
+               <Text style={styles.infoValueNew}>
+                 {formatDate(order.orderDate)}
+               </Text>
+             </View>
+           </View>
 
- <View style={styles.whiteCardContent}>
- <View style={styles.infoRow}>
- <View style={styles.infoItem}>
- <View style={styles.infoIcon}>
- <MaterialIcons name="event" size={16} color="#7c3aed" />
- </View>
- <View>
- <Text style={styles.infoLabelNew}>Order Date</Text>
- <Text style={styles.infoValueNew}>
- {formatDate(
- new Date(
- new Date(order.deliveryDate).setDate(
- new Date(order.deliveryDate).getDate(),
- ),
- )
- .toISOString()
- .split('T')[0],
- )}
- </Text>
- </View>
- </View>
+           <View style={styles.infoItem}>
+             <View style={styles.infoIcon}>
+               <MaterialIcons
+                 name="local-shipping"
+                 size={16}
+                 color="#7c3aed"
+               />
+             </View>
+             <View>
+               <Text style={styles.infoLabelNew}>Delivery Date</Text>
+               <Text style={styles.infoValueNew}>
+                 {formatDate(order.deliveryDate)}
+               </Text>
+             </View>
+           </View>
+         </View>
 
- <View style={styles.infoItem}>
- <View style={styles.infoIcon}>
- <MaterialIcons
- name="local-shipping"
- size={16}
- color="#7c3aed"
- />
- </View>
- <View>
- <Text style={styles.infoLabelNew}>Delivery Date</Text>
- {/* <Text style={styles.infoValueNew}>{formatDate(order.deliveryDate)}</Text> */}
- <Text style={styles.infoValueNew}>
- {formatDate(
- new Date(
- new Date(order.deliveryDate).setDate(
- new Date(order.deliveryDate).getDate(),
- ),
- )
- .toISOString()
- .split('T')[0],
- )}
- </Text>
- </View>
- </View>
- </View>
+         <View style={styles.dividerHorizontal} />
 
- <View style={styles.dividerHorizontal} />
+         <View style={styles.infoRow}>
+           <View style={styles.infoItem}>
+             <View style={styles.infoIcon}>
+               <MaterialIcons
+                 name="directions-bus"
+                 size={16}
+                 color="#7c3aed"
+               />
+             </View>
+             <View style={{flex: 1}}>
+               <Text style={styles.infoLabelNew}>Transporter</Text>
+               <Text
+                 style={[styles.infoValueNew, styles.transporterText]}
+                 numberOfLines={3}>
+                 {order.transporterName || 'Qqq'}
+               </Text>
+             </View>
+           </View>
+         </View>
 
- <View style={styles.infoRow}>
- <View style={styles.infoItem}>
- <View style={styles.infoIcon}>
- <MaterialIcons
- name="directions-bus"
- size={16}
- color="#7c3aed"
- />
- </View>
- <View style={{flex: 1}}>
- <Text style={styles.infoLabelNew}>Transporter</Text>
- <Text
- style={[styles.infoValueNew, styles.transporterText]}
- numberOfLines={3}>
- {order.transporterName || 'Qqq'}
- </Text>
- </View>
- </View>
- </View>
+         <View style={styles.dividerHorizontal} />
 
- <View style={styles.dividerHorizontal} />
+         <View style={styles.infoRow}>
+           <View style={styles.infoItem}>
+             <View style={styles.infoIcon}>
+               <MaterialIcons name="location-on" size={16} color="#7c3aed" />
+             </View>
+             <View>
+               <Text style={styles.infoLabelNew}>Delivery Location</Text>
+               <View style={styles.locationBox}>
+                 <Text style={styles.locationText}>
+                   {order.deliveryAddress || 'N/A'}
+                 </Text>
+               </View>
+             </View>
+           </View>
+         </View>
+       </View>
+     </View>
 
- <View style={styles.infoRow}>
- <View style={styles.infoItem}>
- <View style={styles.infoIcon}>
- <MaterialIcons name="location-on" size={16} color="#7c3aed" />
- </View>
- <View>
- <Text style={styles.infoLabelNew}>Delivery Location</Text>
- <View style={styles.locationBox}>
- <Text style={styles.locationText}>
- {order.deliveryAddress || 'N/A'}
- </Text>
- </View>
- </View>
- </View>
- </View>
+     {orderItems && orderItems.length > 0 ? (
+       orderItems.map((item: OrderItem, index: number) => (
+         <View
+           key={`item-${item.detailId || index}`}
+           style={styles.itemCard}>
+           <View style={styles.itemHeader}>
+             <View style={styles.itemNameContainer}>
+               <MaterialIcons name="inventory" size={18} color="#0369a1" />
+               <Text style={styles.itemName}>{item.itemName}</Text>
+             </View>
+             <View style={styles.statusBadge}>
+               <MaterialIcons
+                 name="check-circle"
+                 size={14}
+                 color="#0284c7"
+               />
+               <Text style={styles.statusText}>{item.status}</Text>
+             </View>
+           </View>
 
- {/* <View style={styles.dividerHorizontal} /> */}
+           <View style={styles.lotNoContainer}>
+             <MaterialIcons name="label" size={16} color="#f97316" />
+             <Text style={styles.lotNo}>Lot No: {item.lotNo || 'N/A'}</Text>
+           </View>
 
- {/* <View style={styles.orderStatus}>
- <View style={styles.statusDot}></View>
- <Text style={styles.orderStatusText}>Order Processing</Text>
- <TouchableOpacity>
- <Text style={styles.trackOrderLink}>Track Order</Text>
- </TouchableOpacity>
- </View> */}
- </View>
- </View>
+           <View style={styles.itemDetailsGrid}>
+             <View style={styles.itemDetail}>
+               <MaterialIcons name="bookmark" size={14} color="#6B7280" />
+               <Text style={styles.detailLabel}>Item Marks:</Text>
+               <Text style={styles.detailValue}>
+                 {item.itemMarks || 'N/A'}
+               </Text>
+             </View>
+           </View>
+           <View style={styles.itemDetail}>
+             <MaterialIcons name="description" size={14} color="#6B7280" />
+             <Text style={styles.detailLabel}>Vakal No:</Text>
+             <Text style={styles.detailValue}>{item.vakalNo || 'N/A'}</Text>
+           </View>
 
- {orderItems && orderItems.length > 0 ? (
- orderItems.map((item: OrderItem, index: number) => (
- <View
- key={`item-${item.detailId || index}`}
- style={styles.itemCard}>
- <View style={styles.itemHeader}>
- <View style={styles.itemNameContainer}>
- <MaterialIcons name="inventory" size={18} color="#0369a1" />
- <Text style={styles.itemName}>{item.itemName}</Text>
- </View>
- <View style={styles.statusBadge}>
- <MaterialIcons
- name="check-circle"
- size={14}
- color="#0284c7"
- />
- <Text style={styles.statusText}>{item.status}</Text>
- </View>
- </View>
+           <View style={styles.quantityContainer}>
+             <View style={styles.quantityColumn}>
+               <View style={styles.quantityLabelRow}>
+                 <MaterialIcons
+                   name="shopping-cart"
+                   size={18}
+                   color="#0369a1"
+                 />
+                 <Text style={styles.quantityLabel}>Ordered</Text>
+               </View>
+               <Text style={styles.quantityValue}>{item.requestedQty}</Text>
+             </View>
+             <View style={styles.quantityDivider} />
+             <View style={styles.quantityColumn}>
+               <View style={styles.quantityLabelRow}>
+                 <MaterialIcons name="inventory" size={18} color="#0369a1" />
+                 <Text style={styles.quantityLabel}>Available</Text>
+               </View>
+               <Text style={styles.quantityValue}>{item.availableQty}</Text>
+             </View>
+           </View>
 
- <View style={styles.lotNoContainer}>
- <MaterialIcons name="label" size={16} color="#f97316" />
- <Text style={styles.lotNo}>Lot No: {item.lotNo || 'N/A'}</Text>
- </View>
+           <View style={styles.itemDetailsGrid}>
+             <View style={styles.itemDetail}>
+               <MaterialIcons name="straighten" size={14} color="#6B7280" />
+               <Text style={styles.detailLabel}>Unit:</Text>
+               <Text style={styles.detailValue}>
+                 {item.unitName || 'N/A'}
+               </Text>
+             </View>
+             <View style={styles.itemDetail}>
+               <MaterialIcons name="scale" size={14} color="#6B7280" />
+               <Text style={styles.detailLabel}>Net Qty:</Text>
+               <View
+                 style={[
+                   styles.netQtyContainer,
+                   item.availableQty - item.requestedQty < 0
+                     ? styles.negativeQtyContainer
+                     : item.availableQty - item.requestedQty > 0
+                       ? styles.positiveQtyContainer
+                       : null,
+                 ]}>
+                 <Text
+                   style={[
+                     styles.detailValue,
+                     item.availableQty - item.requestedQty < 0
+                       ? styles.negativeQuantity
+                       : item.availableQty - item.requestedQty > 0
+                         ? styles.positiveQuantity
+                         : null,
+                   ]}>
+                   {item.availableQty - item.requestedQty > 0 ? '+' : ''}
+                   {item.availableQty - item.requestedQty}
+                 </Text>
+               </View>
+             </View>
+           </View>
 
- <View style={styles.itemDetailsGrid}>
- <View style={styles.itemDetail}>
- <MaterialIcons name="bookmark" size={14} color="#6B7280" />
- <Text style={styles.detailLabel}>Item Marks:</Text>
- <Text style={styles.detailValue}>
- {item.itemMarks || 'N/A'}
- </Text>
- </View>
- </View>
- <View style={styles.itemDetail}>
- <MaterialIcons name="description" size={14} color="#6B7280" />
- <Text style={styles.detailLabel}>Vakal No:</Text>
- <Text style={styles.detailValue}>{item.vakalNo || 'N/A'}</Text>
- </View>
+           <TouchableOpacity
+             style={styles.cancelButton}
+             onPress={() => showCancelConfirmation(item)}
+             disabled={isLoading}>
+             <MaterialIcons name="cancel" size={16} color="#fff" />
+             <Text style={styles.cancelButtonText}>
+               {isLoading ? 'Processing...' : 'Cancel Order'}
+             </Text>
+           </TouchableOpacity>
+         </View>
+       ))
+     ) : (
+       <View style={styles.noItemsContainer}>
+         <MaterialIcons name="info" size={48} color="#9ca3af" />
+         <Text style={styles.noItemsText}>
+           All order items have been cancelled
+         </Text>
+         <TouchableOpacity
+           style={styles.backToOrdersButton}
+           onPress={() => navigation.goBack()}>
+           <MaterialIcons name="arrow-back" size={16} color="#fff" />
+           <Text style={styles.backToOrdersText}>Back to Orders</Text>
+         </TouchableOpacity>
+       </View>
+     )}
+   </ScrollView>
 
- <View style={styles.quantityContainer}>
- <View style={styles.quantityColumn}>
- <View style={styles.quantityLabelRow}>
- <MaterialIcons
- name="shopping-cart"
- size={18}
- color="#0369a1"
- />
- <Text style={styles.quantityLabel}>Ordered</Text>
- </View>
- <Text style={styles.quantityValue}>{item.requestedQty}</Text>
- </View>
- <View style={styles.quantityDivider} />
- <View style={styles.quantityColumn}>
- <View style={styles.quantityLabelRow}>
- <MaterialIcons name="inventory" size={18} color="#0369a1" />
- <Text style={styles.quantityLabel}>Available</Text>
- </View>
- <Text style={styles.quantityValue}>{item.availableQty}</Text>
- </View>
- </View>
+   {/* Custom Cancel Alert Modal */}
+   <Modal
+     animationType="fade"
+     transparent={true}
+     visible={modalVisible}
+     onRequestClose={() => setModalVisible(false)}>
+     <View style={styles.modalOverlay}>
+       <View style={styles.modalContent}>
+         <View style={styles.modalHeader}>
+           <MaterialIcons name="error-outline" size={40} color="#ef4444" />
+           <Text style={styles.modalTitle}>Cancel Order</Text>
+         </View>
 
- <View style={styles.itemDetailsGrid}>
- <View style={styles.itemDetail}>
- <MaterialIcons name="straighten" size={14} color="#6B7280" />
- <Text style={styles.detailLabel}>Unit:</Text>
- <Text style={styles.detailValue}>
- {item.unitName || 'N/A'}
- </Text>
- </View>
- <View style={styles.itemDetail}>
- <MaterialIcons name="scale" size={14} color="#6B7280" />
- <Text style={styles.detailLabel}>Net Qty:</Text>
- <View
- style={[
- styles.netQtyContainer,
- item.availableQty - item.requestedQty < 0
- ? styles.negativeQtyContainer
- : item.availableQty - item.requestedQty > 0
- ? styles.positiveQtyContainer
- : null,
- ]}>
- <Text
- style={[
- styles.detailValue,
- item.availableQty - item.requestedQty < 0
- ? styles.negativeQuantity
- : item.availableQty - item.requestedQty > 0
- ? styles.positiveQuantity
- : null,
- ]}>
- {item.availableQty - item.requestedQty > 0 ? '+' : ''}
- {item.availableQty - item.requestedQty}
- </Text>
- </View>
- </View>
- </View>
+         <View style={styles.modalBody}>
+           <Text style={styles.modalMessage}>
+             Are you sure you want to cancel order for:
+           </Text>
 
- <TouchableOpacity
- style={styles.cancelButton}
- onPress={() => showCancelConfirmation(item)}
- disabled={isLoading}>
- <MaterialIcons name="cancel" size={16} color="#fff" />
- <Text style={styles.cancelButtonText}>
- {isLoading ? 'Processing...' : 'Cancel Order'}
- </Text>
- </TouchableOpacity>
- </View>
- ))
- ) : (
- <View style={styles.noItemsContainer}>
- <MaterialIcons name="info" size={48} color="#9ca3af" />
- <Text style={styles.noItemsText}>
- All order items have been cancelled
- </Text>
- <TouchableOpacity
- style={styles.backToOrdersButton}
- onPress={() => navigation.goBack()}>
- <MaterialIcons name="arrow-back" size={16} color="#fff" />
- <Text style={styles.backToOrdersText}>Back to Orders</Text>
- </TouchableOpacity>
- </View>
- )}
- </ScrollView>
+           {selectedItem && (
+             <View style={styles.selectedItemContainer}>
+               <Text style={styles.selectedItemName}>
+                 {selectedItem?.itemName}
+               </Text>
+               <View style={styles.selectedItemDetails}>
+                 <MaterialIcons name="label" size={16} color="#f97316" />
+                 <Text style={styles.selectedItemLot}>
+                   Lot No: {selectedItem?.lotNo || 'N/A'}
+                 </Text>
+               </View>
+             </View>
+           )}
 
- {/* Custom Cancel Alert Modal */}
- <Modal
- animationType="fade"
- transparent={true}
- visible={modalVisible}
- onRequestClose={() => setModalVisible(false)}>
- <View style={styles.modalOverlay}>
- <View style={styles.modalContent}>
- <View style={styles.modalHeader}>
- <MaterialIcons name="error-outline" size={40} color="#ef4444" />
- <Text style={styles.modalTitle}>Cancel Order</Text>
- </View>
+           <Text style={styles.modalWarning}>
+             This action cannot be undone.
+           </Text>
+         </View>
 
- <View style={styles.modalBody}>
- <Text style={styles.modalMessage}>
- Are you sure you want to cancel order for:
- </Text>
+         <View style={styles.modalActions}>
+           <TouchableOpacity
+             style={styles.modalCancelButton}
+             onPress={() => setModalVisible(false)}>
+             <Text style={styles.modalCancelText}>Keep Order</Text>
+           </TouchableOpacity>
 
- {selectedItem && (
- <View style={styles.selectedItemContainer}>
- <Text style={styles.selectedItemName}>
- {selectedItem.itemName}
- </Text>
- <View style={styles.selectedItemDetails}>
- <MaterialIcons name="label" size={16} color="#f97316" />
- <Text style={styles.selectedItemLot}>
- Lot No: {selectedItem.lotNo || 'N/A'}
- </Text>
- </View>
- </View>
- )}
+           <TouchableOpacity
+             style={styles.modalConfirmButton}
+             onPress={handleCancelOrder}>
+             <MaterialIcons name="delete" size={16} color="#fff" />
+             <Text style={styles.modalConfirmText}>Yes, Cancel</Text>
+           </TouchableOpacity>
+         </View>
+       </View>
+     </View>
+   </Modal>
 
- <Text style={styles.modalWarning}>
- This action cannot be undone.
- </Text>
- </View>
-
- <View style={styles.modalActions}>
- <TouchableOpacity
- style={styles.modalCancelButton}
- onPress={() => setModalVisible(false)}>
- <Text style={styles.modalCancelText}>Keep Order</Text>
- </TouchableOpacity>
-
- <TouchableOpacity
- style={styles.modalConfirmButton}
- onPress={handleCancelOrder}>
- <MaterialIcons name="delete" size={16} color="#fff" />
- <Text style={styles.modalConfirmText}>Yes, Cancel</Text>
- </TouchableOpacity>
- </View>
- </View>
- </View>
- </Modal>
-
- {/* Custom Toast Notification */}
- {toastVisible && (
- <Animated.View
- style={[
- styles.toast,
- {
- opacity: toastOpacity,
- transform: [{translateX: toastOffset}],
- },
- toastType === 'error' ? styles.errorToast : styles.successToast,
- ]}>
- <View style={styles.toastContent}>
- <MaterialIcons
- name={toastType === 'success' ? 'check-circle' : 'error'}
- size={24}
- color={toastType === 'success' ? '#22c55e' : '#ef4444'}
- />
- <Text style={styles.toastMessage}>{toastMessage}</Text>
- </View>
- </Animated.View>
- )}
+   {/* Custom Toast Notification */}
+   {toastVisible && (
+     <Animated.View
+       style={[
+         styles.toast,
+         {
+           opacity: toastOpacity,
+           transform: [{translateX: toastOffset}],
+         },
+         toastType === 'error' ? styles.errorToast : styles.successToast,
+       ]}>
+       <View style={styles.toastContent}>
+         <MaterialIcons
+           name={toastType === 'success' ? 'check-circle' : 'error'}
+           size={24}
+           color={toastType === 'success' ? '#22c55e' : '#ef4444'}
+         />
+         <Text style={styles.toastMessage}>{toastMessage}</Text>
+       </View>
+     </Animated.View>
+   )}
  </SafeAreaView>
  );
 };

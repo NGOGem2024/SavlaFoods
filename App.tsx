@@ -112,12 +112,24 @@ const MainStackNavigator: React.FC = () => {
         <MainStack.Screen
           name="PendingOrdersScreen"
           component={PendingOrdersScreen}
-          options={{ title: 'Pending Orders' }}
+          options={{ 
+            title: 'Pending Orders', 
+            headerStyle: {
+              backgroundColor: '#fff',
+            },
+            headerTintColor: '#F48221',
+          }}
         />
         <MainStack.Screen
           name="OrderHistoryScreen"
           component={OrderHistoryScreen}
-          options={{ title: '' }}
+          options={{ 
+            title: '', 
+            headerStyle: {
+              backgroundColor: '#fff',
+            },
+            headerTintColor: '#F48221',
+          }}
         />
         <RootStack.Screen
           name="HomeScreen"

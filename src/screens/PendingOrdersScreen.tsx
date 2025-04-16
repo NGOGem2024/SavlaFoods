@@ -188,103 +188,79 @@ const PendingOrdersScreen = () => {
 
  const formatDate = (dateString: string) => {
  try {
- if (!dateString) return '';
+   if (!dateString) return '';
 
- // Extract date parts from string
- let year, month, day;
+   // Extract date parts from string
+   let year, month, day;
 
- // For YYYY-MM-DD format
- if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
- [year, month, day] = dateString.split('-');
+   // For YYYY-MM-DD format
+   if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+     [year, month, day] = dateString.split('-');
 
- // Create date parts directly without timezone issues
- const monthIndex = parseInt(month, 10) - 1;
- let dayNum = parseInt(day, 10) + 1; // Add one day
- let yearNum = parseInt(year, 10);
+     // Add 1 to the day to fix the timezone offset issue
+     let monthIndex = parseInt(month, 10) - 1;
+     let dayNum = parseInt(day, 10) + 1;
+     let yearNum = parseInt(year, 10);
+     
+     // Handle month/year rollover if day exceeds month length
+     const daysInMonth = new Date(yearNum, monthIndex + 1, 0).getDate();
+     if (dayNum > daysInMonth) {
+       dayNum = 1;
+       if (monthIndex === 11) {
+         monthIndex = 0;
+         yearNum++;
+       } else {
+         monthIndex++;
+       }
+     }
 
- // Handle month/year rollover if day exceeds month length
- let monthNum = parseInt(month, 10);
- const daysInMonth = new Date(yearNum, monthNum, 0).getDate();
+     // Convert month number to month name
+     const monthNames = [
+       'January', 'February', 'March', 'April', 'May', 'June',
+       'July', 'August', 'September', 'October', 'November', 'December'
+     ];
 
- if (dayNum > daysInMonth) {
- dayNum = 1;
- monthNum += 1;
+     // Format the date manually without creating a Date object
+     return `${monthNames[monthIndex]} ${dayNum}, ${yearNum}`;
+   }
+   // For ISO format with time component
+   else if (dateString.includes('T')) {
+     const [datePart] = dateString.split('T');
+     [year, month, day] = datePart.split('-');
 
- if (monthNum > 12) {
- monthNum = 1;
- yearNum += 1;
- }
- }
+     // Add 1 to the day to fix the timezone offset issue
+     let monthIndex = parseInt(month, 10) - 1;
+     let dayNum = parseInt(day, 10) + 1;
+     let yearNum = parseInt(year, 10);
+     
+     // Handle month/year rollover if day exceeds month length
+     const daysInMonth = new Date(yearNum, monthIndex + 1, 0).getDate();
+     if (dayNum > daysInMonth) {
+       dayNum = 1;
+       if (monthIndex === 11) {
+         monthIndex = 0;
+         yearNum++;
+       } else {
+         monthIndex++;
+       }
+     }
 
- // Convert month number to month name
- const monthNames = [
- 'January',
- 'February',
- 'March',
- 'April',
- 'May',
- 'June',
- 'July',
- 'August',
- 'September',
- 'October',
- 'November',
- 'December',
- ];
+     // Convert month number to month name
+     const monthNames = [
+       'January', 'February', 'March', 'April', 'May', 'June',
+       'July', 'August', 'September', 'October', 'November', 'December'
+     ];
 
- // Format the date manually without creating a Date object
- return `${monthNames[monthNum - 1]} ${dayNum}, ${yearNum}`;
- }
- // For ISO format with time component
- else if (dateString.includes('T')) {
- const [datePart] = dateString.split('T');
- [year, month, day] = datePart.split('-');
-
- // Create date parts directly without timezone issues
- const monthIndex = parseInt(month, 10) - 1;
- let dayNum = parseInt(day, 10) + 1; // Add one day
- let yearNum = parseInt(year, 10);
-
- // Handle month/year rollover if day exceeds month length
- let monthNum = parseInt(month, 10);
- const daysInMonth = new Date(yearNum, monthNum, 0).getDate();
-
- if (dayNum > daysInMonth) {
- dayNum = 1;
- monthNum += 1;
-
- if (monthNum > 12) {
- monthNum = 1;
- yearNum += 1;
- }
- }
-
- // Convert month number to month name
- const monthNames = [
- 'January',
- 'February',
- 'March',
- 'April',
- 'May',
- 'June',
- 'July',
- 'August',
- 'September',
- 'October',
- 'November',
- 'December',
- ];
-
- // Format the date manually without creating a Date object
- return `${monthNames[monthNum - 1]} ${dayNum}, ${yearNum}`;
- }
- // Invalid format
- else {
- return dateString;
- }
+     // Format the date manually without creating a Date object
+     return `${monthNames[monthIndex]} ${dayNum}, ${yearNum}`;
+   }
+   // Invalid format
+   else {
+     return dateString;
+   }
  } catch (error) {
- console.log('Error formatting date:', error, dateString);
- return dateString;
+   console.log('Error formatting date:', error, dateString);
+   return dateString;
  }
  };
 

@@ -131,70 +131,51 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
  // Format date for display (doesn't change date)
  const formatDateForDisplay = (dateString: string) => {
  try {
- if (!dateString) return '';
+   if (!dateString) return '';
 
- // Check if it's a valid date
- const date = new Date(dateString);
- if (isNaN(date.getTime())) {
-   // Not a valid date string - try to parse it manually
-   // Extract date parts from string
-   let year, month, day;
-
-   // For YYYY-MM-DD format or ISO format
-   if (dateString.includes('-')) {
+   // For YYYY-MM-DD format with or without time component
+   if (dateString.match(/^\d{4}-\d{2}-\d{2}/) || dateString.includes('T')) {
+     // Extract date part only if there's a time component
      const datePart = dateString.split('T')[0];
-     [year, month, day] = datePart.split('-');
-   } else {
+     const [year, month, day] = datePart.split('-');
+     
+     // Add 1 to day to compensate for timezone shift
+     let dayNum = parseInt(day, 10) + 1;
+     let monthIndex = parseInt(month, 10) - 1;
+     let yearNum = parseInt(year, 10);
+     
+     // Handle month/year rollover if day exceeds month length
+     const daysInMonth = new Date(yearNum, monthIndex + 1, 0).getDate();
+     if (dayNum > daysInMonth) {
+       dayNum = 1;
+       if (monthIndex === 11) {
+         monthIndex = 0;
+         yearNum++;
+       } else {
+         monthIndex++;
+       }
+     }
+     
+     // Convert month number to month name
+     const monthNames = [
+       'January', 'February', 'March', 'April', 'May', 'June',
+       'July', 'August', 'September', 'October', 'November', 'December'
+     ];
+
+     // Format the date manually
+     return `${monthNames[monthIndex]} ${dayNum}, ${yearNum}`;
+   }
+   
+   // For already formatted dates like "Month Day, Year"
+   if (dateString.includes(',')) {
      return dateString;
    }
-
-   // Convert month number to month name
-   const monthNames = [
-     'January',
-     'February',
-     'March',
-     'April',
-     'May',
-     'June',
-     'July',
-     'August',
-     'September',
-     'October',
-     'November',
-     'December',
-   ];
-
-   const monthIndex = parseInt(month, 10) - 1;
-   const dayNum = parseInt(day, 10);
-
-   // Check for valid month and day indices
-   if (monthIndex < 0 || monthIndex > 11 || isNaN(dayNum)) {
-     return dateString;
-   }
-
-   // Format the date manually
-   return `${monthNames[monthIndex]} ${dayNum}, ${year}`;
- } else {
-   // Valid date - format using the Date object
-   const monthNames = [
-     'January',
-     'February',
-     'March',
-     'April',
-     'May',
-     'June',
-     'July',
-     'August',
-     'September',
-     'October',
-     'November',
-     'December',
-   ];
-   return `${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
- }
+   
+   // Last resort fallback
+   return dateString;
  } catch (error) {
- console.log('Error formatting date:', error, dateString);
- return dateString;
+   console.log('Error formatting date:', error, dateString);
+   return dateString;
  }
  };
 
@@ -208,38 +189,38 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
  return dateString;
  }
 
- // Check if it's a valid date string that can be directly parsed
- const date = new Date(dateString);
- if (!isNaN(date.getTime())) {
- // Valid date - format to YYYY-MM-DD
- return date.toISOString().split('T')[0];
+ // For dates in "Month Day, Year" format (from the UI)
+ if (dateString.includes(',')) {
+   const parts = dateString.split(' ');
+   if (parts.length === 3) {
+     const monthNames = [
+       'January', 'February', 'March', 'April', 'May', 'June',
+       'July', 'August', 'September', 'October', 'November', 'December'
+     ];
+     const day = parseInt(parts[1].replace(',', ''));
+     const month = monthNames.indexOf(parts[0]) + 1;
+     const year = parseInt(parts[2]);
+
+     // Format directly to YYYY-MM-DD without creating Date object
+     return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+   }
  }
 
- // Parse the displayed date back to API format
- const parts = dateString.split(' ');
- if (parts.length < 3) return dateString;
+ // For other date formats, manually extract and format
+ if (dateString.includes('T')) {
+   const [datePart] = dateString.split('T');
+   return datePart;
+ }
 
- const day = parseInt(parts[1].replace(',', ''));
- const monthNames = [
- 'January',
- 'February',
- 'March',
- 'April',
- 'May',
- 'June',
- 'July',
- 'August',
- 'September',
- 'October',
- 'November',
- 'December',
- ];
- const month = monthNames.indexOf(parts[0]) + 1;
- const year = parseInt(parts[2]);
+ // Last resort - parse with Date object but avoid timezone issues
+ const [month, day, year] = new Date(dateString + 'T00:00:00').toLocaleDateString('en-US', {
+   year: 'numeric',
+   month: '2-digit',
+   day: '2-digit',
+ }).split('/');
 
- return `${year}-${month.toString().padStart(2, '0')}-${day
- .toString()
- .padStart(2, '0')}`;
+ // Convert from MM/DD/YYYY to YYYY-MM-DD
+ return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
  } catch (error) {
  console.log('Error formatting date for API:', error, dateString);
  return dateString;
@@ -355,11 +336,18 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
        
        // Wait for toast to show before navigating
        setTimeout(() => {
-         // Simply go back to the previous screen (which should be PendingOrdersScreen within the Orders tab)
-         navigation.goBack();
+         // Navigation approach 1: Navigate to the OrdersScreen first
+         navigation.navigate(NAVIGATION_CONSTANTS.BOTTOM_TAB, {
+           screen: NAVIGATION_CONSTANTS.ORDERS
+         });
          
-         // You can implement event listening in the PendingOrdersScreen component
-         // to refresh data when focusing the screen again
+         // Then after a short delay, navigate to PendingOrdersScreen (correct screen name)
+         setTimeout(() => {
+           navigation.navigate('PendingOrdersScreen', {
+             customerID: customerID,
+             shouldRefresh: true
+           });
+         }, 500);
        }, 1500);
      } else {
        // API returned an error
