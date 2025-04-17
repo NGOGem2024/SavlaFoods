@@ -390,17 +390,17 @@ const InwardOutwardReportScreen = () => {
  setUnit('');
  };
 
- // Handle download as Excel
- const handleDownload = async () => {
- try {
- if (!validateInputs()) return;
+ // Handle download as PDF
+ const handlePdfDownload = async () => {
+   try {
+     if (!validateInputs()) return;
 
- // Implement API call to generate and download Excel
- Alert.alert('Success', 'Report downloaded as Excel successfully!');
- } catch (err) {
- console.error('Error downloading excel:', err);
- Alert.alert('Error', 'Failed to download report');
- }
+     // Implement API call to generate and download PDF
+     Alert.alert('Success', 'Report downloaded as PDF successfully!');
+   } catch (err) {
+     console.error('Error downloading PDF:', err);
+     Alert.alert('Error', 'Failed to download report');
+   }
  };
 
  // Add a function to go back to the form
@@ -733,14 +733,14 @@ const InwardOutwardReportScreen = () => {
          {isInward ? 'Inward Report Results' : 'Outward Report Results'}
        </Text>
        <TouchableOpacity
-         style={[styles.excelButton, {backgroundColor: isInward ? '#F48221' : '#4682B4'}]}
-         onPress={handleDownload}>
+         style={[styles.pdfButton, {backgroundColor: isInward ? '#F48221' : '#4682B4'}]}
+         onPress={handlePdfDownload}>
          <MaterialIcons
            name="download"
            size={20}
            color="#FFFFFF"
          />
-         <Text style={styles.excelButtonText}>Excel</Text>
+         <Text style={styles.pdfButtonText}>PDF</Text>
        </TouchableOpacity>
      </View>
      
@@ -768,79 +768,82 @@ const InwardOutwardReportScreen = () => {
            <MaterialIcons name="swipe" size={16} color="#64748B" />
            <Text style={styles.scrollHintText}>Swipe horizontally to see all columns</Text>
          </View>
-         <ScrollView horizontal={true} showsHorizontalScrollIndicator={true} style={styles.horizontalScrollContainer}>
-           <View style={styles.tableWrapper}>
-             <View style={[styles.tableHeader, {backgroundColor: '#f8f8f8'}]}>
-               <Text style={[styles.tableHeaderCell, { width: 40, color: isInward ? '#F48221' : '#4682B4' }]}>#</Text>
-               <Text style={[styles.tableHeaderCell, { width: 70, color: isInward ? '#F48221' : '#4682B4' }]}>Unit</Text>
-               <Text style={[styles.tableHeaderCell, { width: 100, color: isInward ? '#F48221' : '#4682B4' }]}>Inward Date</Text>
-               <Text style={[styles.tableHeaderCell, { width: 100, color: isInward ? '#F48221' : '#4682B4' }]}>Inward No</Text>
-               <Text style={[styles.tableHeaderCell, { width: 150, color: isInward ? '#F48221' : '#4682B4' }]}>Customer</Text>
-               <Text style={[styles.tableHeaderCell, { width: 120, color: isInward ? '#F48221' : '#4682B4' }]}>Vehicle</Text>
-               <Text style={[styles.tableHeaderCell, { width: 80, color: isInward ? '#F48221' : '#4682B4' }]}>Lot No</Text>
-               <Text style={[styles.tableHeaderCell, { width: 150, color: isInward ? '#F48221' : '#4682B4' }]}>Item Name</Text>
-               <Text style={[styles.tableHeaderCell, { width: 100, color: isInward ? '#F48221' : '#4682B4' }]}>Remark</Text>
-               <Text style={[styles.tableHeaderCell, { width: 100, color: isInward ? '#F48221' : '#4682B4' }]}>Item Mark</Text>
-               <Text style={[styles.tableHeaderCell, { width: 80, color: isInward ? '#F48221' : '#4682B4' }]}>Vakkal</Text>
-               <Text style={[styles.tableHeaderCell, { width: 60, color: isInward ? '#F48221' : '#4682B4' }]}>Qty</Text>
-             </View>
-             <FlatList
-               data={reportData}
-               keyExtractor={(item, index) => `report-row-${index}`}
-               scrollEnabled={false} // Disable scrolling on FlatList since parent ScrollView handles it
-               renderItem={({ item, index }) => (
-                 <View style={[
-                   styles.tableRow, 
-                   index % 2 === 0 ? 
-                     {backgroundColor: isInward ? '#FFF9F2' : '#F0F7FF'} : 
-                     {backgroundColor: '#FFFFFF'}
-                 ]}>
-                   <Text style={[styles.tableCell, { width: 40, fontWeight: 'bold' }]}>
-                     {index + 1}
-                   </Text>
-                   <Text style={[styles.tableCell, { width: 70 }]}>
-                     {item.UNIT_NAME || '-'}
-                   </Text>
-                   <Text style={[styles.tableCell, { width: 100 }]}>
-                     {item.GRN_DATE ? new Date(item.GRN_DATE).toLocaleDateString() : '-'}
-                   </Text>
-                   <Text style={[styles.tableCell, { width: 100 }]}>
-                     {item.GRN_NO || '-'}
-                   </Text>
-                   <Text style={[styles.tableCell, { width: 150 }]}>
-                     {item.CUSTOMER_NAME || '-'}
-                   </Text>
-                   <Text style={[styles.tableCell, { width: 120 }]}>
-                     {item.VEHICLE_NO || '-'}
-                   </Text>
-                   <Text style={[styles.tableCell, { width: 80 }]}>
-                     {item.LOT_NO || '-'}
-                   </Text>
-                   <Text style={[styles.tableCell, { width: 150 }]}>
-                     {item.ITEM_NAME || '-'}
-                   </Text>
-                   <Text style={[styles.tableCell, { width: 100 }]}>
-                     {item.REMARKS || '-'}
-                   </Text>
-                   <Text style={[styles.tableCell, { width: 100 }]}>
-                     {item.ITEM_MARKS || '-'}
-                   </Text>
-                   <Text style={[styles.tableCell, { width: 80 }]}>
-                     {item.VAKAL_NO || '-'}
-                   </Text>
-                   <Text style={[styles.tableCell, { width: 60, fontWeight: 'bold' }]}>
-                     {item.QUANTITY || '-'}
-                   </Text>
+         <View style={styles.tableContainer}>
+           <ScrollView 
+             horizontal={true} 
+             showsHorizontalScrollIndicator={true}
+           >
+             <ScrollView 
+               nestedScrollEnabled={true}
+               showsVerticalScrollIndicator={true}
+             >
+               <View style={styles.tableWrapper}>
+                 <View style={[styles.tableHeader, {backgroundColor: '#f8f8f8'}]}>
+                   <Text style={[styles.tableHeaderCell, { width: 40, color: isInward ? '#F48221' : '#4682B4' }]}>#</Text>
+                   <Text style={[styles.tableHeaderCell, { width: 70, color: isInward ? '#F48221' : '#4682B4' }]}>Unit</Text>
+                   <Text style={[styles.tableHeaderCell, { width: 100, color: isInward ? '#F48221' : '#4682B4' }]}>Inward Date</Text>
+                   <Text style={[styles.tableHeaderCell, { width: 100, color: isInward ? '#F48221' : '#4682B4' }]}>Inward No</Text>
+                   <Text style={[styles.tableHeaderCell, { width: 150, color: isInward ? '#F48221' : '#4682B4' }]}>Customer</Text>
+                   <Text style={[styles.tableHeaderCell, { width: 120, color: isInward ? '#F48221' : '#4682B4' }]}>Vehicle</Text>
+                   <Text style={[styles.tableHeaderCell, { width: 80, color: isInward ? '#F48221' : '#4682B4' }]}>Lot No</Text>
+                   <Text style={[styles.tableHeaderCell, { width: 150, color: isInward ? '#F48221' : '#4682B4' }]}>Item Name</Text>
+                   <Text style={[styles.tableHeaderCell, { width: 100, color: isInward ? '#F48221' : '#4682B4', textAlign: 'center' }]}>Remark</Text>
+                   <Text style={[styles.tableHeaderCell, { width: 100, color: isInward ? '#F48221' : '#4682B4' }]}>Item Mark</Text>
+                   <Text style={[styles.tableHeaderCell, { width: 80, color: isInward ? '#F48221' : '#4682B4' }]}>Vakkal</Text>
+                   <Text style={[styles.tableHeaderCell, { width: 60, color: isInward ? '#F48221' : '#4682B4' }]}>Qty</Text>
                  </View>
-               )}
-               ListEmptyComponent={
-                 <View style={styles.emptyTableContainer}>
-                   <Text style={styles.emptyTableText}>No data available</Text>
-                 </View>
-               }
-             />
-           </View>
-         </ScrollView>
+                 {reportData.map((item, index) => (
+                   <View 
+                     key={`row-${index}`}
+                     style={[
+                       styles.tableRow, 
+                       index % 2 === 0 ? 
+                         {backgroundColor: isInward ? '#FFF9F2' : '#F0F7FF'} : 
+                         {backgroundColor: '#FFFFFF'}
+                     ]}
+                   >
+                     <Text style={[styles.tableCell, { width: 40, fontWeight: 'bold' }]}>
+                       {index + 1}
+                     </Text>
+                     <Text style={[styles.tableCell, { width: 70 }]}>
+                       {item.UNIT_NAME || '-'}
+                     </Text>
+                     <Text style={[styles.tableCell, { width: 100 }]}>
+                       {item.GRN_DATE ? new Date(item.GRN_DATE).toLocaleDateString() : '-'}
+                     </Text>
+                     <Text style={[styles.tableCell, { width: 100 }]}>
+                       {item.GRN_NO || '-'}
+                     </Text>
+                     <Text style={[styles.tableCell, { width: 150 }]}>
+                       {item.CUSTOMER_NAME || '-'}
+                     </Text>
+                     <Text style={[styles.tableCell, { width: 120 }]}>
+                       {item.VEHICLE_NO || '-'}
+                     </Text>
+                     <Text style={[styles.tableCell, { width: 80 }]}>
+                       {item.LOT_NO || '-'}
+                     </Text>
+                     <Text style={[styles.tableCell, { width: 150 }]}>
+                       {item.ITEM_NAME || '-'}
+                     </Text>
+                     <Text style={[styles.tableCell, { width: 100, textAlign: 'center' }]}>
+                       {item.REMARKS || '-'}
+                     </Text>
+                     <Text style={[styles.tableCell, { width: 100 }]}>
+                       {item.ITEM_MARKS || '-'}
+                     </Text>
+                     <Text style={[styles.tableCell, { width: 80 }]}>
+                       {item.VAKAL_NO || '-'}
+                     </Text>
+                     <Text style={[styles.tableCell, { width: 60, fontWeight: 'bold' }]}>
+                       {item.QUANTITY || '-'}
+                     </Text>
+                   </View>
+                 ))}
+               </View>
+             </ScrollView>
+           </ScrollView>
+         </View>
        </>
      ) : !isReportLoading && (
        <View style={styles.emptyStateContainer}>
@@ -1257,9 +1260,13 @@ const styles = StyleSheet.create({
  reportContainer: {
    flex: 1,
    backgroundColor: '#FFFFFF',
+   marginTop: -24, // Increased negative margin to further reduce space above header
  },
  reportHeader: {
-   padding: 16,
+   padding: 0,
+   paddingTop: 10,
+   paddingBottom: 12,
+   paddingHorizontal: 16,
    flexDirection: 'row',
    justifyContent: 'space-between',
    alignItems: 'center',
@@ -1307,14 +1314,14 @@ const styles = StyleSheet.create({
    fontSize: 14,
    fontWeight: '600',
  },
- excelButton: {
+ pdfButton: {
    flexDirection: 'row',
    alignItems: 'center',
-   paddingVertical: 8,
-   paddingHorizontal: 12,
+   paddingVertical: 7,
+   paddingHorizontal: 15,
    borderRadius: 4,
  },
- excelButtonText: {
+ pdfButtonText: {
    color: '#FFFFFF',
    fontWeight: 'bold',
    fontSize: 14,
@@ -1360,6 +1367,13 @@ const styles = StyleSheet.create({
    color: '#64748B',
    marginLeft: 6,
  },
+ tableContainer: {
+   flex: 1,
+   borderWidth: 1,
+   borderColor: '#E2E8F0',
+   margin: 0,
+   borderRadius: 0,
+ },
  horizontalScrollContainer: {
    flex: 1,
  },
@@ -1369,7 +1383,7 @@ const styles = StyleSheet.create({
  tableHeader: {
    flexDirection: 'row',
    paddingVertical: 10,
-   paddingHorizontal: 8,
+   paddingHorizontal: 0,
    borderBottomWidth: 1,
    borderBottomColor: '#CBD5E1',
  },
