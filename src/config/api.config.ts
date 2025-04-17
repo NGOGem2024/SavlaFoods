@@ -26,6 +26,7 @@ export const API_ENDPOINTS = {
   GET_ACCOUNTS_BY_GROUP: `${API_BASE_URL}/sf/getAccountsByGroup`,
   SWITCH_ACCOUNT: `${API_BASE_URL}/sf/switchAccount`,
   UPDATE_PENDING_ORDER: `${API_BASE_URL}/order/updatePendingOrder`,
+  GET_INWARD_REPORT: `${API_BASE_URL}/reports/getInwardData`,
 };
 
 export const BASE_IMAGE_PATH = `${API_BASE_URL}/assets/images`;
