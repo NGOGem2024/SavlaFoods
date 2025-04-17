@@ -2,7 +2,6 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
-import axios from 'axios';
 import React, {useEffect, useState} from 'react';
 import {
   ActivityIndicator,
@@ -19,6 +18,7 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import {RootStackParamList} from '../type/type';
 import {useDisplayName} from '../contexts/DisplayNameContext';
 import {API_ENDPOINTS} from '../config/api.config';
+import apiClient from '../utils/apiClient';
 
 interface ProfileMenuProps {
   displayName: string | null;
@@ -30,6 +30,42 @@ interface AccountItem {
   value: string;
   customerId: number;
   groupId: number;
+  token: string;
+  key: string;
+}
+
+// Define response type interfaces
+interface CustomerAccount {
+  CustomerID: number;
+  PhoneNo: string | null;
+  DisplayName: string;
+  CustomerGroupID: number;
+  CustomerName: string;
+  token: string;
+  isCurrentAccount: boolean;
+}
+
+interface GetAccountsResponse {
+  message: string;
+  input: {
+    FK_CUST_GROUP_ID: number;
+  };
+  output: {
+    accounts: CustomerAccount[];
+    currentAccount: CustomerAccount;
+  };
+}
+
+interface SwitchAccountResponse {
+  message: string;
+  input: {
+    FK_CUSTOMER_ID: number;
+    FK_CUST_GROUP_ID: number;
+  };
+  output: {
+    currentAccount: CustomerAccount;
+    otherAccountsInGroup: CustomerAccount[];
+  };
 }
 
 const ProfileMenu: React.FC<ProfileMenuProps> = ({
@@ -68,6 +104,57 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
     }
   };
 
+  // Add a helper function to make token comparison clearer
+  const formatTokenForLogging = (token: string | null) => {
+    if (!token) return 'null';
+    
+    // Get first 10 chars and last 10 chars to make differences more visible
+    const firstPart = token.substring(0, 10);
+    const lastPart = token.substring(token.length - 10);
+    return `${firstPart}...${lastPart}`;
+  };
+
+  // Add function to decode JWT without verification
+  const decodeJwt = (token: string): any => {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      console.error('Error decoding JWT:', e);
+      return null;
+    }
+  };
+
+  // Helper function to decode JWT and check if it matches the expected customer ID
+  const verifyTokenMatchesCustomer = (token: string, customerId: number, displayName: string) => {
+    const decoded = decodeJwt(token);
+    if (!decoded) {
+      console.warn(`❌ Could not decode token for ${displayName}`);
+      return false;
+    }
+    
+    console.log(`Token payload for ${displayName}:`, decoded);
+    
+    if (decoded.customerId !== customerId) {
+      console.warn(`❌ Token customerId (${decoded.customerId}) doesn't match account ID (${customerId})`);
+      return false;
+    }
+    
+    if (decoded.displayName !== displayName) {
+      console.warn(`❌ Token displayName (${decoded.displayName}) doesn't match account name (${displayName})`);
+      return false;
+    }
+    
+    return true;
+  };
+
   const fetchCustomerGroups = async () => {
     try {
       setLoading(true);
@@ -76,10 +163,12 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
 
       const groupId = await AsyncStorage.getItem('FK_CUST_GROUP_ID');
       const storedCustomerId = await AsyncStorage.getItem('customerID');
+      const currentToken = await AsyncStorage.getItem('userToken');
 
       setCustomerId(storedCustomerId);
       console.log('Stored FK_CUST_GROUP_ID:', groupId);
       console.log('API Endpoint:', API_ENDPOINTS.GET_ACCOUNTS_BY_GROUP);
+      console.log('Current User Token:', formatTokenForLogging(currentToken));
 
       if (!groupId) {
         throw new Error('No customer group ID found');
@@ -87,42 +176,89 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
 
       setDebugInfo(`Fetching accounts for group ID: ${groupId}`);
       const payload = {FK_CUST_GROUP_ID: parseInt(groupId)};
-
-      // Updated to use the correct API endpoint and handle the response format
-      const response = await axios.post(
+      
+      // Use apiClient with proper type
+      const response = await apiClient.post<GetAccountsResponse>(
         API_ENDPOINTS.GET_ACCOUNTS_BY_GROUP,
-        payload,
+        payload
       );
 
       if (
-        !response.data.output ||
-        !response.data.output.accounts ||
-        response.data.output.accounts.length === 0
+        !response.output ||
+        !response.output.accounts ||
+        response.output.accounts.length === 0
       ) {
         throw new Error('No accounts found for this group');
       }
+      
+      // Verify that each account has a unique token
+      const tokenMap = new Map<string, string>();
+      response.output.accounts.forEach(account => {
+        if (tokenMap.has(account.token)) {
+          console.warn(`⚠️ WARNING: Account ${account.DisplayName} has the same token as ${tokenMap.get(account.token)}`);
+        } else {
+          tokenMap.set(account.token, account.DisplayName);
+        }
+        
+        // Verify token matches the customer it's for
+        verifyTokenMatchesCustomer(
+          account.token, 
+          account.CustomerID, 
+          account.DisplayName
+        );
+      });
+      
+      if (tokenMap.size !== response.output.accounts.length) {
+        console.warn(`⚠️ CRITICAL: Found only ${tokenMap.size} unique tokens for ${response.output.accounts.length} accounts!`);
+      } else {
+        console.log(`✅ All ${response.output.accounts.length} accounts have unique tokens`);
+      }
+
+      // Log each account and its token for debugging with clearer token format
+      console.log('Available accounts with tokens:');
+      response.output.accounts.forEach(account => {
+        console.log(`Account: ${account.DisplayName} (ID: ${account.CustomerID})`);
+        console.log(`Token: ${formatTokenForLogging(account.token)}`);
+        console.log(`Is Current: ${account.isCurrentAccount}`);
+        console.log('-------------------');
+      });
+
+      // Log current account
+      console.log('Current account from API:');
+      if (response.output.currentAccount) {
+        console.log(`Name: ${response.output.currentAccount.DisplayName}`);
+        console.log(`ID: ${response.output.currentAccount.CustomerID}`);
+        console.log(`Token: ${formatTokenForLogging(response.output.currentAccount.token)}`);
+      } else {
+        console.log('No current account returned from API');
+      }
 
       // Map the accounts to dropdown items using the correct response structure
-      const accountItems: AccountItem[] = response.data.output.accounts.map(
-        (account: {
-          CustomerID: number;
-          PhoneNo: string | null;
-          DisplayName: string;
-          CustomerGroupID: number;
-          CustomerName: string;
-        }) => ({
+      const accountItems: AccountItem[] = response.output.accounts.map(
+        (account: CustomerAccount) => ({
           label: account.DisplayName,
-          value: account.CustomerID.toString() + '_' + Math.random().toString(36).substring(2, 7), // Make value unique
+          value: `${account.CustomerID}_${account.DisplayName.replace(/\s+/g, '_')}`,
           customerId: account.CustomerID,
           groupId: account.CustomerGroupID,
+          token: account.token,
+          key: `${account.CustomerID}_${account.DisplayName.replace(/\s+/g, '_')}`,
         }),
       );
 
       setItems(accountItems);
 
-      // Set initial value to current customer ID
-      if (storedCustomerId) {
-        setValue(storedCustomerId);
+      // Find current account from response and set as initial value
+      const currentAccount = response.output.currentAccount;
+      if (currentAccount) {
+        setValue(`${currentAccount.CustomerID}_${currentAccount.DisplayName.replace(/\s+/g, '_')}`);
+      } else if (storedCustomerId) {
+        // Try to find matching item
+        const matchingItem = accountItems.find(item => item.customerId.toString() === storedCustomerId);
+        if (matchingItem) {
+          setValue(matchingItem.value);
+        } else {
+          setValue(null);
+        }
       }
     } catch (error: any) {
       console.error('Error fetching customer groups:', error);
@@ -169,32 +305,128 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
     try {
       setLoading(true);
 
-      // Extract the customer ID from the value (removing the unique suffix)
-      const selectedCustomerId = value.split('_')[0];
-      const selectedAccount = items.find(item => item.customerId.toString() === selectedCustomerId);
+      // Find the selected account from items array
+      const selectedAccount = items.find(item => item.value === value);
       
       if (!selectedAccount) {
         throw new Error('Invalid account selected');
       }
 
+      console.log('Switching to account:', selectedAccount.label);
+      console.log('Account ID:', selectedAccount.customerId);
+      console.log('Account token:', formatTokenForLogging(selectedAccount.token));
+      console.log('Account value:', selectedAccount.value);
+
+      // Get the group ID
       const groupId = await AsyncStorage.getItem('FK_CUST_GROUP_ID');
       if (!groupId) {
         throw new Error('No customer group ID found');
       }
 
-      // Call the switchAccount API
+      // Use the token directly from the selected account item
+      if (selectedAccount.token) {
+        console.log('Using token directly from account data');
+        
+        // Get the current token for comparison
+        const oldToken = await AsyncStorage.getItem('userToken');
+        console.log('Old token:', formatTokenForLogging(oldToken));
+        console.log('New token:', formatTokenForLogging(selectedAccount.token));
+        
+        // Decode and verify tokens
+        if (oldToken) {
+          const oldDecoded = decodeJwt(oldToken);
+          console.log('Old token payload:', oldDecoded);
+        }
+        
+        const newDecoded = decodeJwt(selectedAccount.token);
+        console.log('New token payload:', newDecoded);
+        
+        // Verify the new token contains the correct customer info
+        const isValid = verifyTokenMatchesCustomer(
+          selectedAccount.token, 
+          selectedAccount.customerId, 
+          selectedAccount.label
+        );
+        
+        if (!isValid) {
+          console.warn('⚠️ WARNING: The token does not match the selected account!');
+        }
+        
+        // Compare tokens to make it very clear if they're different
+        if (oldToken === selectedAccount.token) {
+          console.warn('WARNING: New token is identical to old token!');
+        } else {
+          console.log('TOKENS ARE DIFFERENT - this is expected');
+        }
+        
+        // Store the new account information including the token
+        await Promise.all([
+          AsyncStorage.setItem('customerID', selectedAccount.customerId.toString()),
+          AsyncStorage.setItem('Disp_name', selectedAccount.label),
+          AsyncStorage.setItem('FK_CUST_GROUP_ID', selectedAccount.groupId.toString()),
+          AsyncStorage.setItem('userToken', selectedAccount.token),
+        ]);
+
+        // Verify token was stored
+        const verifyToken = await AsyncStorage.getItem('userToken');
+        console.log('Verified stored token:', formatTokenForLogging(verifyToken));
+        
+        // Additional verification that tokens are different
+        if (oldToken === verifyToken) {
+          console.warn('WARNING: Token did not change after storage!');
+        } else {
+          console.log('✅ Token successfully changed');
+        }
+
+        // Call the onAccountSwitch callback if provided
+        if (onAccountSwitch) {
+          onAccountSwitch();
+        }
+
+        setDisplayName(selectedAccount.label);
+        setShowSwitchModal(false);
+
+        // Show toast message before navigation
+        showToast(`Switched to ${selectedAccount.label}`);
+
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'HomeScreen',
+              params: {
+                switchedAccount: true,
+                newCustomerId: selectedAccount.customerId.toString(),
+                timestamp: Date.now(), // Force refresh
+              },
+            },
+          ],
+        });
+        
+        return;
+      }
+
+      // Fallback: Call the switchAccount API if we don't have the token
+      console.log('Falling back to switchAccount API call');
       const payload = {
         FK_CUSTOMER_ID: selectedAccount.customerId,
         FK_CUST_GROUP_ID: parseInt(groupId),
+        DISP_NAME: selectedAccount.label, // Add display name to help identify which account to switch to
       };
 
-      const response = await axios.post(API_ENDPOINTS.SWITCH_ACCOUNT, payload);
+      // Use apiClient with proper type
+      const response = await apiClient.post<SwitchAccountResponse>(
+        API_ENDPOINTS.SWITCH_ACCOUNT,
+        payload
+      );
 
-      if (!response.data.output || !response.data.output.currentAccount) {
+      if (!response.output || !response.output.currentAccount) {
         throw new Error('Failed to switch account');
       }
 
-      const currentAccount = response.data.output.currentAccount;
+      const currentAccount = response.output.currentAccount;
+      console.log('API response current account:', currentAccount.DisplayName);
+      console.log('API response token:', formatTokenForLogging(currentAccount.token));
 
       // Store the new account information
       await Promise.all([
@@ -209,6 +441,10 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
         ),
         AsyncStorage.setItem('userToken', currentAccount.token), // Store the new token
       ]);
+
+      // Verify token was stored
+      const verifyToken = await AsyncStorage.getItem('userToken');
+      console.log('Verified stored token:', formatTokenForLogging(verifyToken));
 
       // Call the onAccountSwitch callback if provided
       if (onAccountSwitch) {
@@ -334,6 +570,15 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 containerStyle={{marginBottom: 20}}
                 selectedItemContainerStyle={styles.selectedItemContainer}
                 selectedItemLabelStyle={styles.selectedItemLabel}
+                listMode="SCROLLVIEW"
+                scrollViewProps={{
+                  nestedScrollEnabled: true,
+                }}
+                // Use key-based unique identifiers
+                schema={{
+                  label: 'label',
+                  value: 'value'
+                }}
                 // Update zIndex to ensure dropdown appears above other elements
                 zIndex={1000}
               />
