@@ -12,8 +12,14 @@ import {
   View,
   ActivityIndicator,
   Animated,
+  BackHandler,
 } from 'react-native';
-import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  RouteProp,
+  useFocusEffect,
+} from '@react-navigation/native';
 import {NavigationProp} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -32,6 +38,7 @@ import {useCart} from '../contexts/CartContext';
 import {useDisplayName} from '../contexts/DisplayNameContext';
 import {LayoutWrapper} from '../components/AppLayout';
 import QuantitySelectorModal from '../components/QuantitySelectorModal';
+import {useNetwork} from '../contexts/NetworkContext';
 
 interface HomeScreenParams {
   initialLogin?: boolean;
@@ -73,7 +80,7 @@ type SearchResultItem = {
   SUB_CATEGORY_NAME: string;
   CATEGORY_IMAGE_NAME: string;
   SUBCATEGORY_IMAGE_NAME: string;
-  // Additional properties for UI
+
   imageUrl?: any;
 };
 
@@ -102,19 +109,68 @@ const HomeScreen: React.FC = () => {
   }>({});
   const [isModalVisible, setModalVisible] = useState(false);
   const [selectedStockItem, setSelectedStockItem] = useState<{
-    item_id: number | string;
+    item_id: number;
     item_name: string;
     lot_no: string;
     available_qty: number;
-    box_quantity?: number;
+    box_quantity: number;
     unit_name: string;
     vakal_no: string;
-    customerID?: number | string;
+    customerID?: string | number;
     item_marks: string;
   } | null>(null);
+  const {isConnected, addRetryCallback, removeRetryCallback} = useNetwork();
+  const [wasDisconnected, setWasDisconnected] = useState(false);
 
   const {cartItems, clearCart} = useCart() || {};
   const cartItemCount = cartItems?.length || 0;
+
+  // Handle back button press to prevent navigation to login screen
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        // Check if there's a search query active
+        if (searchQuery.trim()) {
+          // Clear the search query to return to home screen view
+          setSearchQuery('');
+          setSearchResults([]);
+          return true; // Prevent default behavior
+        }
+
+        // If no search is active, show exit app dialog
+        // Check if user is authenticated
+        const isAuthenticated = CustomerID !== null;
+
+        if (isAuthenticated) {
+          // If authenticated, prevent going back to login screen
+          Alert.alert(
+            'Exit App',
+            'Do you want to exit the app?',
+            [
+              {text: 'Cancel', style: 'cancel', onPress: () => {}},
+              {
+                text: 'Exit',
+                style: 'destructive',
+                onPress: () => BackHandler.exitApp(),
+              },
+            ],
+            {cancelable: true},
+          );
+          return true; // Prevent default behavior
+        }
+
+        // Default behavior (allow back navigation)
+        return false;
+      };
+
+      // Add back button handler
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      // Cleanup function
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [CustomerID, searchQuery]),
+  );
 
   const handleAccountSwitch = useCallback(() => {
     setCategories([]);
@@ -297,13 +353,13 @@ const HomeScreen: React.FC = () => {
     }).start();
 
     setSelectedStockItem({
-      item_id: item.ITEM_ID,
+      item_id: Number(item.ITEM_ID),
       item_name: item.ITEM_NAME,
       lot_no: item.LOT_NO,
       available_qty: item.AVAILABLE_QTY || 0,
       box_quantity: item.BOX_QUANTITY || 0,
       unit_name: item.UNIT_NAME || '',
-      customerID: CustomerID,
+      customerID: CustomerID || undefined,
       vakal_no: item.VAKAL_NO || '',
       item_marks: item.ITEM_MARKS || '',
     });
@@ -368,14 +424,18 @@ const HomeScreen: React.FC = () => {
 
               <TouchableOpacity
                 style={styles.lotNoValueContainer}
-                onPress={() =>
-                  navigation.navigate('LotReportScreen', {
-                    // Add any necessary params for LotReportScreen
-                    lotNo: item.LOT_NO,
-                    itemId: item.ITEM_ID,
-                    customerID: CustomerID,
-                  })
-                }>
+                // onPress={() => {
+                //   if (CustomerID) {
+                //     navigation.navigate('LotReportScreen' as any, {
+                //       lotNo: item.LOT_NO,
+                //       itemId: item.ITEM_ID,
+                //       customerID: CustomerID,
+                //     });
+                //   } else {
+                //     Alert.alert('Error', 'Customer ID not available');
+                //   }
+                // }}
+              >
                 <Text style={styles.lotNoValue}>{item.LOT_NO || 'N/A'}</Text>
               </TouchableOpacity>
             </View>
@@ -399,7 +459,12 @@ const HomeScreen: React.FC = () => {
                 style={styles.addToCartButton}
                 onPress={() => handleAddToCart(item)}>
                 <View style={styles.cartIconWrapper}>
-                  <Text style={styles.cartIcon}>🛒</Text>
+                  {/* <Text style={styles.cartIcon}>🛒</Text> */}
+                  <Image
+                    source={require('../assets/images/cart.png')}
+                    style={{width: 32, height: 32, alignSelf: 'center'}}
+                    resizeMode="contain"
+                  />
                 </View>
               </TouchableOpacity>
             </Animated.View>
@@ -457,12 +522,9 @@ const HomeScreen: React.FC = () => {
       setSearchQuery(text);
 
       if (text.trim() === '') {
-        // When search is cleared, show categories
+        // When search is cleared, show all categories
         setSearchResults([]);
-        const filtered = categories.filter(category =>
-          category.CATDESC.toLowerCase().includes(text.toLowerCase()),
-        );
-        setFilteredCategories(filtered);
+        setFilteredCategories(categories); // Reset to show all categories
       } else {
         // When searching, call the API
         searchItems(text);
@@ -528,29 +590,78 @@ const HomeScreen: React.FC = () => {
     loadImageMappings();
   }, []);
 
+  // Register data refresh callback when network is restored
+  useEffect(() => {
+    // If we have a CustomerID, register a callback to refetch data
+    if (CustomerID) {
+      const refreshData = () => {
+        console.log('Network restored, refreshing home screen data...');
+        fetchCategories(CustomerID);
+        if (searchQuery.trim()) {
+          searchItems(searchQuery);
+        }
+      };
+
+      // Register the callback
+      addRetryCallback('homescreen-refresh', refreshData);
+
+      // Cleanup - remove the callback when component unmounts
+      return () => {
+        removeRetryCallback('homescreen-refresh');
+      };
+    }
+  }, [
+    CustomerID,
+    searchQuery,
+    addRetryCallback,
+    removeRetryCallback,
+    fetchCategories,
+    searchItems,
+  ]);
+
+  // Monitor network connectivity changes for UI feedback
+  useEffect(() => {
+    if (isConnected === false) {
+      // Network is disconnected
+      setWasDisconnected(true);
+    } else if (isConnected === true && wasDisconnected) {
+      // Network was disconnected before but now connected again
+      // UI will update automatically via the callback
+      setWasDisconnected(false);
+    }
+  }, [isConnected, wasDisconnected]);
+
   return (
-    <LayoutWrapper
-      onCartPress={handleCartPress}
-      onAccountSwitch={handleAccountSwitch}
-      showTabBar={false}
-      route={route}>
+    <LayoutWrapper showTabBar={false} route={route}>
       <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search lot numbers, item marks, vakal numbers..."
-          placeholderTextColor={'#000'}
-          value={searchQuery}
-          onChangeText={handleSearch}
-          onSubmitEditing={handleSearchSubmit}
-          returnKeyType="search"
-        />
         <TouchableOpacity
-          style={styles.searchButton}
+          activeOpacity={0.9}
+          style={styles.searchInputContainer}
           onPress={handleSearchSubmit}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search lot numbers, item marks, vakal no.."
+            placeholderTextColor={'#999'}
+            value={searchQuery}
+            onChangeText={handleSearch}
+            onSubmitEditing={handleSearchSubmit}
+            returnKeyType="search"
+            textAlignVertical="center"
+            numberOfLines={1}
+          />
           {isSearching ? (
-            <ActivityIndicator size="small" color="#F48221" />
+            <ActivityIndicator
+              size="small"
+              color="#F48221"
+              style={styles.searchIcon}
+            />
           ) : (
-            <Icon name="search" size={24} style={{color: '#000'}} />
+            <Icon
+              name="search"
+              size={24}
+              color="#555"
+              style={styles.searchIcon}
+            />
           )}
         </TouchableOpacity>
       </View>
@@ -642,25 +753,44 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   searchContainer: {
-    flexDirection: 'row',
     paddingHorizontal: 20,
     paddingVertical: 12,
     marginBottom: 0,
+    width: '100%',
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#777',
+    paddingRight: 7,
+    width: '100%',
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    paddingLeft: 15,
+    paddingRight: 45,
+    paddingVertical: 0,
+    textAlignVertical: 'center',
+    fontSize: 14,
+    width: '85%',
+  },
+  searchIcon: {
+    padding: 10,
+    marginLeft: 0,
+    width: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 5,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  searchInput: {
-    flex: 1,
-    height: 40,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
   },
   imageContainer: {
     width: '100%',
@@ -670,16 +800,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     borderRadius: 8,
     overflow: 'hidden',
-  },
-  searchButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#ddd',
   },
   cardContainer: {
     paddingHorizontal: 10,
@@ -718,7 +838,7 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
   headingText: {
-    fontSize: 21,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   moreText: {
@@ -809,7 +929,7 @@ const styles = StyleSheet.create({
   addToCartButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFDD0',
+    // backgroundColor: '#FFFDD0',
     paddingHorizontal: 8,
     paddingVertical: 8,
     borderRadius: 25,

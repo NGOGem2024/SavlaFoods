@@ -1,4 +1,4 @@
-import { ParamListBase } from '@react-navigation/native';
+import {ParamListBase} from '@react-navigation/native';
 
 // Stack Navigation Types
 export type RootStackParamList = {
@@ -9,12 +9,12 @@ export type RootStackParamList = {
     searchResults: CategoryResult[];
     customerID: string;
   };
-  SubCategory: { 
+  SubCategory: {
     searchResults: ItemAndSubCategoryResult[];
     categoryName?: string;
     customerID: string;
   };
-  ItemDetailsExpanded: { 
+  ItemDetailsExpanded: {
     lotData: LotNumberResult;
     fromSearch?: boolean;
     customerID: string;

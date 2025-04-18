@@ -522,9 +522,6 @@ const QuantitySelectorModal: React.FC<QuantitySelectorModalProps> = ({
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Quantity</Text>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Icon name="x" size={24} color="#6B7280" />
-              </TouchableOpacity>
             </View>
 
             <View style={styles.itemInfo}>
@@ -710,7 +707,7 @@ const styles = StyleSheet.create({
   cancelButton: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#E5E7EB',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',

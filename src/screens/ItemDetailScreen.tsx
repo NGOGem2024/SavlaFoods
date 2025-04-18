@@ -336,7 +336,10 @@ const ItemDetailScreen: React.FC<ItemDetailScreenProps> = ({
                   style={{color: '#666666'}}
                 />
                 <Text style={styles.statsText}>
-                  {items.length} Items Available
+                  {items.length}{' '}
+                  {items.length === 0 || items.length === 1
+                    ? 'Item Available'
+                    : 'Items Available'}
                 </Text>
               </View>
             </View>
@@ -413,7 +416,7 @@ const styles = StyleSheet.create({
   statsText: {
     marginLeft: 5,
     color: '#666',
-    fontSize: 12,
+    fontSize: 14,
   },
   imageContainer: {
     width: 100,
@@ -462,14 +465,14 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   description: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
     marginTop: 5,
   },
   viewDetailsButton: {
     position: 'absolute',
     right: 0,
-    top: 0,
+    top: 10,
   },
   emptyContainer: {
     flex: 1,

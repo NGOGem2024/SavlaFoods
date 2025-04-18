@@ -20,9 +20,12 @@ export const API_ENDPOINTS = {
   GET_ORDER_HISTORY: `${API_BASE_URL}/order/getOrderHistory`,
   GET_PENDING_ORDERS: `${API_BASE_URL}/order/getPendingOrders`,
   SEARCH_STOCK_ITEMS: `${API_BASE_URL}/sf/searchStockItems`,
-
   GET_CANCEL_ORDER: `${API_BASE_URL}/order/cancelOrder`,
   SEARCH_ITEMS: `${API_BASE_URL}/search/SearchItems`,
+  GET_ACCOUNTS_BY_GROUP: `${API_BASE_URL}/sf/getAccountsByGroup`,
+  SWITCH_ACCOUNT: `${API_BASE_URL}/sf/switchAccount`,
+  UPDATE_PENDING_ORDER: `${API_BASE_URL}/order/updatePendingOrder`,
+  GET_INWARD_REPORT: `${API_BASE_URL}/reports/getInwardData`,
 };
 
 export const BASE_IMAGE_PATH = `${API_BASE_URL}/assets/images`;

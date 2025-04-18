@@ -1,6 +1,6 @@
 // In api/orderService.js
 
-import axios from 'axios';
+import axios, {AxiosError} from 'axios';
 import {API_ENDPOINTS} from '../config/api.config';
 
 // Add this function to your existing orderService.js file
@@ -12,14 +12,15 @@ export const cancelOrderItem = async (cancelData: any) => {
     );
 
     return response.data;
-  } catch (error) {
-    console.error('Error in cancelOrderItem API call:', error);
+  } catch (error: unknown) {
+    const axiosError = error as AxiosError<{message?: string; error?: string}>;
 
-    // Return a standardized error object
+    console.error('Error in cancelOrderItem API call:', axiosError);
+
     return {
       success: false,
-      message: error.response?.data?.message || 'Failed to cancel order',
-      error: error.response?.data?.error || error.message,
+      message: axiosError.response?.data?.message || 'Failed to cancel order',
+      error: axiosError.response?.data?.error || axiosError.message,
     };
   }
 };

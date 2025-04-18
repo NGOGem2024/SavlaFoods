@@ -1,589 +1,3 @@
-// // OrderHistoryScreen.tsx
-
-// import React, {useEffect, useState} from 'react';
-// import {
-//   ActivityIndicator,
-//   Alert,
-//   FlatList,
-//   RefreshControl,
-//   StatusBar,
-//   StyleSheet,
-//   Text,
-//   TouchableOpacity,
-//   View,
-//   SafeAreaView,
-//   Animated,
-// } from 'react-native';
-// import {RouteProp} from '@react-navigation/native';
-// import {StackNavigationProp} from '@react-navigation/stack';
-// import {MainStackParamList} from '../type/type';
-// import axios from 'axios';
-// import {API_ENDPOINTS} from '../config/api.config';
-
-// interface OrderHeader {
-//   ID: number;
-//   FK_CUSTOMER_ID: number;
-//   FK_USER_SUPERVISOR_ID: string;
-//   STATUS: string;
-//   CREATEDBY: string;
-//   CREATEDON: string;
-//   UPDATEDBY: string;
-//   UPDATEDON: string;
-//   ORDER_BY: string;
-//   ORDER_NO: string;
-//   ORDER_DATE: string;
-//   DELIVERY_DATE: string;
-//   TRANSPORTER_NAME: string;
-//   deliveryAdress: string;
-//   REMARK: string;
-//   ORDER_MODE: string;
-// }
-
-// interface OrderDetail {
-//   ORDERED_QUANTITY: number;
-//   ITEM_NAME: string;
-//   ID: number;
-//   FK_ORDER_ID: number;
-//   FK_ITEM_ID: number;
-//   LOT_NO: number | string;
-//   ITEM_MARKS: string;
-//   VAKAL_NO: string;
-//   REQUESTED_QTY: number;
-//   AVAILABLE_QTY: number;
-//   STATUS: string;
-//   // MARK: string;
-//   REMARK: string;
-//   UNIT_NAME?: string;
-//   NET_QUANTITY?: number;
-// }
-
-// interface OrderResponse {
-//   success: boolean;
-//   header: OrderHeader;
-//   details: OrderDetail[];
-// }
-
-// type OrderHistoryScreenRouteProp = RouteProp<
-//   MainStackParamList,
-//   'OrderHistoryScreen'
-// >;
-// type OrderHistoryScreenNavigationProp = StackNavigationProp<
-//   MainStackParamList,
-//   'OrderHistoryScreen'
-// >;
-
-// interface OrderHistoryScreenProps {
-//   route: OrderHistoryScreenRouteProp;
-//   navigation: OrderHistoryScreenNavigationProp;
-// }
-
-// const DetailRow: React.FC<{label: string; value: string}> = ({
-//   label,
-//   value,
-// }) => (
-//   <View style={styles.detailRow}>
-//     <Text style={styles.label}>{label}:</Text>
-//     <Text style={styles.value}>{value || 'N/A'}</Text>
-//   </View>
-// );
-
-// const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
-//   route,
-//   navigation,
-// }) => {
-//   const {
-//     orderId,
-//     orderNo,
-//     transporterName,
-//     deliveryDate,
-//     deliveryAddress,
-//     orderDate,
-//     items,
-//   } = route.params;
-//   const [orderData, setOrderData] = useState<OrderResponse | null>(null);
-//   const [isLoading, setIsLoading] = useState(true);
-//   const [refreshing, setRefreshing] = useState(false);
-//   const [expandedId, setExpandedId] = useState<number | null>(null);
-//   const [error, setError] = useState<string | null>(null);
-//   const [rotationValues] = useState<{[key: number]: Animated.Value}>({});
-
-//   const fetchOrderDetails = async () => {
-//     try {
-//       setIsLoading(true);
-//       setError(null);
-
-//       // Create fallback data using route params
-//       const fallbackData: OrderResponse = {
-//         success: true,
-//         header: {
-//           ID: orderId,
-//           ORDER_NO: orderNo,
-//           DELIVERY_DATE: deliveryDate,
-//           ORDER_DATE: orderDate || new Date().toISOString(), // Add fallback value
-//           TRANSPORTER_NAME: transporterName,
-//           deliveryAdress: deliveryAddress,
-//           STATUS: 'NEW',
-//           FK_CUSTOMER_ID: 0,
-//           FK_USER_SUPERVISOR_ID: '',
-//           CREATEDBY: '',
-//           CREATEDON: '',
-//           UPDATEDBY: '',
-//           UPDATEDON: '',
-//           ORDER_BY: '',
-//           ORDER_MODE: '',
-//           REMARK: '',
-//         },
-//         details: items.map((item: any, index: number) => ({
-//           ID: item.ID || `${orderId}-${index}`,
-//           FK_ORDER_ID: orderId,
-//           FK_ITEM_ID: item.ITEM_ID,
-//           ITEM_NAME: item.ITEM_NAME,
-//           LOT_NO: item.LOT_NO,
-//           ITEM_MARKS: item.ITEM_MARKS,
-//           VAKAL_NO: item.VAKAL_NO,
-//           REQUESTED_QTY: item.ORDERED_QUANTITY,
-//           AVAILABLE_QTY: item.AVAILABLE_QTY,
-//           STATUS: 'NEW',
-//           MARK: item.ITEM_MARKS,
-//           REMARK: item.REMARK || '',
-//           ORDERED_QUANTITY: item.ORDERED_QUANTITY,
-//           UNIT_NAME: item.UNIT_NAME,
-//           NET_QUANTITY: item.NET_QUANTITY,
-//         })),
-//       };
-
-//       setOrderData(fallbackData);
-//     } catch (error: any) {
-//       console.error('Error handling order details:', error);
-//       setError('Failed to load order details');
-//     } finally {
-//       setIsLoading(false);
-//       setRefreshing(false);
-//     }
-//   };
-
-//   useEffect(() => {
-//     if (!orderId || !items) {
-//       setError('Order details are missing');
-//       return;
-//     }
-//     fetchOrderDetails();
-//   }, [orderId, items]);
-
-//   const formatDate = (dateString: string) => {
-//     try {
-//       const date = new Date(dateString);
-//       return date.toLocaleDateString('en-US', {
-//         year: 'numeric',
-//         month: 'long',
-//         day: 'numeric',
-//       });
-//     } catch {
-//       return dateString;
-//     }
-//   };
-
-//   const renderOrderDetail = ({item}: {item: OrderDetail}) => {
-//     const isExpanded = expandedId === item.ID;
-
-//     // Initialize rotation value for this item if it doesn't exist
-//     if (!rotationValues[item.ID]) {
-//       rotationValues[item.ID] = new Animated.Value(isExpanded ? 1 : 0);
-//     }
-
-//     const rotate = rotationValues[item.ID].interpolate({
-//       inputRange: [0, 1],
-//       outputRange: ['0deg', '180deg'],
-//     });
-
-//     return (
-//       <TouchableOpacity
-//         onPress={() => toggleExpand(item.ID)}
-//         activeOpacity={0.9}>
-//         <Animated.View style={[styles.card, isExpanded && styles.expandedCard]}>
-//           <View style={styles.mainContent}>
-//             <View style={styles.cardHeader}>
-//               <View style={styles.nameContainer}>
-//                 <Text style={styles.itemName}>{item.ITEM_NAME}</Text>
-//                 <View style={styles.lotNoContainer}>
-//                   <Text style={styles.lotNo}>Lot No: {item.LOT_NO}</Text>
-//                 </View>
-//               </View>
-//               <View style={styles.statusContainer}>
-//                 <View
-//                   style={[
-//                     styles.statusBadge,
-//                     {
-//                       backgroundColor:
-//                         item.STATUS === 'NEW' ? '#e0f2fe' : '#f3f4f6',
-//                     },
-//                   ]}>
-//                   <Text
-//                     style={[
-//                       styles.statusText,
-//                       {color: item.STATUS === 'NEW' ? '#0284c7' : '#6B7280'},
-//                     ]}>
-//                     {item.STATUS}
-//                   </Text>
-//                 </View>
-//                 <Animated.Text
-//                   style={[styles.menuIcon, {transform: [{rotate}]}]}>
-//                   ▼
-//                 </Animated.Text>
-//               </View>
-//             </View>
-
-//             {isExpanded && (
-//               <View style={styles.expandedContent}>
-//                 <View style={styles.divider} />
-//                 <View style={styles.detailsGrid}>
-//                   <DetailRow label="Item Marks" value={item.ITEM_MARKS} />
-//                   <DetailRow label="Vakal No" value={item.VAKAL_NO} />
-//                   <View style={styles.quantityContainer}>
-//                     <View style={styles.quantityBox}>
-//                       <Text style={styles.quantityLabel}>Ordered</Text>
-//                       <Text style={styles.quantityValue}>
-//                         {item.ORDERED_QUANTITY}
-//                       </Text>
-//                     </View>
-//                     <View style={styles.quantityBox}>
-//                       <Text style={styles.quantityLabel}>Available</Text>
-//                       <Text style={styles.quantityValue}>
-//                         {item.AVAILABLE_QTY}
-//                       </Text>
-//                     </View>
-//                   </View>
-//                   <DetailRow label="Unit Name" value={item.UNIT_NAME || ''} />
-//                   <DetailRow
-//                     label="Net Quantity"
-//                     value={String(item.NET_QUANTITY || '')}
-//                   />
-//                   {/* <DetailRow label="Mark" value={item.MARK} />
-//                   {item.REMARK && (
-//                     <DetailRow label="Remark" value={item.REMARK} />
-//                   )} */}
-//                 </View>
-//               </View>
-//             )}
-//           </View>
-//         </Animated.View>
-//       </TouchableOpacity>
-//     );
-//   };
-
-//   const toggleExpand = (detailId: number) => {
-//     // Initialize rotation value for this item if it doesn't exist
-//     if (!rotationValues[detailId]) {
-//       rotationValues[detailId] = new Animated.Value(0);
-//     }
-
-//     const isExpanding = expandedId !== detailId;
-
-//     Animated.timing(rotationValues[detailId], {
-//       toValue: isExpanding ? 1 : 0,
-//       duration: 200,
-//       useNativeDriver: true,
-//     }).start();
-
-//     setExpandedId(isExpanding ? detailId : null);
-//   };
-
-//   if (isLoading) {
-//     return (
-//       <View style={styles.centered}>
-//         <ActivityIndicator size="large" color="#0284C7" />
-//       </View>
-//     );
-//   }
-
-//   if (error) {
-//     return (
-//       <View style={styles.centered}>
-//         <Text style={styles.errorText}>{error}</Text>
-//       </View>
-//     );
-//   }
-
-//   if (!orderData) {
-//     return (
-//       <View style={styles.centered}>
-//         <Text style={styles.errorText}>No order data found</Text>
-//       </View>
-//     );
-//   }
-
-//   return (
-//     <SafeAreaView style={styles.container}>
-//       <StatusBar barStyle="dark-content" backgroundColor="#f3f4f6" />
-
-//       <View style={styles.titleContainer}>
-//         <Text style={styles.screenTitle}>Order History</Text>
-//       </View>
-
-//       <View style={styles.headerCard}>
-//         <Text style={styles.orderNo}>
-//           Order No : {orderData?.header.ORDER_NO}
-//         </Text>
-//         <View style={styles.dateContainer}>
-//           <View style={styles.dateBox}>
-//             <Text style={styles.dateLabel}>Order Date</Text>
-//             <Text style={styles.dateValue}>
-//               {formatDate(orderData?.header.ORDER_DATE || '')}
-//             </Text>
-//           </View>
-//           <View style={styles.dateDivider} />
-//           <View style={styles.dateBox}>
-//             <Text style={styles.dateLabel}>Delivery Date</Text>
-//             <Text style={styles.dateValue}>
-//               {formatDate(orderData?.header.DELIVERY_DATE || '')}
-//             </Text>
-//           </View>
-//         </View>
-//         <View style={styles.transporterContainer}>
-//           <Text style={styles.transporterLabel}>Transporter</Text>
-//           <Text style={styles.transporterValue}>
-//             {orderData?.header.TRANSPORTER_NAME}
-//           </Text>
-//         </View>
-//         {/* New Delivery Address Section */}
-//         <View style={styles.deliveryContainer}>
-//           <Text style={styles.deliveryLabel}>Delivery Location</Text>
-//           <Text style={styles.deliveryValue}>{deliveryAddress || 'N/A'}</Text>
-//         </View>
-//       </View>
-
-//       <FlatList
-//         data={orderData?.details}
-//         keyExtractor={item => `detail-${item.FK_ORDER_ID}${item.ID}`}
-//         renderItem={renderOrderDetail}
-//         refreshControl={
-//           <RefreshControl
-//             refreshing={refreshing}
-//             onRefresh={() => {
-//               setRefreshing(true);
-//               fetchOrderDetails();
-//             }}
-//           />
-//         }
-//         contentContainerStyle={styles.list}
-//       />
-//     </SafeAreaView>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: '#f3f4f6',
-//   },
-//   deliveryContainer: {
-//     marginTop: 8,
-//     backgroundColor: '#F1F5F9',
-//     padding: 12,
-//     borderRadius: 8,
-//   },
-//   deliveryLabel: {
-//     fontSize: 13,
-//     color: '#6B7280',
-//     marginBottom: 2,
-//   },
-//   deliveryValue: {
-//     fontSize: 15,
-//     color: '#111827',
-//     fontWeight: '500',
-//   },
-
-//   titleContainer: {
-//     alignItems: 'center',
-//     paddingVertical: 16,
-//     backgroundColor: '#fff',
-//     borderBottomWidth: 1,
-//     borderBottomColor: '#e5e7eb',
-//   },
-//   screenTitle: {
-//     fontSize: 20,
-//     fontWeight: '600',
-//     color: '#7c3aed', // Purple color
-//   },
-//   headerCard: {
-//     backgroundColor: '#ffffff',
-//     padding: 16,
-//     margin: 16,
-//     borderRadius: 16,
-//     elevation: 2,
-//     shadowColor: '#000',
-//     shadowOffset: {width: 0, height: 2},
-//     shadowOpacity: 0.1,
-//     shadowRadius: 4,
-//   },
-//   centered: {
-//     flex: 1,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//   },
-//   orderNo: {
-//     fontSize: 18,
-//     fontWeight: '600',
-//     color: '#111827',
-//     marginBottom: 16,
-//     textAlign: 'center',
-//   },
-//   dateContainer: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     marginBottom: 16,
-//   },
-//   dateBox: {
-//     flex: 1,
-//   },
-//   dateLabel: {
-//     fontSize: 13,
-//     color: '#6B7280',
-//     marginBottom: 2,
-//   },
-//   dateValue: {
-//     fontSize: 15,
-//     color: '#111827',
-//     fontWeight: '500',
-//   },
-//   dateDivider: {
-//     width: 1,
-//     backgroundColor: '#E5E7EB',
-//     marginHorizontal: 16,
-//   },
-//   transporterContainer: {
-//     marginTop: 8,
-//   },
-//   transporterLabel: {
-//     fontSize: 13,
-//     color: '#6B7280',
-//     marginBottom: 2,
-//   },
-//   transporterValue: {
-//     fontSize: 15,
-//     color: '#111827',
-//     fontWeight: '500',
-//   },
-//   list: {
-//     padding: 16,
-//   },
-//   card: {
-//     backgroundColor: '#ffffff',
-//     borderRadius: 16,
-//     marginBottom: 8,
-//     elevation: 2,
-//     shadowColor: '#000',
-//     shadowOffset: {width: 0, height: 1},
-//     shadowOpacity: 0.1,
-//     shadowRadius: 2,
-//   },
-//   expandedCard: {
-//     borderColor: '#e0f2fe',
-//     borderWidth: 1,
-//   },
-//   mainContent: {
-//     padding: 12,
-//   },
-//   cardHeader: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//   },
-//   nameContainer: {
-//     flex: 1,
-//     gap: 4,
-//   },
-//   itemName: {
-//     fontSize: 15,
-//     fontWeight: '600',
-//     color: '#111827',
-//   },
-//   lotNoContainer: {
-//     backgroundColor: '#fff7ed',
-//     paddingHorizontal: 8,
-//     paddingVertical: 2,
-//     borderRadius: 4,
-//     alignSelf: 'flex-start',
-//   },
-//   lotNo: {
-//     fontSize: 13,
-//     color: '#ea580c', // Orange color
-//     fontWeight: '500',
-//   },
-//   statusContainer: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     gap: 8,
-//   },
-//   statusBadge: {
-//     paddingHorizontal: 8,
-//     paddingVertical: 2,
-//     borderRadius: 12,
-//   },
-//   statusText: {
-//     fontSize: 13,
-//     fontWeight: '500',
-//   },
-//   menuIcon: {
-//     fontSize: 12,
-//     color: '#6B7280',
-//   },
-//   expandedContent: {
-//     marginTop: 8,
-//   },
-//   divider: {
-//     height: 1,
-//     backgroundColor: '#E5E7EB',
-//     marginVertical: 8,
-//   },
-//   detailsGrid: {
-//     gap: 8,
-//   },
-//   detailRow: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//   },
-//   label: {
-//     fontSize: 13,
-//     color: '#6B7280',
-//   },
-//   value: {
-//     fontSize: 13,
-//     color: '#111827',
-//     fontWeight: '500',
-//   },
-//   quantityContainer: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     backgroundColor: '#f8fafc',
-//     padding: 8,
-//     borderRadius: 8,
-//     marginVertical: 4,
-//   },
-//   quantityBox: {
-//     alignItems: 'center',
-//   },
-//   quantityLabel: {
-//     fontSize: 12,
-//     color: '#6B7280',
-//     marginBottom: 2,
-//   },
-//   quantityValue: {
-//     fontSize: 14,
-//     fontWeight: '600',
-//     color: '#0284c7',
-//   },
-//   errorText: {
-//     fontSize: 16,
-//     color: '#EF4444',
-//     textAlign: 'center',
-//   },
-// });
-
-// export default OrderHistoryScreen;
-
-//Integrated History
 import React, {useEffect, useState, useCallback} from 'react';
 import {
   ActivityIndicator,
@@ -606,6 +20,7 @@ import {useCustomer} from '../contexts/DisplayNameContext';
 import {MainStackParamList} from '../../src/type/type';
 
 interface OrderHistory {
+  deliveryAddress: string;
   orderId: number;
   orderNo: string;
   orderDate: string;
@@ -613,19 +28,35 @@ interface OrderHistory {
   status: string;
   transporterName: string;
   remarks: string;
-  deliveryAddress: string;
+  createdOn: string;
   customerName: string;
+  customerMobile: number;
+  customerEmail: string | null;
   totalItems: number;
   totalQuantity: number;
-  createdon: string;
-  closedon: string;
+  items: Array<{
+    detailId: number;
+    itemId: number;
+    itemName: string;
+    lotNo: number;
+    itemMarks: string;
+    vakalNo: string;
+    batchNo: string | null;
+    requestedQty: number;
+    availableQty: number;
+    status: string;
+    supervisorName: string | null;
+    mukadamName: string | null;
+    cancelledRemark: string | null;
+    cancelledDate: string | null;
+  }>;
 }
 
 interface OrderHistoryResponse {
   success: boolean;
   message: string;
   data: {
-    orders: any[];
+    orders: OrderHistory[];
     pagination: {
       page: number;
       limit: number;
@@ -647,7 +78,7 @@ const OrderHistoryScreen = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<string | null>('CANCEL');
 
   // Get customerID from context or route params
   const {customerID: contextCustomerID} = useCustomer();
@@ -657,7 +88,7 @@ const OrderHistoryScreen = () => {
   const hasSpecificOrder = params?.orderId && params?.orderNo;
 
   const fetchOrderHistory = useCallback(
-    async (pageNum = 1, refresh = false) => {
+    async (pageNum = 1, refresh = false, status = selectedStatus) => {
       try {
         if (!customerID) {
           setError('Customer ID not found. Please login again.');
@@ -682,68 +113,47 @@ const OrderHistoryScreen = () => {
         };
 
         // Add status filter if selected
-        if (selectedStatus) apiParams.status = selectedStatus;
+        if (status) apiParams.status = status;
 
-        console.log('Fetching order history with params:', apiParams);
+        console.log(
+          'Fetching order history with params:',
+          JSON.stringify(apiParams, null, 2),
+        );
 
-        const response = await axios.get(`${API_ENDPOINTS.GET_ORDER_HISTORY}`, {
-          params: apiParams,
-        });
+        const response = await axios.get<OrderHistoryResponse>(
+          `${API_ENDPOINTS.GET_ORDER_HISTORY}`,
+          {
+            params: apiParams,
+          },
+        );
 
-        const result: OrderHistoryResponse = response.data;
-        console.log('Order history response:', result);
+        const result = response.data;
+        console.log('Order history response:', JSON.stringify(result, null, 2));
+        console.log('Orders Count:', result.data.orders.length);
+        console.log(
+          'Pagination Info:',
+          JSON.stringify(result.data.pagination, null, 2),
+        );
 
         if (result.success) {
-          // Process orders to normalize data
-          const normalizedOrders = result.data.orders.map(order => {
-            // Ensure dates are in YYYY-MM-DD format without time component
-            const normalizeDate = (dateString: string) => {
-              if (!dateString) return '';
-              // Extract just the date part if it's an ISO string
-              return dateString.split('T')[0];
-            };
-
-            // Map backend field names to frontend expected names
-            return {
-              orderId: order.ORDER_ID,
-              orderNo: order.ORDER_NO,
-              orderDate: normalizeDate(order.ORDER_DATE),
-              deliveryDate: normalizeDate(order.DELIVERY_DATE),
-              status: order.STATUS,
-              transporterName: order.TRANSPORTER_NAME || '',
-              remarks: order.REMARK || '',
-              deliveryAddress: order.CUST_DELIVERY_ADD || '',
-              customerName: order.CUSTOMER_NAME || '',
-              totalItems: order.TOTAL_ITEMS || 0,
-              totalQuantity: order.TOTAL_QUANTITY || 0,
-              createdon: normalizeDate(order.CREATEDON),
-              closedon: normalizeDate(order.CLOSEDON),
-            };
-          });
-
-          console.log('Normalized orders:', normalizedOrders);
+          const ordersData = result.data.orders;
 
           if (refresh || pageNum === 1) {
-            setOrders(normalizedOrders);
+            setOrders(ordersData);
           } else {
-            setOrders(prevOrders => [...prevOrders, ...normalizedOrders]);
+            setOrders(prevOrders => [...prevOrders, ...ordersData]);
           }
 
           setTotalPages(result.data.pagination.totalPages);
           setPage(result.data.pagination.page);
         } else {
-          setError(result.message);
+          setError(result.message || 'Failed to load order history');
+          setOrders([]);
         }
       } catch (err: any) {
         console.error('Error fetching Order History:', err);
-        setError(err.message || 'Failed to load order history');
-
-        // Using mock data for demonstration if the API fails
-        if (pageNum === 1) {
-          const mockOrders = generateMockData();
-          setOrders(mockOrders);
-          setTotalPages(3);
-        }
+        setError(err.message || 'Server error. Please try again later.');
+        setOrders([]);
       } finally {
         setIsLoading(false);
         setRefreshing(false);
@@ -761,20 +171,22 @@ const OrderHistoryScreen = () => {
         orderNo: params.orderNo,
         orderDate: params.orderDate || '',
         deliveryDate: params.deliveryDate || '',
+        deliveryAddress: params.deliveryAddress || '',
         status: params.status || 'NEW',
         transporterName: params.transporterName || '',
         remarks: params.remarks || '',
-        deliveryAddress: params.deliveryAddress || '',
+        createdOn: params.createdOn || '',
         customerName: params.customerName || '',
+        customerMobile: params.customerMobile || 0,
+        customerEmail: params.customerEmail || null,
         totalItems: params.items?.length || 0,
         totalQuantity:
           params.items?.reduce(
-            (sum: any, item: {ORDERED_QUANTITY: any}) =>
-              sum + (item.ORDERED_QUANTITY || 0),
+            (sum: any, item: {requestedQty: any}) =>
+              sum + (item.requestedQty || 0),
             0,
           ) || 0,
-        createdon: params.orderDate || '',
-        closedon: params.closedon || '',
+        items: params.items || [],
       };
       setOrders([paramOrder]);
       setIsLoading(false);
@@ -799,10 +211,6 @@ const OrderHistoryScreen = () => {
     if (!isLoadingMore && page < totalPages) {
       fetchOrderHistory(page + 1);
     }
-  };
-
-  const handleOrderPress = (order: OrderHistory) => {
-    navigation.navigate('OrderDetailsScreen' as any, {order});
   };
 
   const formatDate = (dateString: string) => {
@@ -879,20 +287,69 @@ const OrderHistoryScreen = () => {
     }
   };
 
-  const handleViewDetails = (order: OrderHistory) => {
-    navigation.navigate('OrderDetailsScreen' as any, {order});
-  };
-
   const handleStatusFilter = (status: string | null) => {
     // Don't apply filters if we have a specific order from params
     if (hasSpecificOrder) return;
 
+    // Set the status immediately
     setSelectedStatus(status);
-    // Reset pagination when filter changes
-    setPage(1);
+
+    // Reset data and fetch with new status
+    setOrders([]);
     setIsLoading(true);
-    // Fetch data with new filter on next render
-    fetchOrderHistory(1, true);
+    setPage(1);
+
+    // Small timeout to ensure state is updated before fetch
+    setTimeout(() => {
+      const apiParams: any = {
+        customerId: customerID,
+        page: 1,
+        limit: 10,
+      };
+
+      if (status) apiParams.status = status;
+
+      console.log('Filtering with status:', status);
+
+      axios
+        .get<OrderHistoryResponse>(`${API_ENDPOINTS.GET_ORDER_HISTORY}`, {
+          params: apiParams,
+        })
+        .then(response => {
+          const result = response.data;
+
+          if (result.success) {
+            const ordersData = result.data.orders;
+
+            setOrders(ordersData);
+            setTotalPages(result.data.pagination.totalPages);
+            setPage(result.data.pagination.page);
+          } else {
+            setError(result.message || 'Failed to load order history');
+            setOrders([]);
+          }
+        })
+        .catch(err => {
+          console.error('Error fetching filtered orders:', err);
+          setError(err.message || 'Server error. Please try again later.');
+          setOrders([]);
+        })
+        .finally(() => {
+          setIsLoading(false);
+          setRefreshing(false);
+        });
+    }, 50);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'CLOSED':
+        return {bg: '#dcfce7', text: '#16a34a'};
+      case 'CANCEL':
+        return {bg: '#fee2e2', text: '#ef4444'};
+      default:
+        return {bg: '#f3f4f6', text: '#6B7280'};
+    }
   };
 
   const renderStatusFilter = () => {
@@ -901,27 +358,30 @@ const OrderHistoryScreen = () => {
 
     return (
       <View style={styles.filterContainer}>
-        <Text style={styles.filterTitle}>Filter by Status:</Text>
-        <View style={styles.statusButtons}>
+        <View style={styles.header}>
           <TouchableOpacity
-            style={[
-              styles.statusButton,
-              selectedStatus === null && styles.statusButtonSelected,
-            ]}
-            onPress={() => handleStatusFilter(null)}>
-            <Text
-              style={[
-                styles.statusButtonText,
-                selectedStatus === null && styles.statusButtonTextSelected,
-              ]}>
-              All
-            </Text>
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}>
+            <MaterialIcons
+              name="arrow-back"
+              size={24}
+              style={{color: '#0284c7'}}
+            />
           </TouchableOpacity>
+          <Text style={styles.headerText}>Order Confirmation</Text>
+          <View style={styles.headerSpacer}></View>
+        </View>
+        <View style={styles.filterHeader}>
+          <MaterialIcons name="tune" size={20} color="#0284c7" />
+          <Text style={styles.filterTitle}>Filter Orders</Text>
+        </View>
+        <View style={styles.statusButtons}>
           <TouchableOpacity
             style={[
               styles.statusButton,
               selectedStatus === 'CLOSED' && styles.statusButtonSelected,
             ]}
+            activeOpacity={0.6}
             onPress={() => handleStatusFilter('CLOSED')}>
             <Text
               style={[
@@ -936,6 +396,7 @@ const OrderHistoryScreen = () => {
               styles.statusButton,
               selectedStatus === 'CANCEL' && styles.statusButtonSelected,
             ]}
+            activeOpacity={0.6}
             onPress={() => handleStatusFilter('CANCEL')}>
             <Text
               style={[
@@ -945,96 +406,227 @@ const OrderHistoryScreen = () => {
               Cancelled
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.statusButton,
-              selectedStatus === 'NEW' && styles.statusButtonSelected,
-            ]}
-            onPress={() => handleStatusFilter('NEW')}>
-            <Text
-              style={[
-                styles.statusButtonText,
-                selectedStatus === 'NEW' && styles.statusButtonTextSelected,
-              ]}>
-              New
-            </Text>
-          </TouchableOpacity>
         </View>
       </View>
     );
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'CLOSED':
-        return {bg: '#dcfce7', text: '#16a34a'};
-      case 'CANCEL':
-        return {bg: '#fee2e2', text: '#ef4444'};
-      case 'NEW':
-        return {bg: '#e0f2fe', text: '#0284c7'};
-      default:
-        return {bg: '#f3f4f6', text: '#6B7280'};
-    }
-  };
-
   const renderOrderCard = ({item}: {item: OrderHistory}) => {
-    const statusColors = getStatusColor(item.status);
+    // Check if any items have CANCEL status
+    const hasAnyCancelledItem =
+      item.items && item.items.some(orderItem => orderItem.status === 'CANCEL');
+
+    // If any item is cancelled, override the order status for display purposes
+    const displayStatus = hasAnyCancelledItem ? 'CANCEL' : item.status;
+
+    // Get the appropriate colors for the status
+    const statusColors = getStatusColor(displayStatus);
 
     return (
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() => handleOrderPress(item)}
-        activeOpacity={0.7}>
-        <View style={styles.cardHeader}>
-          <View>
-            <Text style={styles.orderNo}>Order No: {item.orderNo}</Text>
-            <Text style={styles.totalItems}>Items: {item.totalItems}</Text>
+      <View style={styles.card}>
+        {/* Order Number and Status */}
+        <View style={styles.orderHeaderTop}>
+          <View style={styles.orderNumberContainer}>
+            {/* <MaterialIcons
+              name="receipt"
+              size={20}
+              color="#0284C7"
+              style={styles.orderIcon}
+            /> */}
+            <Text style={styles.orderNumberLabel}>Order No:</Text>
+            <Text style={styles.orderNumberValue}>{item.orderNo}</Text>
           </View>
-          <View style={styles.statusContainer}>
+          {/* <View style={styles.statusContainer}>
             <View
               style={[styles.statusBadge, {backgroundColor: statusColors.bg}]}>
               <Text style={[styles.statusText, {color: statusColors.text}]}>
-                {item.status}
+                {displayStatus}
+              </Text>
+            </View>
+          </View> */}
+        </View>
+
+        {/* Items List */}
+        <View style={styles.itemsList}>
+          <View style={styles.itemsListHeader}>
+            <MaterialIcons
+              name="inventory"
+              size={20}
+              color="#0284C7"
+              style={styles.itemsIcon}
+            />
+            <Text style={styles.itemsListTitle}>Items ({item.totalItems})</Text>
+          </View>
+          {item.items &&
+            item.items.map((orderItem, index) => (
+              <View key={`item-${index}`} style={styles.itemContainer}>
+                {index > 0 && <View style={styles.itemDivider} />}
+                <View style={styles.itemHeader}>
+                  <View style={styles.itemHeaderContainer}>
+                    <Text style={styles.itemHeaderName}>
+                      {orderItem.itemName}
+                    </Text>
+                    <View style={styles.quantityContainer}>
+                      <MaterialIcons
+                        name="shopping-cart"
+                        size={16}
+                        color="#6B7280"
+                        style={styles.quantityIcon}
+                      />
+                      <Text style={styles.itemHeaderQuantity}>
+                        Qty: {orderItem.requestedQty}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.lotNoContainer}>
+                  <MaterialIcons
+                    name="label"
+                    size={16}
+                    color="#d97706"
+                    style={styles.lotNoIcon}
+                  />
+                  <Text style={styles.lotNoLabel}>Lot No:</Text>
+                  <Text style={styles.lotNoValue}>{orderItem.lotNo}</Text>
+                </View>
+
+                {orderItem.itemMarks && (
+                  <View style={styles.itemMarksContainer}>
+                    <MaterialIcons
+                      name="description"
+                      size={16}
+                      color="#4B5563"
+                      style={styles.itemMarksIcon}
+                    />
+                    <Text style={styles.itemMarksLabel}>Item Marks:</Text>
+                    <Text style={styles.itemMarksValue}>
+                      {orderItem.itemMarks}
+                    </Text>
+                  </View>
+                )}
+
+                {orderItem.vakalNo && (
+                  <View style={styles.vakalNoContainer}>
+                    <MaterialIcons
+                      name="receipt-long"
+                      size={16}
+                      color="#4B5563"
+                      style={styles.vakalNoIcon}
+                    />
+                    <Text style={styles.vakalNoLabel}>Vakal No:</Text>
+                    <Text style={styles.vakalNoValue}>{orderItem.vakalNo}</Text>
+                  </View>
+                )}
+              </View>
+            ))}
+        </View>
+
+        {/* Common Order Details at the bottom */}
+        <View style={styles.orderDetailsSection}>
+          <View style={styles.orderDetailsHeader}>
+            <MaterialIcons
+              name="info"
+              size={20}
+              color="#0284C7"
+              style={styles.orderDetailsIcon}
+            />
+            <Text style={styles.orderDetailsTitle}>Order Details</Text>
+          </View>
+
+          <View style={styles.dateContainer}>
+            <View style={styles.dateBox}>
+              <View style={styles.dateLabelContainer}>
+                <MaterialIcons
+                  name="event"
+                  size={16}
+                  color="#374151"
+                  style={styles.dateIcon}
+                />
+                <Text style={styles.dateLabel}>Order Date</Text>
+              </View>
+              <Text style={styles.dateValue}>{formatDate(item.orderDate)}</Text>
+            </View>
+            <View style={styles.dateBox}>
+              <View style={styles.dateLabelContainer}>
+                <MaterialIcons
+                  name="local-shipping"
+                  size={16}
+                  color="#374151"
+                  style={styles.dateIcon}
+                />
+                <Text style={styles.dateLabel}>Delivery Date</Text>
+              </View>
+              <Text style={styles.dateValue}>
+                {formatDate(item.deliveryDate)}
               </Text>
             </View>
           </View>
-        </View>
 
-        <View style={styles.dateContainer}>
-          <View style={styles.dateBox}>
-            <Text style={styles.dateLabel}>Order Date</Text>
-            <Text style={styles.dateValue}>{formatDate(item.orderDate)}</Text>
-          </View>
-          <View style={styles.dateDivider} />
-          <View style={styles.dateBox}>
-            <Text style={styles.dateLabel}>Delivery Date</Text>
-            <Text style={styles.dateValue}>
-              {formatDate(item.deliveryDate)}
+          {displayStatus === 'CANCEL' && (
+            <View style={styles.closedDateContainer}>
+              <MaterialIcons
+                name="block"
+                size={16}
+                color="#ef4444"
+                style={styles.closedDateIcon}
+              />
+              <Text style={styles.closedDateLabel}>Cancelled on:</Text>
+              <Text style={styles.closedDateValue}>
+                {formatDate(item.createdOn)}
+              </Text>
+            </View>
+          )}
+
+          {item.remarks && (
+            <View style={styles.remarksContainer}>
+              <View style={styles.remarksHeader}>
+                <MaterialIcons
+                  name="comment"
+                  size={16}
+                  color="#4B5563"
+                  style={styles.remarksIcon}
+                />
+                <Text style={styles.remarksTitle}>Remarks: </Text>
+              </View>
+              <Text style={styles.remarksValue}>{item.remarks}</Text>
+            </View>
+          )}
+
+          {item.transporterName && (
+            <View style={styles.transporterContainer}>
+              <View style={styles.transporterHeader}>
+                <MaterialIcons
+                  name="local-shipping"
+                  size={16}
+                  color="#4B5563"
+                  style={styles.transporterIcon}
+                />
+                <Text style={styles.transporterTitle}>Transporter Name: </Text>
+              </View>
+              <Text style={styles.transporterValue}>
+                {item.transporterName}
+              </Text>
+            </View>
+          )}
+
+          {/* Delivery Location Field */}
+          <View style={styles.locationContainer}>
+            <View style={styles.locationHeader}>
+              <MaterialIcons
+                name="location-on"
+                size={16}
+                color="#4B5563"
+                style={styles.locationIcon}
+              />
+              <Text style={styles.locationTitle}>Delivery Location : </Text>
+            </View>
+            <Text style={styles.locationValue}>
+              {item.deliveryAddress || 'Not specified'}
             </Text>
           </View>
         </View>
-
-        {item.closedon && (
-          <View style={styles.closedDateContainer}>
-            <Text style={styles.closedDateLabel}>Closed on:</Text>
-            <Text style={styles.closedDateValue}>
-              {formatDate(item.closedon)}
-            </Text>
-          </View>
-        )}
-
-        <View style={styles.bottomRow}>
-          <Text style={styles.transporterValue} numberOfLines={1}>
-            {item.transporterName || 'No transporter'}
-          </Text>
-          <TouchableOpacity
-            style={styles.viewDetails}
-            onPress={() => handleViewDetails(item)}>
-            <Text style={styles.viewDetailsText}>View Details</Text>
-            <MaterialIcons name="chevron-right" size={16} color="#0284c7" />
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
+      </View>
     );
   };
 
@@ -1065,11 +657,17 @@ const OrderHistoryScreen = () => {
 
       {error && orders.length === 0 ? (
         <View style={styles.centered}>
+          <MaterialIcons name="error-outline" size={64} color="#ef4444" />
+          <Text style={styles.errorTitle}>Server Error</Text>
           <Text style={styles.errorText}>{error}</Text>
+          <Text style={styles.errorInfo}>
+            The server encountered an issue processing your request. This might
+            be temporary.
+          </Text>
           <TouchableOpacity
             style={styles.retryButton}
             onPress={() => fetchOrderHistory(1, true)}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -1106,55 +704,39 @@ const OrderHistoryScreen = () => {
   );
 };
 
-// Mock data generation function for demonstration
-const generateMockData = (): OrderHistory[] => {
-  const mockOrders: OrderHistory[] = [];
-  const statuses = ['CLOSED', 'CANCEL', 'NEW'];
-
-  for (let i = 1; i <= 5; i++) {
-    // Create dates without time component to avoid timezone issues
-    const orderDate = new Date();
-    orderDate.setDate(orderDate.getDate() - i * 5);
-
-    const deliveryDate = new Date(orderDate);
-    deliveryDate.setDate(deliveryDate.getDate() + 3);
-
-    const closedDate = new Date(deliveryDate);
-    closedDate.setDate(closedDate.getDate() + 2);
-
-    // Format dates as YYYY-MM-DD to avoid timezone issues
-    const formatDateToString = (date: Date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-
-    const status = statuses[Math.floor(Math.random() * statuses.length)];
-
-    mockOrders.push({
-      orderId: i + 100,
-      orderNo: `HIST-${2024}${i.toString().padStart(4, '0')}`,
-      orderDate: formatDateToString(orderDate),
-      deliveryDate: formatDateToString(deliveryDate),
-      status,
-      transporterName: `Transporter ${i + 5}`,
-      remarks: `Historical order ${i}`,
-      deliveryAddress: `456 History St, Building ${i}, City`,
-      customerName: 'John Doe',
-      totalItems: Math.floor(Math.random() * 10) + 1,
-      totalQuantity: Math.floor(Math.random() * 100) + 20,
-      createdon: formatDateToString(orderDate),
-      closedon: status === 'CLOSED' ? formatDateToString(closedDate) : '',
-    });
-  }
-  return mockOrders;
-};
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f3f4f6',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F7',
+    width: '100%',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#F8F7FF',
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  headerText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0284c7',
   },
   centered: {
     flex: 1,
@@ -1165,20 +747,24 @@ const styles = StyleSheet.create({
   filterContainer: {
     backgroundColor: '#ffffff',
     padding: 16,
-    marginBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
+  },
+  filterHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   filterTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
+    color: '#0284c7',
+    marginLeft: 8,
   },
   statusButtons: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 16,
+    marginBottom: 0,
   },
   statusButton: {
     paddingHorizontal: 12,
@@ -1186,7 +772,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#f3f4f6',
     marginRight: 8,
-    marginBottom: 8,
+    marginBottom: 3,
     borderWidth: 1,
     borderColor: '#e5e7eb',
   },
@@ -1203,112 +789,332 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   list: {
-    padding: 16,
+    padding: 14,
     paddingBottom: 50,
   },
   card: {
     backgroundColor: '#ffffff',
-    borderRadius: 16,
-    marginBottom: 16,
-    padding: 16,
+    borderRadius: 12,
+    marginHorizontal: 8,
+    marginVertical: 6,
+    padding: 14,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
-  cardHeader: {
+  orderHeaderTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+    alignItems: 'center',
+    marginBottom: 6,
   },
-  orderNo: {
+  orderNumberContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  orderIcon: {
+    marginRight: 8,
+    color: '#F48221',
+  },
+  orderNumberLabel: {
     fontSize: 16,
+    color: '#F48221',
     fontWeight: '600',
-    color: '#0284c7',
   },
-  totalItems: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 4,
+  orderNumberValue: {
+    fontSize: 16,
+    color: '#F48221',
+    fontWeight: '600',
+    marginLeft: 4,
   },
   statusContainer: {
     alignItems: 'flex-end',
   },
   statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    // backgroundColor: '#fee2e2',
+  },
+  statusIcon: {
+    marginRight: 6,
+    color: '#ef4444',
   },
   statusText: {
-    fontSize: 13,
+    fontSize: 14,
+    color: '#ef4444',
+    fontWeight: '600',
+  },
+  itemsList: {
+    marginTop: -4,
+  },
+  itemsListHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  itemsIcon: {
+    marginRight: 8,
+    color: '#0284C7',
+  },
+  itemsListTitle: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '600',
+  },
+  itemContainer: {
+    marginBottom: 12,
+  },
+  itemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  itemHeaderContainer: {
+    flex: 1,
+  },
+  itemHeaderName: {
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  quantityIcon: {
+    marginRight: 6,
+    color: '#6B7280',
+  },
+  itemHeaderQuantity: {
+    fontSize: 15,
+    color: '#6B7280',
+  },
+  lotNoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  lotNoIcon: {
+    marginRight: 3,
+    color: '#d97706',
+  },
+  lotNoLabel: {
+    fontSize: 14,
+    color: '#d97706',
+    fontWeight: '600',
+    marginRight: 4,
+  },
+  lotNoValue: {
+    fontSize: 14,
+    color: '#d97706',
+    fontWeight: '600',
+  },
+  itemDivider: {
+    height: 1,
+    backgroundColor: '#e5e7eb',
+    marginVertical: 9,
+  },
+  itemMarksContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  itemMarksIcon: {
+    marginRight: 6,
+    color: '#4B5563',
+  },
+  itemMarksLabel: {
+    fontSize: 14,
+    color: '#4B5563',
     fontWeight: '500',
+    marginRight: 4,
+  },
+  itemMarksValue: {
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '500',
+    flex: 1,
+  },
+  vakalNoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  vakalNoIcon: {
+    marginRight: 6,
+    color: '#4B5563',
+  },
+  vakalNoLabel: {
+    fontSize: 14,
+    color: '#4B5563',
+    fontWeight: '500',
+    marginRight: 4,
+  },
+
+  locationContainer: {
+    backgroundColor: '#f8fafc',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  locationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  locationIcon: {
+    marginRight: 4,
+    color: '#4B5563',
+  },
+  locationTitle: {
+    fontSize: 14,
+    color: '#4B5563',
+    fontWeight: '500',
+  },
+  locationValue: {
+    fontSize: 15,
+    color: '#111827',
+    lineHeight: 20,
+    paddingLeft: 22,
+  },
+  vakalNoValue: {
+    fontSize: 1,
+    color: '#111827',
+    fontWeight: '500',
+  },
+  orderDetailsSection: {
+    marginTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+    paddingTop: 16,
+  },
+  orderDetailsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  orderDetailsIcon: {
+    marginRight: 8,
+    color: '#0284C7',
+  },
+  orderDetailsTitle: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '600',
   },
   dateContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
-    backgroundColor: '#f9fafb',
-    padding: 12,
+    backgroundColor: '#f8fafc',
+    padding: 10,
     borderRadius: 8,
+    marginBottom: 10,
   },
   dateBox: {
     flex: 1,
   },
+  dateLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  dateIcon: {
+    marginRight: 6,
+    color: '#374151',
+  },
   dateLabel: {
     fontSize: 14,
     color: '#374151',
-    marginBottom: 4,
   },
   dateValue: {
-    fontSize: 14,
+    fontSize: 15,
+    marginLeft: 10,
     color: '#111827',
     fontWeight: '500',
   },
-  dateDivider: {
-    width: 1,
-    backgroundColor: '#E5E7EB',
-    marginHorizontal: 16,
-  },
   closedDateContainer: {
-    backgroundColor: '#f9fafb',
-    padding: 8,
-    borderRadius: 6,
-    marginBottom: 8,
     flexDirection: 'row',
     alignItems: 'center',
+    // backgroundColor: '#fee2e2',
+    backgroundColor: '#f8fafc',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  closedDateIcon: {
+    marginRight: 6,
+    color: '#ef4444',
   },
   closedDateLabel: {
-    fontSize: 13,
-    color: '#6B7280',
+    fontSize: 14,
+    color: '#ef4444',
+    fontWeight: '600',
     marginRight: 4,
   },
   closedDateValue: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#111827',
     fontWeight: '500',
   },
-  bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 4,
+  remarksContainer: {
+    backgroundColor: '#f8fafc',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
   },
-  transporterValue: {
+  remarksHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  remarksIcon: {
+    marginRight: 4,
+    color: '#4B5563',
+  },
+  remarksTitle: {
     fontSize: 14,
     color: '#4B5563',
-    flex: 1,
+    fontWeight: '500',
   },
-  viewDetails: {
+  remarksValue: {
+    fontSize: 15,
+    color: '#111827',
+    lineHeight: 20,
+    paddingLeft: 22,
+  },
+  transporterContainer: {
+    backgroundColor: '#f8fafc',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  transporterHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 4,
   },
-  viewDetailsText: {
-    fontSize: 14,
-    color: '#0284c7',
-    fontWeight: '500',
+  transporterIcon: {
     marginRight: 4,
+    color: '#4B5563',
+  },
+  transporterTitle: {
+    fontSize: 14,
+    color: '#4B5563',
+    fontWeight: '500',
+  },
+  transporterValue: {
+    fontSize: 15,
+    color: '#111827',
+    lineHeight: 20,
+    paddingLeft: 22,
   },
   footerLoader: {
     flexDirection: 'row',
@@ -1357,6 +1163,19 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '500',
     fontSize: 16,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  errorInfo: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 24,
   },
 });
 

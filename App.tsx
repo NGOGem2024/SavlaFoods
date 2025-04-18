@@ -23,6 +23,10 @@ import {DisplayNameProvider} from './src/contexts/DisplayNameContext';
 import {CartProvider} from './src/contexts/CartContext';
 import {NotificationProvider} from './src/contexts/NotificationContext';
 import {CustomerProvider} from './src/contexts/DisplayNameContext';
+import {NetworkProvider} from './src/contexts/NetworkContext';
+
+// Components
+import OfflineNotice from './src/components/OfflineNotice.tsx';
 
 // Types
 import {RootStackParamList, MainStackParamList} from './src/type/type';
@@ -33,6 +37,7 @@ import OrderHistoryScreen from './src/screens/OrderHistoryScreen';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import OrderDetailsScreen from './src/screens/OrderDetailsScreen';
 import PendingOrdersScreen from './src/screens/PendingOrdersScreen';
+import EditOrderScreen from './src/components/EditOrderScreen.tsx';
 
 const RootStack = createStackNavigator<RootStackParamList>();
 const MainStack = createStackNavigator<MainStackParamList>();
@@ -109,10 +114,22 @@ const MainStackNavigator: React.FC = () => {
           component={PendingOrdersScreen}
           options={{title: 'Pending Orders'}}
         />
+
+        <MainStack.Screen
+          name="EditOrderScreen"
+          component={EditOrderScreen}
+          options={{headerShown: false}}
+        />
+
         <MainStack.Screen
           name="OrderHistoryScreen"
           component={OrderHistoryScreen}
-          options={{title: ''}}
+          options={{headerShown: false}}
+        />
+        <RootStack.Screen
+          name="HomeScreen"
+          component={MainStackNavigator}
+          options={{headerShown: false}}
         />
         <MainStack.Screen
           name="QuantitySelectorModal"
@@ -135,33 +152,36 @@ function App(): JSX.Element {
           <NotificationProvider>
             <CartProvider>
               <CustomerProvider>
-                <NavigationContainer>
-                  <RootStack.Navigator
-                    initialRouteName="SplashScreen"
-                    screenOptions={{
-                      headerShown: false,
-                      gestureEnabled: false,
-                    }}>
-                    <RootStack.Screen
-                      name="SplashScreen"
-                      component={SplashScreen}
-                    />
-                    <RootStack.Screen
-                      name="OtpVerificationScreen"
-                      component={OtpVerificationScreen}
-                      options={{headerShown: false}}
-                    />
-                    <RootStack.Screen
-                      name="Main"
-                      component={MainStackNavigator}
-                    />
-                    <RootStack.Screen
-                      name="HomeScreen"
-                      component={MainStackNavigator}
-                      options={{headerShown: false}}
-                    />
-                  </RootStack.Navigator>
-                </NavigationContainer>
+                <NetworkProvider>
+                  <NavigationContainer>
+                    <RootStack.Navigator
+                      initialRouteName="SplashScreen"
+                      screenOptions={{
+                        headerShown: false,
+                        gestureEnabled: false,
+                      }}>
+                      <RootStack.Screen
+                        name="SplashScreen"
+                        component={SplashScreen}
+                      />
+                      <RootStack.Screen
+                        name="OtpVerificationScreen"
+                        component={OtpVerificationScreen}
+                        options={{headerShown: false}}
+                      />
+                      <RootStack.Screen
+                        name="Main"
+                        component={MainStackNavigator}
+                      />
+                      {/* <RootStack.Screen
+                        name="HomeScreen"
+                        component={MainStackNavigator}
+                        options={{headerShown: false}}
+                      /> */}
+                    </RootStack.Navigator>
+                  </NavigationContainer>
+                  <OfflineNotice />
+                </NetworkProvider>
               </CustomerProvider>
             </CartProvider>
           </NotificationProvider>
