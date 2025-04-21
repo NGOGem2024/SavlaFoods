@@ -640,7 +640,7 @@ const HomeScreen: React.FC = () => {
           onPress={handleSearchSubmit}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search lot numbers, item marks, vakal no.."
+            placeholder="Search lot nos, item marks, vakal no.."
             placeholderTextColor={'#999'}
             value={searchQuery}
             onChangeText={handleSearch}

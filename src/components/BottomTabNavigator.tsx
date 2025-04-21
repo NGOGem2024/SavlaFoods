@@ -379,7 +379,7 @@ import React, {createContext, useContext, useState} from 'react';
 import {StyleSheet, View, TouchableOpacity, Text} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createStackNavigator} from '@react-navigation/stack';
-import {useNavigation, CommonActions} from '@react-navigation/native';
+import {useNavigation, CommonActions, useRoute} from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {ParamListBase} from '@react-navigation/native';
 
@@ -397,6 +397,8 @@ import LotReportScreen from '../screens/LotReportScreen';
 import ReportSummaryScreen from '../screens/stocks/ReportSummaryScreen';
 import EditOrderScreen from './EditOrderScreen';
 import OrderDetailsScreen from '../screens/OrderDetailsScreen';
+import {LayoutWrapper} from './AppLayout';
+import ReportsScreen from '../screens/stocks/ReportsScreen';
 
 interface OrderItem {
   detailId?: number;
@@ -489,6 +491,7 @@ const OrdersStackNavigator = () => {
         component={EditOrderScreen}
         options={{headerShown: false}}
       />
+
       <OrdersStack.Screen name="OrderHistory" component={OrderHistoryScreen} />
 
       <OrdersStack.Screen
@@ -512,17 +515,18 @@ const ReportsStackNavigator = () => {
       <ReportsStack.Screen
         name="Reports"
         component={ReportsScreen}
-        options={{
-          title: 'Reports',
-          headerTitleStyle: {
-            fontSize: 24, // set your desired font size here
-            fontWeight: 'bold', // optional
-            color: '#000', // optional
-          },
-        }}
+        // options={{
+        //   title: 'Reports',
+        //   headerTitleStyle: {
+        //     fontSize: 24, // set your desired font size here
+        //     fontWeight: 'bold', // optional
+        //     color: '#000', // optional
+        //   },
+        // }}
+        options={{headerShown: false}}
       />
 
-      <ReportsStack.Screen
+      {/* <ReportsStack.Screen
         name="StockReport"
         component={StockReportScreen}
         options={{title: 'Stock Report'}}
@@ -531,7 +535,7 @@ const ReportsStackNavigator = () => {
         name="LotReport"
         component={LotReportScreen}
         options={{title: 'Lot Report'}}
-      />
+      /> */}
       <ReportsStack.Screen
         name="InwardOutwardReport"
         component={InwardOutwardReportScreen}
@@ -547,54 +551,57 @@ const ReportsStackNavigator = () => {
 };
 
 // Temporary Reports Screen until individual report screens are created
-const ReportsScreen = ({navigation}: {navigation: any}) => {
-  const reportItems = [
-    {
-      name: 'StockReport',
-      title: 'Stock Report',
-      icon: 'inventory',
-    },
-    {
-      name: 'LotReport',
-      title: 'Lot Report',
-      icon: 'list',
-    },
-    {
-      name: 'InwardOutwardReport',
-      title: 'Inward/Outward Report',
-      icon: 'swap-horiz',
-    },
-    {
-      name: 'ReportSummary',
-      title: 'Summary',
-      icon: 'summarize',
-    },
-  ];
-  return (
-    <View style={{flex: 1, padding: 16}}>
-      {reportItems.map(item => (
-        <TouchableOpacity
-          key={item.name}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            padding: 16,
-            borderBottomWidth: 1,
-            borderBottomColor: '#ddd',
-          }}
-          onPress={() => navigation.navigate(item.name)}>
-          <MaterialIcons
-            name={item.icon}
-            size={24}
-            color="#F48221"
-            style={{marginRight: 16}}
-          />
-          <Text style={{fontSize: 16}}>{item.title}</Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-};
+// const ReportsScreen = ({navigation}: {navigation: any}) => {
+//   const route = useRoute();
+//   const reportItems = [
+//     {
+//       name: 'StockReport',
+//       title: 'Stock Report',
+//       icon: 'inventory',
+//     },
+//     {
+//       name: 'LotReport',
+//       title: 'Lot Report',
+//       icon: 'list',
+//     },
+//     {
+//       name: 'InwardOutwardReport',
+//       title: 'Inward/Outward Report',
+//       icon: 'swap-horiz',
+//     },
+//     {
+//       name: 'ReportSummary',
+//       title: 'Summary',
+//       icon: 'summarize',
+//     },
+//   ];
+//   return (
+//     <LayoutWrapper showHeader={true} route={route} showTabBar={false}>
+//       <View style={{flex: 1, padding: 16}}>
+//         {reportItems.map(item => (
+//           <TouchableOpacity
+//             key={item.name}
+//             style={{
+//               flexDirection: 'row',
+//               alignItems: 'center',
+//               padding: 16,
+//               borderBottomWidth: 1,
+//               borderBottomColor: '#ddd',
+//             }}
+//             onPress={() => navigation.navigate(item.name)}>
+//             <MaterialIcons
+//               name={item.icon}
+//               size={24}
+//               color="#F48221"
+//               style={{marginRight: 16}}
+//             />
+//             <Text style={{fontSize: 16}}>{item.title}</Text>
+//           </TouchableOpacity>
+//         ))}
+//       </View>
+//     </LayoutWrapper>
+//   );
+// };
 
 interface OrderContextType {
   orderDetails: any;

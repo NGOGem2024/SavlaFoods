@@ -84,6 +84,13 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
     deliveryAddress: order.deliveryAddress || '',
   });
 
+  // Add validation state to track errors
+  const [validationErrors, setValidationErrors] = useState({
+    transporterName: '',
+    deliveryDate: '',
+    requestedQty: {} as Record<number, string>,
+  });
+
   const [orderItems, setOrderItems] = useState<OrderItem[]>([...order.items]);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState(
@@ -255,17 +262,172 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
     }
   };
 
-  const handleQtyChange = (index: number, value: string) => {
-    const numericValue = parseFloat(value);
-    if (isNaN(numericValue)) return;
+  // Add validation for date format
+  const isValidDateFormat = (dateString: string) => {
+    // Support both YYYY-MM-DD and Month Day, Year formats
+    return (
+      dateString.match(/^\d{4}-\d{2}-\d{2}$/) ||
+      dateString.match(/^[A-Za-z]+ \d{1,2}, \d{4}$/) ||
+      (dateString.includes('T') &&
+        dateString.split('T')[0].match(/^\d{4}-\d{2}-\d{2}$/))
+    );
+  };
 
+  // Modified validation for delivery date to ensure it's not before the order date
+  const validateDeliveryDate = (date: string) => {
+    if (!date.trim()) {
+      return 'Delivery date is required';
+    }
+
+    if (!isValidDateFormat(date)) {
+      return 'Invalid date format. Use YYYY-MM-DD or Month Day, Year';
+    }
+
+    // Format the dates properly before validation
+    let deliveryDate: Date;
+    let orderDate: Date;
+
+    try {
+      const formattedDeliveryDate = formatDateForApi(date);
+      deliveryDate = new Date(formattedDeliveryDate);
+      deliveryDate.setHours(0, 0, 0, 0);
+
+      const formattedOrderDate = formatDateForApi(order.orderDate);
+      orderDate = new Date(formattedOrderDate);
+      orderDate.setHours(0, 0, 0, 0);
+    } catch (error) {
+      return 'Invalid date format';
+    }
+
+    // Check if delivery date is before order date
+    if (deliveryDate < orderDate) {
+      return 'Delivery date cannot be before order date';
+    }
+
+    return '';
+  };
+
+  // Validate transporter name
+  const validateTransporterName = (name: string) => {
+    if (!name.trim()) {
+      return 'Transporter name is required';
+    }
+
+    if (name.trim().length < 3) {
+      return 'Transporter name must be at least 3 characters';
+    }
+
+    return '';
+  };
+
+  // Validate requested quantity
+  const validateRequestedQty = (
+    qty: number,
+    availableQty: number,
+    itemId: number,
+  ) => {
+    if (qty <= 0) {
+      return 'Quantity must be greater than zero';
+    }
+
+    // Warning for exceeding available quantity is already shown in UI
+    // This validation is for required fields and number format
+
+    return '';
+  };
+
+  const handleQtyChange = (index: number, value: string) => {
+    // Don't convert to number immediately as this prevents clearing the field
+    // Store the direct text input value
     const updatedItems = [...orderItems];
+    const item = updatedItems[index];
+
+    // Update the requested quantity with the exact text value the user entered
+    const numValue = value === '' ? 0 : parseFloat(value);
     updatedItems[index] = {
       ...updatedItems[index],
-      requestedQty: numericValue,
+      requestedQty: numValue, // Convert to number for storage, empty = 0
     };
+
+    // Validate the quantity
+    const qtyError = validateRequestedQty(
+      numValue,
+      item.availableQty,
+      item.itemId,
+    );
+    setValidationErrors(prev => ({
+      ...prev,
+      requestedQty: {
+        ...prev.requestedQty,
+        [item.itemId]: qtyError,
+      },
+    }));
+
     setOrderItems(updatedItems);
   };
+
+  // Handle transporter name change with validation
+  const handleTransporterNameChange = (text: string) => {
+    setFormData({...formData, transporterName: text});
+    const error = validateTransporterName(text);
+    setValidationErrors(prev => ({...prev, transporterName: error}));
+  };
+
+  // Handle delivery date change with validation
+  const handleDeliveryDateChange = (text: string) => {
+    setFormData({...formData, deliveryDate: text});
+    const error = validateDeliveryDate(text);
+    setValidationErrors(prev => ({...prev, deliveryDate: error}));
+  };
+
+  // Handle delivery address change without validation
+  const handleDeliveryAddressChange = (text: string) => {
+    setFormData({...formData, deliveryAddress: text});
+    // Removed validation for address
+  };
+
+  // Validate all form fields
+  const validateForm = () => {
+    const transporterError = validateTransporterName(formData.transporterName);
+    const deliveryDateError = validateDeliveryDate(formData.deliveryDate);
+
+    // Validate all items
+    const qtyErrors: Record<number, string> = {};
+    let hasQtyError = false;
+
+    orderItems.forEach(item => {
+      const error = validateRequestedQty(
+        item.requestedQty,
+        item.availableQty,
+        item.itemId,
+      );
+      if (error) {
+        qtyErrors[item.itemId] = error;
+        hasQtyError = true;
+      }
+    });
+
+    // Update validation errors state
+    setValidationErrors({
+      transporterName: transporterError,
+      deliveryDate: deliveryDateError,
+      requestedQty: qtyErrors,
+    });
+
+    // Check if there are any errors
+    return !(transporterError || deliveryDateError || hasQtyError);
+  };
+
+  // Initial validation on component mount
+  useEffect(() => {
+    handleTransporterNameChange(formData.transporterName);
+    handleDeliveryDateChange(formData.deliveryDate);
+
+    // Validate all quantities
+    orderItems.forEach((item, index) => {
+      handleQtyChange(index, item.requestedQty.toString());
+    });
+  }, []);
 
   const showToast = (
     message: string,
@@ -314,23 +476,58 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
       return;
     }
 
+    // Validate all form fields
+    if (!validateForm()) {
+      showToast('Please fix the errors in the form', 'error');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       // Format the delivery date for API
       const formattedDeliveryDate = formatDateForApi(formData.deliveryDate);
 
-      // Validate form data before making API call
-      if (!formattedDeliveryDate) {
-        showToast('Please enter a valid delivery date', 'error');
-        return;
-      }
+      // Check if any requested quantity exceeds available quantity
+      const exceedsAvailable = orderItems.some(
+        item => item.requestedQty > item.availableQty,
+      );
 
-      if (!formData.transporterName.trim()) {
-        showToast('Please enter transporter name', 'error');
-        return;
+      if (exceedsAvailable) {
+        // Show confirmation dialog for quantities exceeding available amounts
+        Alert.alert(
+          'Warning',
+          'Some requested quantities exceed available quantities. Do you want to proceed anyway?',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+              onPress: () => setIsLoading(false),
+            },
+            {
+              text: 'Proceed',
+              onPress: () => submitOrderUpdate(formattedDeliveryDate),
+            },
+          ],
+        );
+      } else {
+        // No quantity issues, proceed with update
+        await submitOrderUpdate(formattedDeliveryDate);
       }
+    } catch (error: any) {
+      console.error('Error updating order:', error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        'Unknown error occurred';
+      showToast(`Error: ${errorMessage}`, 'error');
+      setIsLoading(false);
+    }
+  };
 
+  // Extract the actual submission logic to avoid duplication
+  const submitOrderUpdate = async (formattedDeliveryDate: string) => {
+    try {
       // Prepare the request payload according to the API requirements
       const requestPayload = {
         orderId: order.orderId,
@@ -382,7 +579,7 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
         showToast(`Error: ${result.message}`, 'error');
       }
     } catch (error: any) {
-      console.error('Error updating order:', error);
+      console.error('Error submitting order update:', error);
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
@@ -409,13 +606,6 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
         </View>
 
         <ScrollView style={styles.scrollView}>
-          {/* <View style={styles.orderHeaderCard}>
-            <View style={styles.orderHeaderContent}>
-              <MaterialIcons name="shopping-bag" size={24} color="#FFFFFF" />
-              <Text style={styles.orderHeaderText}>Order #{order.orderNo}</Text>
-            </View>
-          </View> */}
-
           <View style={styles.purpleHeaderCard}>
             <View style={styles.purpleHeader}>
               <View style={styles.headerContent}>
@@ -433,7 +623,11 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
             {/* Delivery Date Field */}
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Delivery Date</Text>
-              <View style={styles.dateInput}>
+              <View
+                style={[
+                  styles.dateInput,
+                  validationErrors.deliveryDate ? styles.inputError : null,
+                ]}>
                 <MaterialIcons
                   name="event"
                   size={20}
@@ -447,19 +641,26 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
                       ? formatDateForDisplay(formData.deliveryDate)
                       : ''
                   }
-                  placeholder="Enter delivery date"
-                  onChangeText={text =>
-                    setFormData({...formData, deliveryDate: text})
-                  }
+                  placeholder="Enter delivery date (YYYY-MM-DD)"
+                  onChangeText={handleDeliveryDateChange}
                   placeholderTextColor="#9CA3AF"
                 />
               </View>
+              {validationErrors.deliveryDate ? (
+                <Text style={styles.errorText}>
+                  {validationErrors.deliveryDate}
+                </Text>
+              ) : null}
             </View>
 
             {/* Transporter Field */}
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Transporter</Text>
-              <View style={styles.textInput}>
+              <View
+                style={[
+                  styles.textInput,
+                  validationErrors.transporterName ? styles.inputError : null,
+                ]}>
                 <MaterialIcons
                   name="directions-bus"
                   size={20}
@@ -470,15 +671,18 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
                   style={styles.input}
                   value={formData.transporterName}
                   placeholder="Enter transporter name"
-                  onChangeText={text =>
-                    setFormData({...formData, transporterName: text})
-                  }
+                  onChangeText={handleTransporterNameChange}
                   placeholderTextColor="#9CA3AF"
                 />
               </View>
+              {validationErrors.transporterName ? (
+                <Text style={styles.errorText}>
+                  {validationErrors.transporterName}
+                </Text>
+              ) : null}
             </View>
 
-            {/* Delivery Address Field */}
+            {/* Delivery Address Field - Removed validation */}
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Delivery Address</Text>
               <View style={styles.textInput}>
@@ -492,9 +696,7 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
                   style={styles.input}
                   value={formData.deliveryAddress}
                   placeholder="Enter delivery address"
-                  onChangeText={text =>
-                    setFormData({...formData, deliveryAddress: text})
-                  }
+                  onChangeText={handleDeliveryAddressChange}
                   placeholderTextColor="#9CA3AF"
                   multiline
                 />
@@ -569,9 +771,15 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
 
                   <View style={styles.quantityInputContainer}>
                     <Text style={styles.quantityLabel}>
-                      Requested Quantity:
+                      Requested Quantity:{' '}
                     </Text>
-                    <View style={styles.qtyInputWrapper}>
+                    <View
+                      style={[
+                        styles.qtyInputWrapper,
+                        validationErrors.requestedQty[item.itemId]
+                          ? styles.inputError
+                          : null,
+                      ]}>
                       <TextInput
                         style={styles.quantityInput}
                         value={item.requestedQty.toString()}
@@ -581,6 +789,12 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
                       />
                     </View>
                   </View>
+
+                  {validationErrors.requestedQty[item.itemId] ? (
+                    <Text style={styles.errorText}>
+                      {validationErrors.requestedQty[item.itemId]}
+                    </Text>
+                  ) : null}
                 </View>
 
                 {/* Show warning if requested qty > available qty */}
@@ -869,6 +1083,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#111827',
+    marginRight: 10,
   },
   quantityInputContainer: {
     flexDirection: 'row',
@@ -971,6 +1186,20 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     flex: 1,
     color: '#1f2937',
+  },
+  requiredAsterisk: {
+    color: '#ef4444',
+    fontWeight: '700',
+  },
+  errorText: {
+    color: '#ef4444',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  inputError: {
+    borderColor: '#ef4444',
+    borderWidth: 1,
   },
 });
 

@@ -358,7 +358,7 @@ const OrderHistoryScreen = () => {
 
     return (
       <View style={styles.filterContainer}>
-        <View style={styles.header}>
+        {/* <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backButton}>
@@ -370,7 +370,7 @@ const OrderHistoryScreen = () => {
           </TouchableOpacity>
           <Text style={styles.headerText}>Order Confirmation</Text>
           <View style={styles.headerSpacer}></View>
-        </View>
+        </View> */}
         <View style={styles.filterHeader}>
           <MaterialIcons name="tune" size={20} color="#0284c7" />
           <Text style={styles.filterTitle}>Filter Orders</Text>

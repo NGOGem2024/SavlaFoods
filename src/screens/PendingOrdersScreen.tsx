@@ -633,6 +633,7 @@
 // });
 
 // export default PendingOrdersScreen;
+
 import React, {useEffect, useState, useCallback} from 'react';
 import {
   ActivityIndicator,
@@ -813,6 +814,9 @@ const PendingOrdersScreen = () => {
     if (!isLoadingMore && page < totalPages) {
       fetchPendingOrder(page + 1);
     }
+  };
+  const backHandler = () => {
+    navigation.goBack();
   };
 
   const handleOrderPress = (order: PendingOrder) => {
@@ -1114,6 +1118,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+  },
+  backButton: {
+    padding: 8,
   },
   titleContainer: {
     alignItems: 'center',

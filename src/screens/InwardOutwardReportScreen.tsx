@@ -337,7 +337,9 @@ const InwardOutwardReportScreen = () => {
 
       // Make API call
       const response = await axios.post(
-        API_ENDPOINTS.GET_INWARD_REPORT,
+        isInward
+          ? API_ENDPOINTS.GET_INWARD_REPORT
+          : API_ENDPOINTS.GET_OUTWARD_REPORT,
         requestData,
         {
           headers: DEFAULT_HEADERS,
@@ -345,7 +347,11 @@ const InwardOutwardReportScreen = () => {
       );
 
       // Log structured response
-      console.log('====== GET_INWARD_REPORT API RESPONSE START ======');
+      console.log(
+        `====== ${
+          isInward ? 'GET_INWARD_REPORT' : 'GET_OUTWARD_REPORT'
+        } API RESPONSE START ======`,
+      );
       console.log('Response status:', response.status);
       console.log(
         'Response headers:',
@@ -922,7 +928,7 @@ const InwardOutwardReportScreen = () => {
                               color: isInward ? '#F48221' : '#4682B4',
                             },
                           ]}>
-                          Inward Date
+                          {isInward ? 'Inward Date' : 'Outward Date'}
                         </Text>
                         <Text
                           style={[
@@ -932,7 +938,7 @@ const InwardOutwardReportScreen = () => {
                               color: isInward ? '#F48221' : '#4682B4',
                             },
                           ]}>
-                          Inward No
+                          {isInward ? 'Inward No' : 'Outward No'}
                         </Text>
                         <Text
                           style={[
@@ -1003,7 +1009,7 @@ const InwardOutwardReportScreen = () => {
                               color: isInward ? '#F48221' : '#4682B4',
                             },
                           ]}>
-                          Vakkal
+                          Vakkal No
                         </Text>
                         <Text
                           style={[
@@ -1014,6 +1020,16 @@ const InwardOutwardReportScreen = () => {
                             },
                           ]}>
                           Qty
+                        </Text>
+                        <Text
+                          style={[
+                            styles.tableHeaderCell,
+                            {
+                              width: 120,
+                              color: isInward ? '#F48221' : '#4682B4',
+                            },
+                          ]}>
+                          Delivered To
                         </Text>
                       </View>
                       {reportData.map((item, index) => (
@@ -1040,12 +1056,18 @@ const InwardOutwardReportScreen = () => {
                             {item.UNIT_NAME || '-'}
                           </Text>
                           <Text style={[styles.tableCell, {width: 100}]}>
-                            {item.GRN_DATE
-                              ? new Date(item.GRN_DATE).toLocaleDateString()
+                            {isInward
+                              ? item.GRN_DATE
+                                ? new Date(item.GRN_DATE).toLocaleDateString()
+                                : '-'
+                              : item.OUTWARD_DATE
+                              ? new Date(item.OUTWARD_DATE).toLocaleDateString()
                               : '-'}
                           </Text>
                           <Text style={[styles.tableCell, {width: 100}]}>
-                            {item.GRN_NO || '-'}
+                            {isInward
+                              ? item.GRN_NO || '-'
+                              : item.OUTWARD_NO || '-'}
                           </Text>
                           <Text style={[styles.tableCell, {width: 150}]}>
                             {item.CUSTOMER_NAME || '-'}
@@ -1064,7 +1086,7 @@ const InwardOutwardReportScreen = () => {
                               styles.tableCell,
                               {width: 100, textAlign: 'center'},
                             ]}>
-                            {item.REMARKS || '-'}
+                            {item.REMARK || item.REMARKS || '-'}
                           </Text>
                           <Text style={[styles.tableCell, {width: 100}]}>
                             {item.ITEM_MARKS || '-'}
@@ -1077,8 +1099,19 @@ const InwardOutwardReportScreen = () => {
                               styles.tableCell,
                               {width: 60, fontWeight: 'bold'},
                             ]}>
-                            {item.QUANTITY || '-'}
+                            {isInward
+                              ? item.QUANTITY || '-'
+                              : item.DC_QTY || '-'}
                           </Text>
+                          {/* <Text style={[styles.tableCell, {width: 120}]}>
+                  {item.DELIVERED_TO || '-'}
+                </Text> */}
+                          {/* Only show Delivered To for outward reports */}
+                          {/* {!isInward && ( */}
+                          <Text style={[styles.tableCell, {width: 120}]}>
+                            {item.DELIVERED_TO || '-'}
+                          </Text>
+                          {/* )} */}
                         </View>
                       ))}
                     </View>
@@ -1123,16 +1156,61 @@ const InwardOutwardReportScreen = () => {
       )}
 
       {/* iOS Date Picker Modal */}
+      {/* <Modal
+ visible={showFromDatePicker && Platform.OS === 'ios'}
+ transparent={true}
+ animationType="slide">
+ <View style={styles.iosDatePickerModal}>
+ <View style={styles.iosDatePickerContainer}>
+ <View style={styles.iosDatePickerHeader}>
+ <Text style={styles.iosDatePickerTitle}>Select From Date</Text>
+ <TouchableOpacity onPress={() => setShowFromDatePicker(false)}>
+ <Text style={styles.iosDatePickerDoneBtn}>Done</Text>
+ </TouchableOpacity>
+ </View>
+ <DateTimePicker
+ testID="fromDatePickerIOS"
+ value={fromDate}
+ mode="date"
+ display="spinner"
+ onChange={(event, date) => {
+ if (date) setFromDate(date);
+ }}
+ style={styles.iosDatePicker}
+ textColor="#000000"
+ />
+ <TouchableOpacity
+ style={styles.iosDatePickerConfirmBtn}
+ onPress={() => {
+ onFromDateChange({}, fromDate);
+ setShowFromDatePicker(false);
+ }}>
+ <Text style={styles.iosDatePickerConfirmText}>Confirm Date</Text>
+ </TouchableOpacity>
+ </View>
+ </View>
+ </Modal> */}
+
       <Modal
         visible={showFromDatePicker && Platform.OS === 'ios'}
         transparent={true}
         animationType="slide">
         <View style={styles.iosDatePickerModal}>
-          <View style={styles.iosDatePickerContainer}>
+          <View
+            style={[
+              styles.iosDatePickerContainer,
+              isInward ? styles.inwardDatePicker : styles.outwardDatePicker,
+            ]}>
             <View style={styles.iosDatePickerHeader}>
               <Text style={styles.iosDatePickerTitle}>Select From Date</Text>
               <TouchableOpacity onPress={() => setShowFromDatePicker(false)}>
-                <Text style={styles.iosDatePickerDoneBtn}>Done</Text>
+                <Text
+                  style={[
+                    styles.iosDatePickerDoneBtn,
+                    {color: isInward ? '#F48221' : '#4682B4'},
+                  ]}>
+                  Done
+                </Text>
               </TouchableOpacity>
             </View>
             <DateTimePicker
@@ -1144,10 +1222,13 @@ const InwardOutwardReportScreen = () => {
                 if (date) setFromDate(date);
               }}
               style={styles.iosDatePicker}
-              textColor="#000000"
+              textColor={isInward ? '#F48221' : '#4682B4'} // Set text color based on mode
             />
             <TouchableOpacity
-              style={styles.iosDatePickerConfirmBtn}
+              style={[
+                styles.iosDatePickerConfirmBtn,
+                {backgroundColor: isInward ? '#F48221' : '#4682B4'},
+              ]}
               onPress={() => {
                 onFromDateChange({}, fromDate);
                 setShowFromDatePicker(false);
@@ -1158,16 +1239,61 @@ const InwardOutwardReportScreen = () => {
         </View>
       </Modal>
 
+      {/* <Modal
+ visible={showToDatePicker && Platform.OS === 'ios'}
+ transparent={true}
+ animationType="slide">
+ <View style={styles.iosDatePickerModal}>
+ <View style={styles.iosDatePickerContainer}>
+ <View style={styles.iosDatePickerHeader}>
+ <Text style={styles.iosDatePickerTitle}>Select To Date</Text>
+ <TouchableOpacity onPress={() => setShowToDatePicker(false)}>
+ <Text style={styles.iosDatePickerDoneBtn}>Done</Text>
+ </TouchableOpacity>
+ </View>
+ <DateTimePicker
+ testID="toDatePickerIOS"
+ value={toDate}
+ mode="date"
+ display="spinner"
+ onChange={(event, date) => {
+ if (date) setToDate(date);
+ }}
+ style={styles.iosDatePicker}
+ textColor="#000000"
+ />
+ <TouchableOpacity
+ style={styles.iosDatePickerConfirmBtn}
+ onPress={() => {
+ onToDateChange({}, toDate);
+ setShowToDatePicker(false);
+ }}>
+ <Text style={styles.iosDatePickerConfirmText}>Confirm Date</Text>
+ </TouchableOpacity>
+ </View>
+ </View>
+ </Modal> */}
+
       <Modal
         visible={showToDatePicker && Platform.OS === 'ios'}
         transparent={true}
         animationType="slide">
         <View style={styles.iosDatePickerModal}>
-          <View style={styles.iosDatePickerContainer}>
+          <View
+            style={[
+              styles.iosDatePickerContainer,
+              isInward ? styles.inwardDatePicker : styles.outwardDatePicker,
+            ]}>
             <View style={styles.iosDatePickerHeader}>
               <Text style={styles.iosDatePickerTitle}>Select To Date</Text>
               <TouchableOpacity onPress={() => setShowToDatePicker(false)}>
-                <Text style={styles.iosDatePickerDoneBtn}>Done</Text>
+                <Text
+                  style={[
+                    styles.iosDatePickerDoneBtn,
+                    {color: isInward ? '#F48221' : '#4682B4'},
+                  ]}>
+                  Done
+                </Text>
               </TouchableOpacity>
             </View>
             <DateTimePicker
@@ -1179,10 +1305,13 @@ const InwardOutwardReportScreen = () => {
                 if (date) setToDate(date);
               }}
               style={styles.iosDatePicker}
-              textColor="#000000"
+              textColor={isInward ? '#F48221' : '#4682B4'} // Set text color based on mode
             />
             <TouchableOpacity
-              style={styles.iosDatePickerConfirmBtn}
+              style={[
+                styles.iosDatePickerConfirmBtn,
+                {backgroundColor: isInward ? '#F48221' : '#4682B4'},
+              ]}
               onPress={() => {
                 onToDateChange({}, toDate);
                 setShowToDatePicker(false);
@@ -1214,7 +1343,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
   },
   toggleButton: {
-    width: 70,
+    width: 62,
     height: 30,
     borderRadius: 15,
     marginHorizontal: 10,
@@ -1445,14 +1574,14 @@ const styles = StyleSheet.create({
   iosDatePickerDoneBtn: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#4CAF50',
+    color: '#F48221',
   },
   iosDatePicker: {
     height: 200,
     marginTop: 10,
   },
   iosDatePickerConfirmBtn: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#F48221',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -1512,7 +1641,7 @@ const styles = StyleSheet.create({
   },
   reportHeader: {
     padding: 0,
-    paddingTop: 10,
+    paddingTop: 50,
     paddingBottom: 12,
     paddingHorizontal: 16,
     flexDirection: 'row',
@@ -1537,6 +1666,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     flex: 1,
     textAlign: 'center',
+    // marginTop: 10,
   },
   backButton: {
     flexDirection: 'row',
@@ -1653,7 +1783,7 @@ const styles = StyleSheet.create({
     color: '#334155',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    textAlign: 'left',
+    textAlign: 'center',
   },
   emptyTableContainer: {
     padding: 40,

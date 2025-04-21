@@ -622,7 +622,7 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
               <Icon name="search" size={24} style={{color: '#777'}} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search by LotNo..."
+                placeholder="Search by lotno..."
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholderTextColor="#888"
@@ -943,15 +943,14 @@ const styles = StyleSheet.create({
   addToCartButton: {
     flexDirection: 'row',
     alignItems: 'center',
-
     paddingHorizontal: 5,
     paddingVertical: 5,
-    borderRadius: 22,
+    // borderRadius: 22,
     elevation: 3,
-    shadowColor: '#000',
+    // shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.2,
-    shadowRadius: 3,
+    // shadowRadius: 3,
   },
   cartIconWrapper: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
