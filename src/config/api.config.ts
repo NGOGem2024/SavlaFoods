@@ -27,6 +27,14 @@ export const API_ENDPOINTS = {
   SWITCH_ACCOUNT: `${API_BASE_URL}/sf/switchAccount`,
   UPDATE_PENDING_ORDER: `${API_BASE_URL}/order/updatePendingOrder`,
   GET_INWARD_REPORT: `${API_BASE_URL}/reports/getInwardData`,
+  GET_OUTWARD_REPORT: `${API_BASE_URL}/reports/getOutwardData`,
+  GET_ALL_SUMMARY: `${API_BASE_URL}/reports/getTotalInwardOutward`,
+  GET_ITEMWISE_SUMMARY: `${API_BASE_URL}/reports/getItemWiseTotals`,
+  GET_STOCK_REPORT: `${API_BASE_URL}/stocks/getStockReport`,
+  GET_STOCK_ITEMWISE:`${API_BASE_URL}/stocks/getItemWiseSummary`,
+  GET_STOCK_CATEGORYWISE:`${API_BASE_URL}/stocks/getCategoryWiseSummary`,
+  GET_LOT_REPORT:`${API_BASE_URL}/lots/getLotReport`,
+
 };
 
 export const BASE_IMAGE_PATH = `${API_BASE_URL}/assets/images`;
