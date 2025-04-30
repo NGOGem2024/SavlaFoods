@@ -16,19 +16,37 @@ export const API_ENDPOINTS = {
   ITEM_CATEGORIES: `${API_BASE_URL}/sf/getItemCatSubCat`,
   GET_ITEMS: `${API_BASE_URL}/sf/getItemsBySubCategory`,
   GET_ITEM_DETAILS: `${API_BASE_URL}/sf/getItemDetailswithStock`,
+
+  //Searching
+  SEARCH_STOCK_ITEMS: `${API_BASE_URL}/sf/searchStockItems`,
+  SEARCH_ITEMS: `${API_BASE_URL}/search/SearchItems`,
+
+  //Switch Account
+  GET_ACCOUNTS_BY_GROUP: `${API_BASE_URL}/sf/getAccountsByGroup`,
+  SWITCH_ACCOUNT: `${API_BASE_URL}/sf/switchAccount`,
+
+  //OrderHistory&Pending Flow
   GET_PLACEORDER_DETAILS: `${API_BASE_URL}/order/placeOrder`,
   GET_ORDER_HISTORY: `${API_BASE_URL}/order/getOrderHistory`,
   GET_PENDING_ORDERS: `${API_BASE_URL}/order/getPendingOrders`,
-  SEARCH_STOCK_ITEMS: `${API_BASE_URL}/sf/searchStockItems`,
-  GET_CANCEL_ORDER: `${API_BASE_URL}/order/cancelOrder`,
-  SEARCH_ITEMS: `${API_BASE_URL}/search/SearchItems`,
-  GET_ACCOUNTS_BY_GROUP: `${API_BASE_URL}/sf/getAccountsByGroup`,
-  SWITCH_ACCOUNT: `${API_BASE_URL}/sf/switchAccount`,
   UPDATE_PENDING_ORDER: `${API_BASE_URL}/order/updatePendingOrder`,
+  GET_CANCEL_ORDER: `${API_BASE_URL}/order/cancelOrder`,
+
+  //Inward/OutwardReport
   GET_INWARD_REPORT: `${API_BASE_URL}/reports/getInwardData`,
   GET_OUTWARD_REPORT: `${API_BASE_URL}/reports/getOutwardData`,
+
+  //Summary
   GET_ALL_SUMMARY: `${API_BASE_URL}/reports/getTotalInwardOutward`,
   GET_ITEMWISE_SUMMARY: `${API_BASE_URL}/reports/getItemWiseTotals`,
+
+  //StockReport
+  GET_STOCK_REPORT: `${API_BASE_URL}/stocks/getStockReport`,
+  GET_STOCK_ITEMWISE: `${API_BASE_URL}/stocks/getItemWiseSummary`,
+  GET_STOCK_CATEGORYWISE: `${API_BASE_URL}/stocks/getCategoryWiseSummary`,
+
+  //LotReport
+  GET_LOT_REPORT: `${API_BASE_URL}/lots/getLotReport`,
 };
 
 export const BASE_IMAGE_PATH = `${API_BASE_URL}/assets/images`;

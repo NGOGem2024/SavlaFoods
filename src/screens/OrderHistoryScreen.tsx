@@ -550,7 +550,7 @@ const OrderHistoryScreen = () => {
             <View style={styles.dateBox}>
               <View style={styles.dateLabelContainer}>
                 <MaterialIcons
-                  name="local-shipping"
+                  name="event"
                   size={16}
                   color="#374151"
                   style={styles.dateIcon}
@@ -587,7 +587,7 @@ const OrderHistoryScreen = () => {
                   color="#4B5563"
                   style={styles.remarksIcon}
                 />
-                <Text style={styles.remarksTitle}>Remarks: </Text>
+                <Text style={styles.remarksTitle}>Remarks </Text>
               </View>
               <Text style={styles.remarksValue}>{item.remarks}</Text>
             </View>
@@ -602,7 +602,7 @@ const OrderHistoryScreen = () => {
                   color="#4B5563"
                   style={styles.transporterIcon}
                 />
-                <Text style={styles.transporterTitle}>Transporter Name: </Text>
+                <Text style={styles.transporterTitle}>Transporter Name </Text>
               </View>
               <Text style={styles.transporterValue}>
                 {item.transporterName}
@@ -619,7 +619,7 @@ const OrderHistoryScreen = () => {
                 color="#4B5563"
                 style={styles.locationIcon}
               />
-              <Text style={styles.locationTitle}>Delivery Location : </Text>
+              <Text style={styles.locationTitle}>Delivery Location</Text>
             </View>
             <Text style={styles.locationValue}>
               {item.deliveryAddress || 'Not specified'}
@@ -691,11 +691,11 @@ const OrderHistoryScreen = () => {
             <View style={styles.emptyContainer}>
               <MaterialIcons name="history" size={64} color="#d1d5db" />
               <Text style={styles.emptyText}>No order history found</Text>
-              {selectedStatus && (
+              {/* {selectedStatus && (
                 <Text style={styles.filterInfoText}>
                   Filter: {selectedStatus}
                 </Text>
-              )}
+              )} */}
             </View>
           }
         />

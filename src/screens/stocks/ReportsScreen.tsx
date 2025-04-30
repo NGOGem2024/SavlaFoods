@@ -1,111 +1,3 @@
-// // src/screens/ReportsScreen.tsx
-// import React from 'react';
-// import {
-//   View,
-//   TouchableOpacity,
-//   Text,
-//   StyleSheet,
-//   SafeAreaView,
-//   ScrollView,
-// } from 'react-native';
-// import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-// import {useNavigation} from '@react-navigation/native';
-// import {LayoutWrapper} from '../../components/AppLayout';
-// import {useRoute} from '@react-navigation/native';
-
-// const ReportsScreen = () => {
-//   const navigation = useNavigation();
-//   const route = useRoute();
-
-//   const reportItems = [
-//     // {
-//     //   name: 'StockReport',
-//     //   title: 'Stock Report',
-//     //   icon: 'inventory',
-//     // },
-//     // {
-//     //   name: 'LotReport',
-//     //   title: 'Lot Report',
-//     //   icon: 'list',
-//     // },
-//     {
-//       name: 'InwardOutwardReport',
-//       title: 'Inward/Outward Report',
-//       icon: 'swap-horiz',
-//     },
-//     {
-//       name: 'ReportSummary',
-//       title: 'Summary',
-//       icon: 'summarize',
-//     },
-//   ];
-
-//   return (
-//     <LayoutWrapper showHeader={true} route={route} showTabBar={false}>
-//       <SafeAreaView style={styles.container}>
-//         <ScrollView>
-//           <View style={styles.header}>
-//             <Text style={styles.headerTitle}>Reports</Text>
-//           </View>
-
-//           <View style={styles.container}>
-//             {reportItems.map(item => (
-//               <TouchableOpacity
-//                 key={item.name}
-//                 style={styles.reportItem}
-//                 onPress={() => navigation.navigate(item.name)}>
-//                 <MaterialIcons
-//                   name={item.icon}
-//                   size={24}
-//                   color="#F48221"
-//                   style={styles.icon}
-//                 />
-//                 <Text style={styles.title}>{item.title}</Text>
-//               </TouchableOpacity>
-//             ))}
-//           </View>
-//         </ScrollView>
-//       </SafeAreaView>
-//     </LayoutWrapper>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     padding: 16,
-//   },
-//   header: {
-//     shadowOpacity: 0.15,
-//     shadowRadius: 3,
-//     elevation: 3, // Slightly increased for better depth
-//     backgroundColor: '#F48221',
-//     padding: 17,
-//     alignItems: 'center',
-//     marginTop: 10,
-//   },
-//   headerTitle: {
-//     fontSize: 18,
-//     fontWeight: 'bold',
-//     color: 'white',
-//   },
-//   reportItem: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     padding: 16,
-//     borderBottomWidth: 1,
-//     borderBottomColor: '#ddd',
-//   },
-//   icon: {
-//     marginRight: 16,
-//   },
-//   title: {
-//     fontSize: 16,
-//   },
-// });
-
-// export default ReportsScreen;
-
 import React from 'react';
 import {
   StyleSheet,
@@ -118,9 +10,10 @@ import {
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {LayoutWrapper} from '../../components/AppLayout';
+import {ParamListBase} from '@react-navigation/native';
 
-const ReportsScreen = () => {
-  const navigation = useNavigation();
+const ReportsScreen = ({navigation}: {navigation: any}) => {
+  // const navigation = useNavigation();
   const route = useRoute();
 
   const reportItems = [
@@ -130,12 +23,25 @@ const ReportsScreen = () => {
       screen: 'InwardOutwardReport',
       description: 'View all inward and outward transactions',
     },
-    // {
-    //   title: 'Summary',
-    //   icon: 'summarize',
-    //   screen: 'ReportSummary',
-    //   description: 'View summary reports and analytics',
-    // },
+    {
+      title: 'Stock Report',
+      icon: 'inventory', // Represents stock/items
+      screen: 'StockReportScreen',
+      description: 'View current stock levels and availability',
+    },
+    {
+      title: 'Lot Report',
+      icon: 'category', // Represents grouping/lots
+      screen: 'LotReport',
+      description: 'View details of product lots information',
+    },
+
+    {
+      title: 'Summary',
+      icon: 'summarize',
+      screen: 'ReportSummary',
+      description: 'View summary reports and analytics',
+    },
   ];
 
   return (

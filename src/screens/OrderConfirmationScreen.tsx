@@ -305,9 +305,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
   // Update the date field handler to handle keyboard properly
   const handleDateFieldTap = () => {
     // Only dismiss keyboard for this specific interaction
-    // This won't affect the keyboard behavior for other interactions
     Keyboard.dismiss();
-
     // Show date picker after ensuring keyboard is dismissed
     setTimeout(() => {
       setShowDatePicker(true);
@@ -788,129 +786,6 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
             </TouchableOpacity>
           </View>
         </ScrollView>
-
-        {/* Labor Modal */}
-        {/* <Modal
-          visible={isLaborModalVisible}
-          transparent={true}
-          animationType="slide"
-          onRequestClose={() => setIsLaborModalVisible(false)}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <View style={styles.modalTitleContainer}>
-                  <MaterialIcons name="engineering" size={24} color="#2C3E50" />
-                  <Text style={styles.modalTitle}>Handling</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => setIsLaborModalVisible(false)}
-                  style={styles.closeModalButton}>
-                  <Ionicons name="close" size={24} color="#2C3E50" />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.tableHeader}>
-                <Text
-                  style={[
-                    styles.tableHeaderCell,
-                    {width: '10%', textAlign: 'center'},
-                  ]}>
-                  #
-                </Text>
-                <Text
-                  style={[
-                    styles.tableHeaderCell,
-                    {width: '15%', textAlign: 'center'},
-                  ]}></Text>
-                <Text style={[styles.tableHeaderCell, {width: '30%'}]}>
-                  Type
-                </Text>
-                <Text style={[styles.tableHeaderCell, {width: '25%'}]}>
-                  Applied Quantity
-                </Text>
-                <Text style={[styles.tableHeaderCell, {width: '20%'}]}>
-                  Quantity
-                </Text>
-              </View>
-
-              <ScrollView style={styles.laborItemsContainer}>
-                {laborCharges.map((charge, index) => (
-                  <View
-                    key={charge.id}
-                    style={[
-                      styles.laborItem,
-                      index % 2 === 0 ? styles.evenRow : null,
-                    ]}>
-                    <Text
-                      style={[
-                        styles.laborItemText,
-                        {width: '10%', textAlign: 'center'},
-                      ]}>
-                      {charge.id}
-                    </Text>
-                    <View style={{width: '15%', alignItems: 'center'}}>
-                      <TouchableOpacity
-                        onPress={() => toggleLaborChargeSelection(charge.id)}
-                        disabled={charge.id === 1}>
-                        <View
-                          style={[
-                            styles.checkbox,
-                            charge.selected && styles.checkboxSelected,
-                            charge.id === 1 && styles.checkboxDisabled,
-                          ]}>
-                          {charge.selected && (
-                            <Text style={styles.checkmark}>✓</Text>
-                          )}
-                        </View>
-                      </TouchableOpacity>
-                    </View>
-                    <Text style={[styles.laborItemText, {width: '30%'}]}>
-                      {charge.type}
-                    </Text>
-                    <View style={{width: '25%', paddingHorizontal: 5}}>
-                      <TextInput
-                        style={[
-                          styles.quantityInput,
-                          !charge.selected && styles.disabledQuantityInput,
-                        ]}
-                        value={charge.appliedQuantity}
-                        onChangeText={text =>
-                          updateAppliedQuantity(charge.id, text)
-                        }
-                        keyboardType="numeric"
-                        editable={charge.selected}
-                      />
-                    </View>
-                    <Text
-                      style={[
-                        styles.laborItemText,
-                        {width: '20%', textAlign: 'center'},
-                      ]}>
-                      {charge.quantity}
-                    </Text>
-                  </View>
-                ))}
-              </ScrollView>
-
-              <View style={styles.modalDivider} />
-
-              <View style={styles.modalButtonContainer}>
-                <TouchableOpacity
-                  style={styles.webModalButton}
-                  onPress={proceedWithLaborCharges}>
-                  <Text style={styles.webModalButtonText}>Proceed</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.webModalButton, styles.webCloseButton]}
-                  onPress={() => setIsLaborModalVisible(false)}>
-                  <Text style={styles.webCloseButtonText}>Close</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </KeyboardAvoidingView>
-        </Modal> */}
 
         <Modal
           visible={showDatePicker && Platform.OS === 'ios'}

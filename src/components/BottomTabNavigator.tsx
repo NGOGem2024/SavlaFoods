@@ -526,8 +526,8 @@ const ReportsStackNavigator = () => {
         options={{headerShown: false}}
       />
 
-      {/* <ReportsStack.Screen
-        name="StockReport"
+      <ReportsStack.Screen
+        name="StockReportScreen"
         component={StockReportScreen}
         options={{title: 'Stock Report'}}
       />
@@ -535,7 +535,7 @@ const ReportsStackNavigator = () => {
         name="LotReport"
         component={LotReportScreen}
         options={{title: 'Lot Report'}}
-      /> */}
+      />
       <ReportsStack.Screen
         name="InwardOutwardReport"
         component={InwardOutwardReportScreen}
@@ -549,59 +549,6 @@ const ReportsStackNavigator = () => {
     </ReportsStack.Navigator>
   );
 };
-
-// Temporary Reports Screen until individual report screens are created
-// const ReportsScreen = ({navigation}: {navigation: any}) => {
-//   const route = useRoute();
-//   const reportItems = [
-//     {
-//       name: 'StockReport',
-//       title: 'Stock Report',
-//       icon: 'inventory',
-//     },
-//     {
-//       name: 'LotReport',
-//       title: 'Lot Report',
-//       icon: 'list',
-//     },
-//     {
-//       name: 'InwardOutwardReport',
-//       title: 'Inward/Outward Report',
-//       icon: 'swap-horiz',
-//     },
-//     {
-//       name: 'ReportSummary',
-//       title: 'Summary',
-//       icon: 'summarize',
-//     },
-//   ];
-//   return (
-//     <LayoutWrapper showHeader={true} route={route} showTabBar={false}>
-//       <View style={{flex: 1, padding: 16}}>
-//         {reportItems.map(item => (
-//           <TouchableOpacity
-//             key={item.name}
-//             style={{
-//               flexDirection: 'row',
-//               alignItems: 'center',
-//               padding: 16,
-//               borderBottomWidth: 1,
-//               borderBottomColor: '#ddd',
-//             }}
-//             onPress={() => navigation.navigate(item.name)}>
-//             <MaterialIcons
-//               name={item.icon}
-//               size={24}
-//               color="#F48221"
-//               style={{marginRight: 16}}
-//             />
-//             <Text style={{fontSize: 16}}>{item.title}</Text>
-//           </TouchableOpacity>
-//         ))}
-//       </View>
-//     </LayoutWrapper>
-//   );
-// };
 
 interface OrderContextType {
   orderDetails: any;
