@@ -173,16 +173,17 @@ const InwardOutwardReportScreen = () => {
     
     switch(period) {
       case 'Weekly':
-        // Initialize to a date within the selected financial year range
-        const financialYearStartValue = parseInt(financialYear);
+        // Initialize to dates based on current month/year or set defaults
         
-        // Set current month and year for week display
-        // Default to January of the financial year start
-        setCurrentMonth(0); // January
-        setCurrentYear(financialYearStartValue);
+        // If current month/year not already set, initialize them
+        if (!currentMonth || !currentYear) {
+          // Default to current month, or January of financial year
+          setCurrentMonth(new Date().getMonth());
+          setCurrentYear(parseInt(financialYear));
+        }
         
-        // Default to first week of January
-        const weekStart = new Date(financialYearStartValue, 0, 1);
+        // Default to first week of current month
+        const weekStart = new Date(currentYear, currentMonth, 1);
         // Adjust to start on Sunday
         const dayOfWeek = weekStart.getDay();
         if (dayOfWeek !== 0) {
@@ -262,8 +263,8 @@ const InwardOutwardReportScreen = () => {
 
   // Generate week dates for current month and year
   const generateWeekDates = () => {
-    // Use the calendar year directly from financialYear 
-    const calendarYear = parseInt(financialYear);
+    // Use the currentYear directly instead of parsing from financialYear
+    const calendarYear = currentYear;
     
     // Get the first day of the month
     const firstDayOfMonth = new Date(calendarYear, currentMonth, 1);
@@ -969,8 +970,7 @@ const InwardOutwardReportScreen = () => {
                           // Update the calendar year
                           const yearValue = parseInt(yearOption.value);
                           
-                          // Set the current month and year to January of the selected year
-                          setCurrentMonth(0); // January
+                          // Set the current month and year based on the selected financial year
                           setCurrentYear(yearValue);
                           
                           // Reset the currently selected period if any
