@@ -2,10 +2,11 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import axios from 'axios';
-import React, {useEffect, useState, useCallback} from 'react';
+import React, {useEffect, useState, useCallback, useRef} from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -14,6 +15,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Animated,
 } from 'react-native';
 import {MainStackParamList} from '../../src/type/type';
 import {useCart} from '../contexts/CartContext';
@@ -21,6 +23,7 @@ import {API_ENDPOINTS} from '../config/api.config';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 interface DetailRowProps {
   label: string;
@@ -71,6 +74,20 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
   const [groupedOrderItems, setGroupedOrderItems] = useState<GroupedItems>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [itemToRemove, setItemToRemove] = useState<OrderItem | null>(null);
+
+  // New state for custom error alert
+  const [errorAlertVisible, setErrorAlertVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [errorAnimation] = useState(new Animated.Value(0));
+
+  // Toast state similar to OrderDetailsScreen
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const toastOffset = useRef(new Animated.Value(300)).current;
 
   useEffect(() => {
     if (!isInitialized && (selectedItems.length > 0 || cartItems.length > 0)) {
@@ -171,63 +188,69 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
     [cartItems, removeCartItem],
   );
 
-  // const handleConfirmOrder = async () => {
-  //   setIsLoading(true);
-  //   try {
-  //     const allItems = Object.values(groupedOrderItems).flat();
+  const showCustomErrorAlert = (message: string) => {
+    setErrorMessage(message);
+    setErrorAlertVisible(true);
 
-  //     if (allItems.length === 0) {
-  //       Alert.alert('Error', 'Please add items to your order');
-  //       return;
-  //     }
+    // Start animation
+    Animated.sequence([
+      Animated.timing(errorAnimation, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.delay(2500),
+      Animated.timing(errorAnimation, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setErrorAlertVisible(false);
+    });
+  };
 
-  //     const invalidItems = allItems.filter(item => !item.ORDERED_QUANTITY || item.ORDERED_QUANTITY <= 0);
-  //     if (invalidItems.length > 0) {
-  //       Alert.alert('Error', 'Please specify valid quantities for all items');
-  //       return;
-  //     }
+  // New toast method similar to OrderDetailsScreen
+  const showToast = (
+    message: string,
+    type: 'success' | 'error' = 'success',
+  ) => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
 
-  //     const orderPayload = {
-  //       CustomerID: route.params?.customerID || "1",
-  //       items: allItems.map(item => ({
-  //         LotNo: item.LOT_NO,
-  //         ItemID: item.ITEM_ID,
-  //         Quantity: item.ORDERED_QUANTITY
-  //       }))
-  //     };
+    // Animate toast in
+    Animated.parallel([
+      Animated.timing(toastOpacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(toastOffset, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
-  //     const response = await axios.post(
-  //       API_ENDPOINTS.GET_PLACEORDER_DETAILS,
-  //       orderPayload
-  //     );
-
-  //     if (response.data.success) {
-  //       Alert.alert(
-  //         'Success',
-  //         'Order placed successfully! You will receive an email confirmation shortly.',
-  //         [
-  //           {
-  //             text: 'OK',
-  //             onPress: () => {
-  //               clearCart();
-  //               navigation.navigate('BottomTabNavigator', {
-  //                 shouldRefresh: true,
-  //                 customerID: String(route.params?.customerID || ''),
-  //               });
-  //             }
-  //           }
-  //         ]
-  //       );
-  //     } else {
-  //       Alert.alert('Error', response.data.message || 'Failed to place order');
-  //     }
-  //   } catch (error: any) {
-  //     const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
-  //     Alert.alert('Error', `Failed to place order: ${errorMessage}`);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
+    // Hide toast after 2.5 seconds
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(toastOpacity, {
+          toValue: 0,
+          duration: 350,
+          useNativeDriver: true,
+        }),
+        Animated.timing(toastOffset, {
+          toValue: 300,
+          duration: 350,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setToastVisible(false);
+      });
+    }, 2500);
+  };
 
   const handleConfirmOrder = async () => {
     setIsLoading(true);
@@ -235,7 +258,9 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
       const allItems = Object.values(groupedOrderItems).flat();
 
       if (allItems.length === 0) {
-        Alert.alert('Error', 'Please add items to your order');
+        // Replace Alert.alert with custom error alert
+        showCustomErrorAlert('Please add items to your order');
+        setIsLoading(false);
         return;
       }
 
@@ -243,7 +268,8 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
         item => !item.ORDERED_QUANTITY || item.ORDERED_QUANTITY <= 0,
       );
       if (invalidItems.length > 0) {
-        Alert.alert('Error', 'Please specify valid quantities for all items');
+        showCustomErrorAlert('Please specify valid quantities for all items');
+        setIsLoading(false);
         return;
       }
 
@@ -257,14 +283,14 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
         customerID: route.params.customerID,
         userSupervisorId: route.params.userSupervisorId,
         userMukadamId: route.params.userMukadamId,
-        stockLotLocationId: route.params.stockLotLocationId || 882698,
+        stockLotLocationId: route.params.stockLotLocationId,
         unitId: route.params.unitId || 3,
         finYearId: route.params.finYearId || 15,
       });
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message || error.message || 'Unknown error';
-      Alert.alert('Error', `Failed to process order: ${errorMessage}`);
+      showCustomErrorAlert(`Failed to process order: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }
@@ -282,20 +308,10 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
         <TouchableOpacity
           style={styles.deleteButton}
           onPress={() => {
-            Alert.alert(
-              'Remove Item',
-              'Are you sure you want to remove this item?',
-              [
-                {text: 'Cancel', style: 'cancel'},
-                {
-                  text: 'Remove',
-                  style: 'destructive',
-                  onPress: () => handleRemoveItem(item),
-                },
-              ],
-            );
+            setItemToRemove(item);
+            setModalVisible(true);
           }}>
-          <Ionicons name="trash-outline" size={20} style={{color:"#FF6B6B" }}/>
+          <Ionicons name="trash-outline" size={20} style={{color: '#FF6B6B'}} />
         </TouchableOpacity>
       </View>
       <View style={styles.orderItemDetails}>
@@ -338,10 +354,15 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
                 keyboardType="numeric"
               />
               <TouchableOpacity
-                style={styles.quantityButton}
+                style={[
+                  styles.quantityButton,
+                  item.ORDERED_QUANTITY >= item.AVAILABLE_QTY &&
+                    styles.disabledQuantityButton,
+                ]}
                 onPress={() =>
                   handleQuantityChange(groupName, item.LOT_NO, 'increment')
-                }>
+                }
+                disabled={item.ORDERED_QUANTITY >= item.AVAILABLE_QTY}>
                 <Text style={styles.quantityButtonText}>+</Text>
               </TouchableOpacity>
             </View>
@@ -376,37 +397,160 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
     ));
   };
 
+  // Render custom error alert
+  const renderErrorAlert = () => {
+    const translateY = errorAnimation.interpolate({
+      inputRange: [0, 1],
+      outputRange: [-100, 0],
+    });
+
+    return (
+      <Animated.View
+        style={[styles.errorAlertContainer, {transform: [{translateY}]}]}
+        pointerEvents="none">
+        <View style={styles.errorAlertContent}>
+          <View style={styles.errorIconContainer}>
+            <FontAwesome name="exclamation-circle" size={24} color="#FFFFFF" />
+          </View>
+          <Text style={styles.errorAlertText}>{errorMessage}</Text>
+        </View>
+      </Animated.View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
+      {/* Custom Error Alert */}
+      {errorAlertVisible && renderErrorAlert()}
+
+      {/* Toast Notification */}
+      {toastVisible && (
+        <Animated.View
+          style={[
+            styles.toast,
+            {
+              opacity: toastOpacity,
+              transform: [{translateX: toastOffset}],
+            },
+            toastType === 'error' ? styles.errorToast : styles.successToast,
+          ]}>
+          <View style={styles.toastContent}>
+            <MaterialIcons
+              name={toastType === 'success' ? 'check-circle' : 'error'}
+              size={24}
+              color={toastType === 'success' ? '#22c55e' : '#ef4444'}
+            />
+            <Text style={styles.toastMessage}>{toastMessage}</Text>
+          </View>
+        </Animated.View>
+      )}
+
+      {/* Custom Modal for Item Removal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Ionicons name="warning" size={32} color="#0284c7" />
+              <Text style={styles.modalTitle}>Remove Item</Text>
+            </View>
+            <View style={styles.modalBody}>
+              <Text style={styles.modalMessage}>
+                Are you sure you want to remove this item?
+              </Text>
+              {itemToRemove && (
+                <View style={styles.itemPreview}>
+                  <Text style={styles.itemPreviewText}>
+                    {itemToRemove.ITEM_NAME} - Lot: {itemToRemove.LOT_NO}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => setModalVisible(false)}>
+                <Text style={styles.modalCancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalConfirmButton}
+                onPress={() => {
+                  if (itemToRemove) {
+                    handleRemoveItem(itemToRemove);
+                    showToast('Item removed successfully !', 'error');
+                  }
+                  setModalVisible(false);
+                }}>
+                <Ionicons name="trash-outline" size={18} color="#FFFFFF" />
+                <Text style={styles.modalConfirmButtonText}>Remove</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <View style={styles.mainContainer}>
-        <ScrollView style={styles.scrollContainer}>
+        <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={{marginLeft: 15}}>
-            <MaterialIcons name="arrow-back" size={24} style={{color:"#663399"}} />
+            style={styles.backButton}>
+            <MaterialIcons
+              name="arrow-back"
+              size={24}
+              style={{color: '#0284c7'}}
+            />
           </TouchableOpacity>
           <Text style={styles.headerText}>Place Your Order</Text>
-          {renderGroupedItems()}
-          <View style={styles.scrollPadding} />
-        </ScrollView>
-        <View style={styles.footerContainer}>
-          <TouchableOpacity
-            style={[styles.confirmButton, isLoading && styles.disabledButton]}
-            onPress={handleConfirmOrder}
-            disabled={isLoading}>
-            {isLoading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator color="#FFFFFF" />
-                <Text style={styles.confirmButtonText}>Processing...</Text>
-              </View>
-            ) : (
-              <>
-                <Text style={styles.confirmButtonText}>Place Order</Text>
-                <Ionicons name="arrow-forward" size={20} style={{color:"#FFFFFF"}} />
-              </>
-            )}
-          </TouchableOpacity>
+          <View style={styles.headerSpacer}></View>
         </View>
+
+        {/* Render empty cart view if there are no items */}
+        {Object.keys(groupedOrderItems).length === 0 ? (
+          <View style={styles.emptyCartContainer}>
+            <Text style={styles.emptyCartEmoji}>🛒</Text>
+            <Text style={styles.emptyCartText}>Your cart is empty</Text>
+            <TouchableOpacity
+              style={styles.homeButton}
+              onPress={() => navigation.navigate('HomeScreen' as never)}>
+              <Text style={styles.homeButtonText}>Fill Cart</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            <ScrollView style={styles.scrollContainer}>
+              {renderGroupedItems()}
+              <View style={styles.scrollPadding} />
+            </ScrollView>
+            <View style={styles.footerContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.confirmButton,
+                  isLoading && styles.disabledButton,
+                ]}
+                onPress={handleConfirmOrder}
+                disabled={isLoading}>
+                {isLoading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator color="#FFFFFF" />
+                    <Text style={styles.confirmButtonText}>Processing...</Text>
+                  </View>
+                ) : (
+                  <>
+                    <Text style={styles.confirmButtonText}>Place Order</Text>
+                    <Ionicons
+                      name="arrow-forward"
+                      size={20}
+                      style={{color: '#FFFFFF'}}
+                    />
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -425,6 +569,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
     paddingHorizontal: 16,
+    marginTop: 12,
   },
   scrollPadding: {
     height: 20,
@@ -433,21 +578,42 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F7',
+    width: '100%',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#F8F7FF',
+  },
+  headerSpacer: {
+    width: 40,
+  },
   headerText: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginTop: 5,
-    marginBottom: 16,
-    textAlign: 'center',
-    color: '#663399',
+    color: '#0284c7',
   },
   groupContainer: {
     marginBottom: 20,
   },
   groupHeaderContainer: {
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#e0f2fe',
     borderLeftWidth: 4,
-    borderLeftColor: '#8B5CF6',
+    borderLeftColor: '#0284c7',
     marginBottom: 8,
     borderRadius: 4,
     shadowColor: '#000',
@@ -473,7 +639,7 @@ const styles = StyleSheet.create({
   statusIndicator: {
     height: 2,
     borderRadius: 2,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#0284c7',
     marginBottom: 12,
   },
   orderItemHeader: {
@@ -495,7 +661,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   highlightedLotNo: {
-    color: '#8B5CF6',
+    color: '#F48221',
     fontWeight: '700',
   },
   deleteButton: {
@@ -513,7 +679,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   detailLabel: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#777',
   },
   footer: {
@@ -522,7 +688,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   confirmButton: {
-    backgroundColor: '#663399',
+    backgroundColor: '#0284c7',
     paddingVertical: 12,
     paddingHorizontal: 32,
     borderRadius: 8,
@@ -555,7 +721,7 @@ const styles = StyleSheet.create({
   quantityButton: {
     width: 30,
     height: 30,
-    backgroundColor: '#8B5CF2',
+    backgroundColor: '#0284c7',
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
@@ -579,15 +745,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   detailValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
     color: '#333',
+    paddingVertical: 5,
   },
   highlightedValue: {
     color: '#ff5733',
   },
   orderhighlightedValue: {
-    color: '#8B5CF2',
+    color: '#0284c7',
   },
   footerContainer: {
     backgroundColor: '#fff',
@@ -606,6 +773,216 @@ const styles = StyleSheet.create({
         elevation: 4,
       },
     }),
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '85%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: {width: 0, height: 2},
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
+  modalHeader: {
+    backgroundColor: '#F8F7FF',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EDE9FE',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#0284c7',
+    marginLeft: 10,
+  },
+  modalBody: {
+    padding: 20,
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 12,
+  },
+  itemPreview: {
+    backgroundColor: '#F3F4F6',
+    padding: 12,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#0284c7',
+  },
+  itemPreviewText: {
+    fontSize: 14,
+    color: '#4B5563',
+    fontWeight: '500',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  modalCancelButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+    marginRight: 12,
+  },
+  modalCancelButtonText: {
+    color: '#4B5563',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  modalConfirmButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#dc3545',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  modalConfirmButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 5,
+  },
+  // Custom error alert styles
+  errorAlertContainer: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 30,
+    left: 20,
+    right: 20,
+    zIndex: 9999,
+    color: 'black',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: {width: 0, height: 4},
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  errorAlertContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF5252',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    width: '100%',
+    minHeight: 60,
+    marginTop: 10,
+  },
+  errorIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  errorAlertText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+    flex: 1,
+  },
+  emptyCartContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    marginTop: -25,
+  },
+  emptyCartText: {
+    fontSize: 20,
+    marginBottom: 20,
+    color: '#333',
+  },
+  homeButton: {
+    // backgroundColor: '#663399',
+    backgroundColor: '#0284c7',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+  },
+  homeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  emptyCartEmoji: {
+    fontSize: 40,
+    marginBottom: 10,
+  },
+  disabledQuantityButton: {
+    backgroundColor: '#C8C8C8',
+    opacity: 0.7,
+  },
+  // Toast styles - similar to OrderDetailsScreen
+  toast: {
+    position: 'absolute',
+    top: 82,
+    right: 5,
+    width: '74%',
+    maxWidth: 310,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: -2,
+      height: 2,
+    },
+    shadowOpacity: 0.18,
+    shadowRadius: 4.65,
+    elevation: 7,
+    zIndex: 1000,
+    borderLeftWidth: 4,
+    borderLeftColor: '#22c55e',
+  },
+  toastContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  toastMessage: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+    marginLeft: 10,
+  },
+  errorToast: {
+    borderLeftColor: '#ef4444',
+  },
+  successToast: {
+    borderLeftColor: '#22c55e',
   },
 });
 

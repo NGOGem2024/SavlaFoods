@@ -1,7 +1,9 @@
- // src/config/api.config
-   
-const YOUR_COMPUTER_IP = '202.189.234.140';  
-// const YOUR_COMPUTER_IP = '192.168.1.37'; 
+// src/config/api.config
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const YOUR_COMPUTER_IP = '202.189.234.140';
+// const YOUR_COMPUTER_IP = '192.168.1.37';
 const PORT = '5000';
 
 export const API_BASE_URL = `http://${YOUR_COMPUTER_IP}:${PORT}`;
@@ -9,28 +11,64 @@ export const API_BASE_URL = `http://${YOUR_COMPUTER_IP}:${PORT}`;
 export const API_ENDPOINTS = {
   LOGIN: `${API_BASE_URL}/sf/getUserAccountID`,
   GET_CUSTOMER_ID: `${API_BASE_URL}/getCustomerID`,
-  GET_LIST_ACCOUNT:`${API_BASE_URL}/sf/listAccounts`,
+  GET_LIST_ACCOUNT: `${API_BASE_URL}/sf/listAccounts`,
   GET_CUSTOMER_INFO: `${API_BASE_URL}/getCustomerInfo`,
   ITEM_CATEGORIES: `${API_BASE_URL}/sf/getItemCatSubCat`,
   GET_ITEMS: `${API_BASE_URL}/sf/getItemsBySubCategory`,
   GET_ITEM_DETAILS: `${API_BASE_URL}/sf/getItemDetailswithStock`,
-  GET_PLACEORDER_DETAILS: `${API_BASE_URL}/sf/placeOrder`,
-  GET_ORDER_HISTORY: `${API_BASE_URL}/sf/getOrderHistory`,
-  SEARCH_STOCK_ITEMS: `${API_BASE_URL}/sf/searchStockItems`,
-  SEARCH_STOCK_SUBCATEGORIES: `${API_BASE_URL}/search/searchItemsAndSubCategories`,
-  SEARCH_STOCK_CATEGORIES: `${API_BASE_URL}/search/searchCategories`,
-  SEARCH_BY_LOT_NUMBER: `${API_BASE_URL}/search/searchByLotNumber`,
-};
 
+  //Searching
+  SEARCH_STOCK_ITEMS: `${API_BASE_URL}/sf/searchStockItems`,
+  SEARCH_ITEMS: `${API_BASE_URL}/search/SearchItems`,
+
+  //Switch Account
+  GET_ACCOUNTS_BY_GROUP: `${API_BASE_URL}/sf/getAccountsByGroup`,
+  SWITCH_ACCOUNT: `${API_BASE_URL}/sf/switchAccount`,
+
+  //OrderHistory&Pending Flow
+  GET_PLACEORDER_DETAILS: `${API_BASE_URL}/order/placeOrder`,
+  GET_ORDER_HISTORY: `${API_BASE_URL}/order/getOrderHistory`,
+  GET_PENDING_ORDERS: `${API_BASE_URL}/order/getPendingOrders`,
+  UPDATE_PENDING_ORDER: `${API_BASE_URL}/order/updatePendingOrder`,
+  GET_CANCEL_ORDER: `${API_BASE_URL}/order/cancelOrder`,
+
+  //Inward/OutwardReport
+  GET_INWARD_REPORT: `${API_BASE_URL}/reports/getInwardData`,
+  GET_OUTWARD_REPORT: `${API_BASE_URL}/reports/getOutwardData`,
+
+  //Summary
+  GET_ALL_SUMMARY: `${API_BASE_URL}/reports/getTotalInwardOutward`,
+  GET_ITEMWISE_SUMMARY: `${API_BASE_URL}/reports/getItemWiseTotals`,
+
+  //StockReport
+  GET_STOCK_REPORT: `${API_BASE_URL}/stocks/getStockReport`,
+  GET_STOCK_ITEMWISE: `${API_BASE_URL}/stocks/getItemWiseSummary`,
+  GET_STOCK_CATEGORYWISE: `${API_BASE_URL}/stocks/getCategoryWiseSummary`,
+
+  //LotReport
+  GET_LOT_REPORT: `${API_BASE_URL}/lots/getLotReport`,
+};
 
 export const BASE_IMAGE_PATH = `${API_BASE_URL}/assets/images`;
 
 export const getImagePath = (imageFileName: string) => {
-    if (!imageFileName) return null;
-    return `${BASE_IMAGE_PATH}/${imageFileName}`;
-  };
+  if (!imageFileName) return null;
+  return `${BASE_IMAGE_PATH}/${imageFileName}`;
+};
 
 export const DEFAULT_HEADERS = {
   'Content-Type': 'application/json',
-  'Accept': 'application/json',
+  Accept: 'application/json',
+};
+
+// Add this new function
+export const getAuthHeaders = async () => {
+  // Get token from storage - this depends on how you're storing auth tokens
+  // You may be using AsyncStorage, SecureStore, or a state management solution
+  const token = await AsyncStorage.getItem('userToken');
+
+  return {
+    ...DEFAULT_HEADERS,
+    Authorization: token ? `Bearer ${token}` : '',
+  };
 };
