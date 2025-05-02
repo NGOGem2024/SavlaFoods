@@ -32,7 +32,7 @@ import {openPdf} from '../utils/ReportPdfUtils';
 import {API_ENDPOINTS, DEFAULT_HEADERS} from '../config/api.config';
 
 // Time period types for the report
-type TimePeriod = 'Weekly' | 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly' | 'Custom';
+type TimePeriod = 'Weekly' | 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Custom';
 
 const InwardOutwardReportScreen = () => {
   // Mode state
@@ -55,7 +55,6 @@ const InwardOutwardReportScreen = () => {
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [selectedQuarter, setSelectedQuarter] = useState<string | null>(null);
   const [selectedHalf, setSelectedHalf] = useState<string | null>(null);
-  const [selectedYear, setSelectedYear] = useState<string | null>(null);
   const [financialYear, setFinancialYear] = useState('2025-2026');
   const [showFinancialYearSelector, setShowFinancialYearSelector] = useState(false);
 
@@ -148,7 +147,6 @@ const InwardOutwardReportScreen = () => {
     setSelectedMonth(null);
     setSelectedQuarter(null);
     setSelectedHalf(null);
-    setSelectedYear(null);
   };
 
   // Helper function to set dates based on the selected time period
@@ -166,7 +164,6 @@ const InwardOutwardReportScreen = () => {
     setSelectedMonth(null);
     setSelectedQuarter(null);
     setSelectedHalf(null);
-    setSelectedYear(null);
     
     // Default to current dates when switching periods
     const today = new Date();
@@ -229,15 +226,6 @@ const InwardOutwardReportScreen = () => {
         
         setFromDate(startOfHalf);
         setToDate(endOfHalf);
-        break;
-      
-      case 'Yearly':
-        // Default to current fiscal year (Apr-Mar)
-        const startOfFY = new Date(today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1, 3, 1);
-        const endOfFY = new Date(today.getMonth() >= 3 ? today.getFullYear() + 1 : today.getFullYear(), 2, 31);
-        
-        setFromDate(startOfFY);
-        setToDate(endOfFY);
         break;
       
       case 'Custom':
@@ -416,8 +404,9 @@ const InwardOutwardReportScreen = () => {
   
   // Handle selection of a full calendar year
   const handleYearSelection = (yearString: string) => {
-    setSelectedYear(yearString);
+    // setSelectedYear(yearString); // Removed since we no longer use Yearly option
     const calendarYear = parseInt(yearString);
+    
     
     const startOfYear = new Date(calendarYear, 0, 1); // Jan 1
     const endOfYear = new Date(calendarYear, 11, 31); // Dec 31
@@ -954,7 +943,11 @@ const InwardOutwardReportScreen = () => {
                       { display: '2025-2026', value: '2025' },
                       { display: '2024-2025', value: '2024' }, 
                       { display: '2023-2024', value: '2023' }, 
-                      { display: '2022-2023', value: '2022' }
+                      { display: '2022-2023', value: '2022' },
+                      { display: '2021-2022', value: '2021' },
+                      { display: '2020-2021', value: '2020' },
+                      { display: '2019-2020', value: '2019' },
+                      { display: '2018-2019', value: '2018' }
                     ].map((yearOption) => (
                       <TouchableOpacity
                         key={yearOption.display}
@@ -1001,7 +994,7 @@ const InwardOutwardReportScreen = () => {
               horizontal
               showsHorizontalScrollIndicator={false}
               style={styles.timePeriodTabsContainer}>
-              {(['Weekly', 'Monthly', 'Quarterly', 'Half-Yearly', 'Yearly', 'Custom'] as TimePeriod[]).map((period) => (
+              {(['Weekly', 'Monthly', 'Quarterly', 'Half-Yearly', 'Custom'] as TimePeriod[]).map((period) => (
                 <TouchableOpacity
                   key={period}
                   style={[
@@ -1318,44 +1311,6 @@ const InwardOutwardReportScreen = () => {
                       Jul-Dec {getFinancialYearDisplay(financialYear).split('-')[0]}
                     </Text>
                   </TouchableOpacity>
-                </View>
-              </View>
-            )}
-
-            {/* Yearly View - shown only when Yearly is selected */}
-            {timePeriod === 'Yearly' && (
-              <View style={styles.timePeriodSelectorContainer}>
-                <View style={styles.yearNavigationContainer}>
-                  <TouchableOpacity style={styles.yearNavigationButton}>
-                    <MaterialIcons name="chevron-left" size={24} color="#555" />
-                  </TouchableOpacity>
-                  <Text style={styles.selectYearText}>Select Financial Year</Text>
-                  <TouchableOpacity style={styles.yearNavigationButton}>
-                    <MaterialIcons name="chevron-right" size={24} color="#555" />
-                  </TouchableOpacity>
-                </View>
-                
-                <View style={styles.yearsGrid}>
-                  {['2025', '2024', '2023', '2022'].map((year) => (
-                    <TouchableOpacity
-                      key={year}
-                      style={[
-                        styles.yearItem,
-                        selectedYear === year && styles.selectedTimeItem,
-                        selectedYear === year && {
-                          backgroundColor: isInward ? '#F48221' : '#4682B4',
-                        },
-                      ]}
-                      onPress={() => handleYearSelection(year)}>
-                      <Text
-                        style={[
-                          styles.yearItemText,
-                          selectedYear === year && styles.selectedTimeItemText,
-                        ]}>
-                        {getFinancialYearDisplay(year)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
                 </View>
               </View>
             )}
@@ -2315,9 +2270,9 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   financialYearOption: {
-    width: '48%',
+    width: '23%',
     marginBottom: 12,
-    padding: 16,
+    padding: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderRadius: 8,
@@ -2329,8 +2284,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF3E5',
   },
   financialYearOptionText: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#64748B',
+    textAlign: 'center',
   },
   selectedFinancialYearText: {
     fontWeight: '600',
