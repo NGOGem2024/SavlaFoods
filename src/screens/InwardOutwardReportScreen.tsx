@@ -911,83 +911,84 @@ const InwardOutwardReportScreen = () => {
               </View>
             )}
 
-            {/* Financial Year Selection */}
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Financial Year</Text>
-              <TouchableOpacity
-                style={styles.financialYearSelector}
-                onPress={() => setShowFinancialYearSelector(!showFinancialYearSelector)}>
-                <Text style={styles.financialYearText}>{getFinancialYearDisplay(financialYear)}</Text>
-                <MaterialIcons name="arrow-drop-down" size={24} color="#555" />
-              </TouchableOpacity>
-              
-              {/* Financial Year Dropdown */}
-              {showFinancialYearSelector && (
-                <View style={styles.financialYearDropdown}>
-                  <View style={styles.yearNavigationContainer}>
-                    <TouchableOpacity 
-                      style={styles.yearNavigationButton}
-                      disabled={true}>
-                      <MaterialIcons name="chevron-left" size={24} color="#CCC" />
-                    </TouchableOpacity>
-                    <Text style={styles.selectYearText}>Select Financial Year</Text>
-                    <TouchableOpacity
-                      style={styles.yearNavigationButton}
-                      disabled={true}>
-                      <MaterialIcons name="chevron-right" size={24} color="#CCC" />
-                    </TouchableOpacity>
-                  </View>
-                  
-                  <View style={styles.financialYearGrid}>
-                    {[
-                      { display: '2025-2026', value: '2025' },
-                      { display: '2024-2025', value: '2024' }, 
-                      { display: '2023-2024', value: '2023' }, 
-                      { display: '2022-2023', value: '2022' },
-                      { display: '2021-2022', value: '2021' },
-                      { display: '2020-2021', value: '2020' },
-                      { display: '2019-2020', value: '2019' },
-                      { display: '2018-2019', value: '2018' }
-                    ].map((yearOption) => (
-                      <TouchableOpacity
-                        key={yearOption.display}
-                        style={[
-                          styles.financialYearOption,
-                          financialYear === yearOption.value && styles.selectedFinancialYear,
-                        ]}
-                        onPress={() => {
-                          setFinancialYear(yearOption.value);
-                          console.log('Financial year selected:', yearOption.display);
-                          setShowFinancialYearSelector(false);
-                          
-                          // Update the calendar year
-                          const yearValue = parseInt(yearOption.value);
-                          
-                          // Set the current month and year based on the selected financial year
-                          setCurrentYear(yearValue);
-                          
-                          // Reset the currently selected period if any
-                          if (timePeriod !== 'Custom') {
-                            setDatesByTimePeriod(timePeriod);
-                          } else {
-                            // For Custom, update to start and end of calendar year (January 1st to December 31st)
-                            setFromDate(new Date(yearValue, 0, 1)); // January 1st
-                            setToDate(new Date(yearValue, 11, 31)); // December 31st
-                          }
-                        }}>
-                        <Text
-                          style={[
-                            styles.financialYearOptionText,
-                            financialYear === yearOption.value && styles.selectedFinancialYearText,
-                          ]}>
-                          {yearOption.display}
-                        </Text>
+            {/* Financial Year Selection - only visible when not in Custom mode */}
+            {timePeriod !== ('Custom' as TimePeriod) && (
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Financial Year</Text>
+                <TouchableOpacity
+                  style={styles.financialYearSelector}
+                  onPress={() => setShowFinancialYearSelector(!showFinancialYearSelector)}>
+                  <Text style={styles.financialYearText}>{getFinancialYearDisplay(financialYear)}</Text>
+                  <MaterialIcons name="arrow-drop-down" size={24} color="#555" />
+                </TouchableOpacity>
+                
+                {showFinancialYearSelector && (
+                  <View style={styles.financialYearDropdown}>
+                    <View style={styles.yearNavigationContainer}>
+                      <TouchableOpacity 
+                        style={styles.yearNavigationButton}
+                        disabled={true}>
+                        <MaterialIcons name="chevron-left" size={24} color="#CCC" />
                       </TouchableOpacity>
-                    ))}
+                      <Text style={styles.selectYearText}>Select Financial Year</Text>
+                      <TouchableOpacity
+                        style={styles.yearNavigationButton}
+                        disabled={true}>
+                        <MaterialIcons name="chevron-right" size={24} color="#CCC" />
+                      </TouchableOpacity>
+                    </View>
+                    
+                    <View style={styles.financialYearGrid}>
+                      {[
+                        { display: '2025-2026', value: '2025' },
+                        { display: '2024-2025', value: '2024' }, 
+                        { display: '2023-2024', value: '2023' }, 
+                        { display: '2022-2023', value: '2022' },
+                        { display: '2021-2022', value: '2021' },
+                        { display: '2020-2021', value: '2020' },
+                        { display: '2019-2020', value: '2019' },
+                        { display: '2018-2019', value: '2018' }
+                      ].map((yearOption) => (
+                        <TouchableOpacity
+                          key={yearOption.display}
+                          style={[
+                            styles.financialYearOption,
+                            financialYear === yearOption.value && styles.selectedFinancialYear,
+                          ]}
+                          onPress={() => {
+                            setFinancialYear(yearOption.value);
+                            console.log('Financial year selected:', yearOption.display);
+                            setShowFinancialYearSelector(false);
+                            
+                            // Update the calendar year
+                            const yearValue = parseInt(yearOption.value);
+                            
+                            // Set the current month and year based on the selected financial year
+                            setCurrentYear(yearValue);
+                            
+                            // Reset the currently selected period if any
+                            if (timePeriod !== ('Custom' as TimePeriod)) {
+                              setDatesByTimePeriod(timePeriod);
+                            } else {
+                              // For Custom, update to start and end of calendar year (January 1st to December 31st)
+                              setFromDate(new Date(yearValue, 0, 1)); // January 1st
+                              setToDate(new Date(yearValue, 11, 31)); // December 31st
+                            }
+                          }}>
+                          <Text
+                            style={[
+                              styles.financialYearOptionText,
+                              financialYear === yearOption.value && styles.selectedFinancialYearText,
+                            ]}>
+                            {yearOption.display}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
                   </View>
-                </View>
-              )}
-            </View>
+                )}
+              </View>
+            )}
 
             {/* Time Period Tabs */}
             <ScrollView
@@ -1320,8 +1321,8 @@ const InwardOutwardReportScreen = () => {
               <Text style={styles.label}>From Date</Text>
               <TouchableOpacity
                 style={styles.dateInputContainer}
-                onPress={() => timePeriod === 'Custom' && showDatePicker('from')}
-                disabled={timePeriod !== 'Custom'}>
+                onPress={() => timePeriod === ('Custom' as TimePeriod) && showDatePicker('from')}
+                disabled={timePeriod !== ('Custom' as TimePeriod)}>
                 <View style={styles.dateInputContent}>
                   <MaterialIcons
                     name="event"
@@ -1331,7 +1332,7 @@ const InwardOutwardReportScreen = () => {
                   />
                   <Text style={[
                     styles.dateText,
-                    timePeriod !== 'Custom' && styles.disabledDateText,
+                    timePeriod !== ('Custom' as TimePeriod) && styles.disabledDateText,
                   ]}>
                     {formatDate(fromDate)}
                   </Text>
@@ -1352,8 +1353,8 @@ const InwardOutwardReportScreen = () => {
               <Text style={styles.label}>To Date</Text>
               <TouchableOpacity
                 style={styles.dateInputContainer}
-                onPress={() => timePeriod === 'Custom' && showDatePicker('to')}
-                disabled={timePeriod !== 'Custom'}>
+                onPress={() => timePeriod === ('Custom' as TimePeriod) && showDatePicker('to')}
+                disabled={timePeriod !== ('Custom' as TimePeriod)}>
                 <View style={styles.dateInputContent}>
                   <MaterialIcons
                     name="event-available"
@@ -1363,7 +1364,7 @@ const InwardOutwardReportScreen = () => {
                   />
                   <Text style={[
                     styles.dateText,
-                    timePeriod !== 'Custom' && styles.disabledDateText,
+                    timePeriod !== ('Custom' as TimePeriod) && styles.disabledDateText,
                   ]}>
                     {formatDate(toDate)}
                   </Text>
