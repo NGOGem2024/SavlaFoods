@@ -1133,10 +1133,10 @@ const InwardOutwardReportScreen = () => {
                       key={month}
                       style={[
                         styles.monthItem,
-                        selectedMonth === month && styles.selectedTimeItem,
                         selectedMonth === month && {
-                          backgroundColor: isInward ? '#F48221' : '#4682B4',
-                        },
+                          backgroundColor: '#5A5A5A',
+                          borderColor: 'transparent',
+                        }
                       ]}
                       onPress={() => handleMonthSelection(index)}>
                       <Text
@@ -2378,6 +2378,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   selectedTimeItem: {
+    backgroundColor: '#5A5A5A',
     borderColor: 'transparent',
   },
   weekItemTitle: {
@@ -2399,20 +2400,31 @@ const styles = StyleSheet.create({
   monthsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  monthItem: {
-    width: '23%',
-    marginBottom: 10,
-    padding: 12,
+    justifyContent: 'space-around',
+    alignContent: 'space-around',
+    width: 340,
+    height: 170,
+    borderRadius: 8,
+    padding: 8,
+    paddingVertical: 10,
+    alignSelf: 'center',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',
+  },
+  monthItem: {
+    width: 71,
+    height: 42,
+    margin: 4,
     borderRadius: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F5F5',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   monthItemText: {
-    fontSize: 13,
+    fontSize: 11,
+    fontWeight: '400',
+    lineHeight: 12,
     color: '#2C3E50',
   },
   // Quarters Grid
