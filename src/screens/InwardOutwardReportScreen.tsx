@@ -273,7 +273,7 @@ const InwardOutwardReportScreen = () => {
       startDate: week1Start,
       endDate: week1End,
       title: `Week 1`,
-      label: `${week1Start.toLocaleString('default', { month: 'short' })} ${currentDay}-${Math.min(7, lastDay)}`
+      label: `1-${Math.min(7, lastDay)}`
     });
     currentDay = 8;
     
@@ -286,7 +286,7 @@ const InwardOutwardReportScreen = () => {
         startDate: week2Start,
         endDate: week2End,
         title: `Week 2`,
-        label: `${week2Start.toLocaleString('default', { month: 'short' })} ${currentDay}-${Math.min(14, lastDay)}`
+        label: `${currentDay}-${Math.min(14, lastDay)}`
       });
       currentDay = 15;
     }
@@ -300,7 +300,7 @@ const InwardOutwardReportScreen = () => {
         startDate: week3Start,
         endDate: week3End,
         title: `Week 3`,
-        label: `${week3Start.toLocaleString('default', { month: 'short' })} ${currentDay}-${Math.min(21, lastDay)}`
+        label: `${currentDay}-${Math.min(21, lastDay)}`
       });
       currentDay = 22;
     }
@@ -314,7 +314,7 @@ const InwardOutwardReportScreen = () => {
         startDate: week4Start,
         endDate: week4End,
         title: `Week 4`,
-        label: `${week4Start.toLocaleString('default', { month: 'short' })} ${currentDay}-${Math.min(28, lastDay)}`
+        label: `${currentDay}-${Math.min(28, lastDay)}`
       });
       currentDay = 29;
     }
@@ -328,7 +328,7 @@ const InwardOutwardReportScreen = () => {
         startDate: week5Start,
         endDate: week5End,
         title: `Week 5`,
-        label: `${week5Start.toLocaleString('default', { month: 'short' })} ${currentDay}-${lastDay}`
+        label: `${currentDay}-${lastDay}`
       });
     }
     
@@ -1097,10 +1097,10 @@ const InwardOutwardReportScreen = () => {
                         key={index}
                         style={[
                           styles.weekItem,
-                          selectedWeek === week.title && styles.selectedTimeItem,
                           selectedWeek === week.title && {
                             backgroundColor: isInward ? '#F48221' : '#4682B4',
-                          },
+                            borderColor: 'transparent',
+                          }
                         ]}
                         onPress={() => handleWeekSelection(week.number, week.startDate, week.endDate)}>
                         <Text
@@ -1115,7 +1115,7 @@ const InwardOutwardReportScreen = () => {
                             styles.weekItemDates,
                             selectedWeek === week.title && styles.selectedTimeItemText,
                           ]}>
-                          {week.label}
+                          {new Date(currentYear, currentMonth).toLocaleString('default', { month: 'short' })} {week.label}
                         </Text>
                       </TouchableOpacity>
                     ))}
@@ -1134,7 +1134,7 @@ const InwardOutwardReportScreen = () => {
                       style={[
                         styles.monthItem,
                         selectedMonth === month && {
-                          backgroundColor: '#5A5A5A',
+                          backgroundColor: isInward ? '#F48221' : '#4682B4',
                           borderColor: 'transparent',
                         }
                       ]}
@@ -1154,109 +1154,109 @@ const InwardOutwardReportScreen = () => {
 
             {/* Quarterly View - shown only when Quarterly is selected */}
             {timePeriod === 'Quarterly' && (
-              <View style={styles.timePeriodSelectorContainer}>
-                <View style={styles.quartersGrid}>
-                  <TouchableOpacity
-                    style={[
-                      styles.quarterItem,
-                      selectedQuarter === 'Q1' && styles.selectedTimeItem,
-                      selectedQuarter === 'Q1' && {
-                        backgroundColor: isInward ? '#F48221' : '#4682B4',
-                      },
-                    ]}
-                    onPress={() => handleQuarterSelection(1)}>
-                    <Text
-                      style={[
-                        styles.quarterItemTitle,
-                        selectedQuarter === 'Q1' && styles.selectedTimeItemText,
-                      ]}>
-                      Q1
-                    </Text>
-                    <Text
-                      style={[
-                        styles.quarterItemDates,
-                        selectedQuarter === 'Q1' && styles.selectedTimeItemText,
-                      ]}>
-                      Jan-Mar
-                    </Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={[
-                      styles.quarterItem,
-                      selectedQuarter === 'Q2' && styles.selectedTimeItem,
-                      selectedQuarter === 'Q2' && {
-                        backgroundColor: isInward ? '#F48221' : '#4682B4',
-                      },
-                    ]}
-                    onPress={() => handleQuarterSelection(2)}>
-                    <Text
-                      style={[
-                        styles.quarterItemTitle,
-                        selectedQuarter === 'Q2' && styles.selectedTimeItemText,
-                      ]}>
-                      Q2
-                    </Text>
-                    <Text
-                      style={[
-                        styles.quarterItemDates,
-                        selectedQuarter === 'Q2' && styles.selectedTimeItemText,
-                      ]}>
-                      Apr-Jun
-                    </Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={[
-                      styles.quarterItem,
-                      selectedQuarter === 'Q3' && styles.selectedTimeItem,
-                      selectedQuarter === 'Q3' && {
-                        backgroundColor: isInward ? '#F48221' : '#4682B4',
-                      },
-                    ]}
-                    onPress={() => handleQuarterSelection(3)}>
-                    <Text
-                      style={[
-                        styles.quarterItemTitle,
-                        selectedQuarter === 'Q3' && styles.selectedTimeItemText,
-                      ]}>
-                      Q3
-                    </Text>
-                    <Text
-                      style={[
-                        styles.quarterItemDates,
-                        selectedQuarter === 'Q3' && styles.selectedTimeItemText,
-                      ]}>
-                      Jul-Sep
-                    </Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={[
-                      styles.quarterItem,
-                      selectedQuarter === 'Q4' && styles.selectedTimeItem,
-                      selectedQuarter === 'Q4' && {
-                        backgroundColor: isInward ? '#F48221' : '#4682B4',
-                      },
-                    ]}
-                    onPress={() => handleQuarterSelection(4)}>
-                    <Text
-                      style={[
-                        styles.quarterItemTitle,
-                        selectedQuarter === 'Q4' && styles.selectedTimeItemText,
-                      ]}>
-                      Q4
-                    </Text>
-                    <Text
-                      style={[
-                        styles.quarterItemDates,
-                        selectedQuarter === 'Q4' && styles.selectedTimeItemText,
-                      ]}>
-                      Oct-Dec
-                    </Text>
-                  </TouchableOpacity>
+                <View style={styles.timePeriodSelectorContainer}>
+                    <View style={styles.quartersGrid}>
+                        <TouchableOpacity
+                            style={[
+                                styles.quarterItem,
+                                selectedQuarter === 'Q1' && {
+                                    backgroundColor: isInward ? '#F48221' : '#4682B4',
+                                    borderColor: 'transparent',
+                                },
+                            ]}
+                            onPress={() => handleQuarterSelection(1)}>
+                            <Text
+                                style={[
+                                    styles.quarterItemTitle,
+                                    selectedQuarter === 'Q1' && styles.selectedTimeItemText,
+                                ]}>
+                                Q1
+                            </Text>
+                            <Text
+                                style={[
+                                    styles.quarterItemDates,
+                                    selectedQuarter === 'Q1' && styles.selectedTimeItemText,
+                                ]}>
+                                Jan-Mar
+                            </Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity
+                            style={[
+                                styles.quarterItem,
+                                selectedQuarter === 'Q2' && {
+                                    backgroundColor: isInward ? '#F48221' : '#4682B4',
+                                    borderColor: 'transparent',
+                                },
+                            ]}
+                            onPress={() => handleQuarterSelection(2)}>
+                            <Text
+                                style={[
+                                    styles.quarterItemTitle,
+                                    selectedQuarter === 'Q2' && styles.selectedTimeItemText,
+                                ]}>
+                                Q2
+                            </Text>
+                            <Text
+                                style={[
+                                    styles.quarterItemDates,
+                                    selectedQuarter === 'Q2' && styles.selectedTimeItemText,
+                                ]}>
+                                Apr-Jun
+                            </Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity
+                            style={[
+                                styles.quarterItem,
+                                selectedQuarter === 'Q3' && {
+                                    backgroundColor: isInward ? '#F48221' : '#4682B4',
+                                    borderColor: 'transparent',
+                                },
+                            ]}
+                            onPress={() => handleQuarterSelection(3)}>
+                            <Text
+                                style={[
+                                    styles.quarterItemTitle,
+                                    selectedQuarter === 'Q3' && styles.selectedTimeItemText,
+                                ]}>
+                                Q3
+                            </Text>
+                            <Text
+                                style={[
+                                    styles.quarterItemDates,
+                                    selectedQuarter === 'Q3' && styles.selectedTimeItemText,
+                                ]}>
+                                Jul-Sep
+                            </Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity
+                            style={[
+                                styles.quarterItem,
+                                selectedQuarter === 'Q4' && {
+                                    backgroundColor: isInward ? '#F48221' : '#4682B4',
+                                    borderColor: 'transparent',
+                                },
+                            ]}
+                            onPress={() => handleQuarterSelection(4)}>
+                            <Text
+                                style={[
+                                    styles.quarterItemTitle,
+                                    selectedQuarter === 'Q4' && styles.selectedTimeItemText,
+                                ]}>
+                                Q4
+                            </Text>
+                            <Text
+                                style={[
+                                    styles.quarterItemDates,
+                                    selectedQuarter === 'Q4' && styles.selectedTimeItemText,
+                                ]}>
+                                Oct-Dec
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
-              </View>
             )}
 
             {/* Half-Yearly View - shown only when Half-Yearly is selected */}
@@ -1266,9 +1266,9 @@ const InwardOutwardReportScreen = () => {
                   <TouchableOpacity
                     style={[
                       styles.halfItem,
-                      selectedHalf === 'H1(First Half)' && styles.selectedTimeItem,
                       selectedHalf === 'H1(First Half)' && {
                         backgroundColor: isInward ? '#F48221' : '#4682B4',
+                        borderColor: 'transparent',
                       },
                     ]}
                     onPress={() => handleHalfYearSelection(1)}>
@@ -1277,7 +1277,7 @@ const InwardOutwardReportScreen = () => {
                         styles.halfItemTitle,
                         selectedHalf === 'H1(First Half)' && styles.selectedTimeItemText,
                       ]}>
-                      H1(First Half)
+                      H1 (First Half)
                     </Text>
                     <Text
                       style={[
@@ -1291,9 +1291,9 @@ const InwardOutwardReportScreen = () => {
                   <TouchableOpacity
                     style={[
                       styles.halfItem,
-                      selectedHalf === 'H2(Second Half)' && styles.selectedTimeItem,
                       selectedHalf === 'H2(Second Half)' && {
                         backgroundColor: isInward ? '#F48221' : '#4682B4',
+                        borderColor: 'transparent',
                       },
                     ]}
                     onPress={() => handleHalfYearSelection(2)}>
@@ -1302,7 +1302,7 @@ const InwardOutwardReportScreen = () => {
                         styles.halfItemTitle,
                         selectedHalf === 'H2(Second Half)' && styles.selectedTimeItemText,
                       ]}>
-                      H2(Second Half)
+                      H2 (Second Half)
                     </Text>
                     <Text
                       style={[
@@ -2322,20 +2322,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 15,
+    paddingVertical: 10,
     paddingHorizontal: 10,
-    backgroundColor: '#f5f7fa',
+    backgroundColor: '#f8fafc',
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderRadius: 8,
-    marginBottom: 15,
+    marginBottom: 12,
+    height: 48,
   },
   navArrowButton: {
-    padding: 4,
+    padding: 1,
   },
   monthYearHeading: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '500',
     color: '#2C3E50',
     textAlign: 'center',
   },
@@ -2343,15 +2344,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderRadius: 8,
-    padding: 15,
+    padding: 9,
+    paddingVertical: 16,
     backgroundColor: '#FFFFFF',
+    width: 340,
+    minHeight: 140,
+    alignSelf: 'center',
   },
   // Month Navigation
   monthNavigationContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: 12,
+    paddingBottom: 8,
   },
   monthNavigationButton: {
     padding: 4,
@@ -2365,16 +2370,20 @@ const styles = StyleSheet.create({
   weeksGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
+    // alignContent: 'flex-start',
+    paddingHorizontal: 8,
+    gap: 10,
   },
   weekItem: {
-    width: '31%', 
+    width: '28%', 
+    margin: 0,
+    marginRight: 9,
     marginBottom: 10,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    paddingVertical: 8,
+    paddingHorizontal: 2,
     borderRadius: 8,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#F5F5F5',
     alignItems: 'center',
   },
   selectedTimeItem: {
@@ -2382,14 +2391,14 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   weekItemTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '500',
     color: '#2C3E50',
-    marginBottom: 4,
+    marginBottom: 2,
     textAlign: 'center',
   },
   weekItemDates: {
-    fontSize: 13,
+    fontSize: 11,
     color: '#64748B',
     textAlign: 'center',
   },
@@ -2415,7 +2424,8 @@ const styles = StyleSheet.create({
   monthItem: {
     width: 71,
     height: 42,
-    margin: 4,
+    marginTop: 4,
+    marginBottom: 4,
     borderRadius: 8,
     backgroundColor: '#F5F5F5',
     alignItems: 'center',
@@ -2430,53 +2440,65 @@ const styles = StyleSheet.create({
   // Quarters Grid
   quartersGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     justifyContent: 'space-between',
-  },
-  quarterItem: {
-    width: '48%',
-    marginBottom: 10,
-    padding: 14,
+    width: 340,
+    alignSelf: 'center',
+    padding: 10,
+    paddingVertical: 10,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
+  },
+  quarterItem: {
+    width: '22%',
+    paddingVertical: 8,
+    paddingHorizontal: 5,
+    borderRadius: 8,
+    backgroundColor: '#F5F5F5',
     alignItems: 'center',
   },
   quarterItemTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '500',
     color: '#2C3E50',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   quarterItemDates: {
-    fontSize: 13,
+    fontSize: 11,
     color: '#64748B',
   },
   // Halfs Grid
   halfsGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     justifyContent: 'space-between',
-  },
-  halfItem: {
-    width: '48%',
-    marginBottom: 10,
-    padding: 16,
+    width: 340,
+    alignSelf: 'center',
+    padding: 10,
+    paddingVertical: 10,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
+  },
+  halfItem: {
+    width: '47%',
+    paddingVertical: 8,
+    paddingHorizontal: 5,
+    borderRadius: 8,
+    backgroundColor: '#F5F5F5',
     alignItems: 'center',
   },
   halfItemTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '500',
     color: '#2C3E50',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   halfItemDates: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#64748B',
   },
   // Years Grid
