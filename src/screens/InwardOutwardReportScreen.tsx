@@ -887,6 +887,135 @@ const InwardOutwardReportScreen = () => {
             </Text>
           </View>
 
+          {/* Financial Year Selection - Moved outside the form container */}
+          {timePeriod !== ('Custom' as TimePeriod) && (
+            <View style={styles.financialYearContainer}>
+              <Text style={styles.label}>Financial Year</Text>
+              <TouchableOpacity
+                style={styles.financialYearSelector}
+                onPress={() => setShowFinancialYearSelector(!showFinancialYearSelector)}>
+                <Text style={styles.financialYearText}>{getFinancialYearDisplay(financialYear)}</Text>
+                <MaterialIcons name="arrow-drop-down" size={24} color="#555" />
+              </TouchableOpacity>
+              
+              {showFinancialYearSelector && (
+                <View style={styles.financialYearDropdown}>
+                  <View style={styles.yearNavigationContainer}>
+                    <TouchableOpacity 
+                      style={styles.yearNavigationButton}
+                      disabled={true}>
+                      <MaterialIcons name="chevron-left" size={24} color="#CCC" />
+                    </TouchableOpacity>
+                    <Text style={styles.selectYearText}>Select Financial Year</Text>
+                    <TouchableOpacity
+                      style={styles.yearNavigationButton}
+                      disabled={true}>
+                      <MaterialIcons name="chevron-right" size={24} color="#CCC" />
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <View style={styles.financialYearGrid}>
+                    {[
+                      { display: '2025-2026', value: '2025' },
+                      { display: '2024-2025', value: '2024' }, 
+                      { display: '2023-2024', value: '2023' }, 
+                      { display: '2022-2023', value: '2022' },
+                      { display: '2021-2022', value: '2021' },
+                      { display: '2020-2021', value: '2020' },
+                      { display: '2019-2020', value: '2019' },
+                      { display: '2018-2019', value: '2018' }
+                    ].map((yearOption) => (
+                      <TouchableOpacity
+                        key={yearOption.display}
+                        style={[
+                          styles.financialYearOption,
+                          financialYear === yearOption.value && styles.selectedFinancialYear,
+                        ]}
+                        onPress={() => {
+                          setFinancialYear(yearOption.value);
+                          console.log('Financial year selected:', yearOption.display);
+                          setShowFinancialYearSelector(false);
+                          
+                          // Update the calendar year
+                          const yearValue = parseInt(yearOption.value);
+                          
+                          // Set the current month and year based on the selected financial year
+                          setCurrentYear(yearValue);
+                          
+                          // Update date ranges based on the current time period without changing the period
+                          const currentPeriod = timePeriod;
+                          
+                          // Handle different periods without toggling back to custom
+                          if (currentPeriod === 'Weekly') {
+                            // Update week dates for the new year
+                            const weekStart = new Date(yearValue, currentMonth, 1);
+                            // Adjust to start on Sunday
+                            const dayOfWeek = weekStart.getDay();
+                            if (dayOfWeek !== 0) {
+                              weekStart.setDate(weekStart.getDate() + (7 - dayOfWeek));
+                            }
+                            
+                            const weekEnd = new Date(weekStart);
+                            weekEnd.setDate(weekStart.getDate() + 6);
+                            
+                            setFromDate(weekStart);
+                            setToDate(weekEnd);
+                            setSelectedWeek(null); // Reset selected week
+                          } 
+                          else if (currentPeriod === 'Monthly') {
+                            // Default to current month but in the new year
+                            const startOfMonth = new Date(yearValue, currentMonth, 1);
+                            const endOfMonth = new Date(yearValue, currentMonth + 1, 0);
+                            
+                            setFromDate(startOfMonth);
+                            setToDate(endOfMonth);
+                            setSelectedMonth(null); // Reset selected month
+                          }
+                          else if (currentPeriod === 'Quarterly') {
+                            // Default to current quarter in new year
+                            const currentQuarter = Math.floor(new Date().getMonth() / 3);
+                            const startOfQuarter = new Date(yearValue, currentQuarter * 3, 1);
+                            const endOfQuarter = new Date(yearValue, (currentQuarter + 1) * 3, 0);
+                            
+                            setFromDate(startOfQuarter);
+                            setToDate(endOfQuarter);
+                            setSelectedQuarter(null); // Reset selected quarter
+                          }
+                          else if (currentPeriod === 'Half-Yearly') {
+                            // Default to current half year in new year
+                            const currentMonth = new Date().getMonth();
+                            const isFirstHalf = currentMonth >= 0 && currentMonth < 6; // Jan-Jun is first half
+                            const startMonth = isFirstHalf ? 0 : 6; // Jan or Jul
+                            const endMonth = isFirstHalf ? 5 : 11; // Jun or Dec
+                            
+                            const startOfHalf = new Date(yearValue, startMonth, 1);
+                            const endOfHalf = new Date(yearValue, endMonth + 1, 0);
+                            
+                            setFromDate(startOfHalf);
+                            setToDate(endOfHalf);
+                            setSelectedHalf(null); // Reset selected half
+                          }
+                          else {
+                            // For Custom, update to start and end of calendar year
+                            setFromDate(new Date(yearValue, 0, 1)); // January 1st
+                            setToDate(new Date(yearValue, 11, 31)); // December 31st
+                          }
+                        }}>
+                        <Text
+                          style={[
+                            styles.financialYearOptionText,
+                            financialYear === yearOption.value && styles.selectedFinancialYearText,
+                          ]}>
+                          {yearOption.display}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
+            </View>
+          )}
+
           <View
             style={[
               styles.formContainer,
@@ -908,85 +1037,6 @@ const InwardOutwardReportScreen = () => {
                   color={isInward ? '#F48221' : '#4682B4'}
                 />
                 <Text style={styles.loadingText}>Loading categories...</Text>
-              </View>
-            )}
-
-            {/* Financial Year Selection - only visible when not in Custom mode */}
-            {timePeriod !== ('Custom' as TimePeriod) && (
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Financial Year</Text>
-                <TouchableOpacity
-                  style={styles.financialYearSelector}
-                  onPress={() => setShowFinancialYearSelector(!showFinancialYearSelector)}>
-                  <Text style={styles.financialYearText}>{getFinancialYearDisplay(financialYear)}</Text>
-                  <MaterialIcons name="arrow-drop-down" size={24} color="#555" />
-                </TouchableOpacity>
-                
-                {showFinancialYearSelector && (
-                  <View style={styles.financialYearDropdown}>
-                    <View style={styles.yearNavigationContainer}>
-                      <TouchableOpacity 
-                        style={styles.yearNavigationButton}
-                        disabled={true}>
-                        <MaterialIcons name="chevron-left" size={24} color="#CCC" />
-                      </TouchableOpacity>
-                      <Text style={styles.selectYearText}>Select Financial Year</Text>
-                      <TouchableOpacity
-                        style={styles.yearNavigationButton}
-                        disabled={true}>
-                        <MaterialIcons name="chevron-right" size={24} color="#CCC" />
-                      </TouchableOpacity>
-                    </View>
-                    
-                    <View style={styles.financialYearGrid}>
-                      {[
-                        { display: '2025-2026', value: '2025' },
-                        { display: '2024-2025', value: '2024' }, 
-                        { display: '2023-2024', value: '2023' }, 
-                        { display: '2022-2023', value: '2022' },
-                        { display: '2021-2022', value: '2021' },
-                        { display: '2020-2021', value: '2020' },
-                        { display: '2019-2020', value: '2019' },
-                        { display: '2018-2019', value: '2018' }
-                      ].map((yearOption) => (
-                        <TouchableOpacity
-                          key={yearOption.display}
-                          style={[
-                            styles.financialYearOption,
-                            financialYear === yearOption.value && styles.selectedFinancialYear,
-                          ]}
-                          onPress={() => {
-                            setFinancialYear(yearOption.value);
-                            console.log('Financial year selected:', yearOption.display);
-                            setShowFinancialYearSelector(false);
-                            
-                            // Update the calendar year
-                            const yearValue = parseInt(yearOption.value);
-                            
-                            // Set the current month and year based on the selected financial year
-                            setCurrentYear(yearValue);
-                            
-                            // Reset the currently selected period if any
-                            if (timePeriod !== ('Custom' as TimePeriod)) {
-                              setDatesByTimePeriod(timePeriod);
-                            } else {
-                              // For Custom, update to start and end of calendar year (January 1st to December 31st)
-                              setFromDate(new Date(yearValue, 0, 1)); // January 1st
-                              setToDate(new Date(yearValue, 11, 31)); // December 31st
-                            }
-                          }}>
-                          <Text
-                            style={[
-                              styles.financialYearOptionText,
-                              financialYear === yearOption.value && styles.selectedFinancialYearText,
-                            ]}>
-                            {yearOption.display}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-                )}
               </View>
             )}
 
@@ -1688,6 +1738,16 @@ const styles = StyleSheet.create({
   },
   toggleTextInactive: {
     opacity: 0.5,
+  },
+  // Add financialYearContainer style for the relocated component
+  financialYearContainer: {
+    margin: 16,
+    marginBottom: 10,
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
   },
   formContainer: {
     margin: 16,
