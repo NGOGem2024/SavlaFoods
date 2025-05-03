@@ -637,11 +637,11 @@ const InwardOutwardReportScreen = () => {
     setShowReport(false);
   };
 
-  // Helper function to get the financial year display format (e.g., '2025-2026')
+  // Helper function to get the financial year display format (e.g., '2025-26')
   const getFinancialYearDisplay = (year: string): string => {
     const startYear = parseInt(year);
     const endYear = startYear + 1;
-    return `${startYear}-${endYear}`;
+    return `${startYear}-${endYear.toString().slice(-2)}`;
   };
 
   // Reset subcategory when category changes
@@ -866,6 +866,7 @@ const InwardOutwardReportScreen = () => {
               style={[
                 styles.toggleButton,
                 {backgroundColor: isInward ? '#F48221' : '#4682B4'},
+                styles.toggleButtonEnhanced,
               ]}
               onPress={() => setIsInward(!isInward)}>
               <View
@@ -890,46 +891,55 @@ const InwardOutwardReportScreen = () => {
           {/* Financial Year Selection - Moved outside the form container */}
           {timePeriod !== ('Custom' as TimePeriod) && (
             <View style={styles.financialYearContainer}>
-              <Text style={styles.label}>Financial Year</Text>
-              <TouchableOpacity
-                style={styles.financialYearSelector}
-                onPress={() => setShowFinancialYearSelector(!showFinancialYearSelector)}>
-                <Text style={styles.financialYearText}>{getFinancialYearDisplay(financialYear)}</Text>
-                <MaterialIcons name="arrow-drop-down" size={24} color="#555" />
-              </TouchableOpacity>
-              
-              {showFinancialYearSelector && (
-                <View style={styles.financialYearDropdown}>
-                  <View style={styles.yearNavigationContainer}>
-                    <TouchableOpacity 
-                      style={styles.yearNavigationButton}
-                      disabled={true}>
-                      <MaterialIcons name="chevron-left" size={24} color="#CCC" />
-                    </TouchableOpacity>
-                    <Text style={styles.selectYearText}>Select Financial Year</Text>
-                    <TouchableOpacity
-                      style={styles.yearNavigationButton}
-                      disabled={true}>
-                      <MaterialIcons name="chevron-right" size={24} color="#CCC" />
-                    </TouchableOpacity>
-                  </View>
-                  
-                  <View style={styles.financialYearGrid}>
+              <Text style={styles.label}>Financial Year :</Text>
+              <View style={styles.selectorWrapper}>
+                <TouchableOpacity
+                  style={[
+                    styles.financialYearSelector,
+                    { 
+                      borderColor: isInward ? '#F48221' : '#4682B4',
+                      backgroundColor: isInward ? '#FFFBF6' : '#F5F9FF',
+                    }
+                  ]}
+                  onPress={() => setShowFinancialYearSelector(!showFinancialYearSelector)}>
+                  <Text style={[
+                    styles.financialYearText,
+                    { color: isInward ? '#F48221' : '#4682B4' }
+                  ]}>
+                    {getFinancialYearDisplay(financialYear)}
+                  </Text>
+                  <MaterialIcons 
+                    name={showFinancialYearSelector ? "keyboard-arrow-up" : "keyboard-arrow-down"} 
+                    size={24} 
+                    color={isInward ? "#F48221" : "#4682B4"} 
+                  />
+                </TouchableOpacity>
+                
+                {showFinancialYearSelector && (
+                  <View style={[
+                    styles.financialYearDropdown,
+                    { borderColor: isInward ? '#F48221' : '#4682B4' }
+                  ]}>
                     {[
-                      { display: '2025-2026', value: '2025' },
-                      { display: '2024-2025', value: '2024' }, 
-                      { display: '2023-2024', value: '2023' }, 
-                      { display: '2022-2023', value: '2022' },
-                      { display: '2021-2022', value: '2021' },
-                      { display: '2020-2021', value: '2020' },
-                      { display: '2019-2020', value: '2019' },
-                      { display: '2018-2019', value: '2018' }
-                    ].map((yearOption) => (
+                      { display: '2025-26', value: '2025' },
+                      { display: '2024-25', value: '2024' }, 
+                      { display: '2023-24', value: '2023' }, 
+                      { display: '2022-23', value: '2022' },
+                      { display: '2021-22', value: '2021' },
+                      { display: '2020-21', value: '2020' },
+                      { display: '2019-20', value: '2019' },
+                      { display: '2018-19', value: '2018' }
+                    ].map((yearOption, index) => (
                       <TouchableOpacity
                         key={yearOption.display}
                         style={[
                           styles.financialYearOption,
-                          financialYear === yearOption.value && styles.selectedFinancialYear,
+                          financialYear === yearOption.value && [
+                            styles.selectedFinancialYear,
+                            { backgroundColor: isInward ? '#FFF3E0' : '#E6F0FA' }
+                          ],
+                          index === 0 && styles.firstYearOption,
+                          index === 7 && styles.lastYearOption,
                         ]}
                         onPress={() => {
                           setFinancialYear(yearOption.value);
@@ -1004,15 +1014,18 @@ const InwardOutwardReportScreen = () => {
                         <Text
                           style={[
                             styles.financialYearOptionText,
-                            financialYear === yearOption.value && styles.selectedFinancialYearText,
+                            financialYear === yearOption.value && [
+                              styles.selectedFinancialYearText,
+                              { color: isInward ? '#F48221' : '#4682B4' }
+                            ],
                           ]}>
                           {yearOption.display}
                         </Text>
                       </TouchableOpacity>
                     ))}
                   </View>
-                </View>
-              )}
+                )}
+              </View>
             </View>
           )}
 
@@ -1186,6 +1199,17 @@ const InwardOutwardReportScreen = () => {
                         selectedMonth === month && {
                           backgroundColor: isInward ? '#F48221' : '#4682B4',
                           borderColor: 'transparent',
+                          ...Platform.select({
+                            ios: {
+                              shadowColor: '#000',
+                              shadowOffset: {width: 0, height: 2},
+                              shadowOpacity: 0.1,
+                              shadowRadius: 3,
+                            },
+                            android: {
+                              elevation: 2,
+                            },
+                          }),
                         }
                       ]}
                       onPress={() => handleMonthSelection(index)}>
@@ -1204,109 +1228,153 @@ const InwardOutwardReportScreen = () => {
 
             {/* Quarterly View - shown only when Quarterly is selected */}
             {timePeriod === 'Quarterly' && (
-                <View style={styles.timePeriodSelectorContainer}>
-                    <View style={styles.quartersGrid}>
-                        <TouchableOpacity
-                            style={[
-                                styles.quarterItem,
-                                selectedQuarter === 'Q1' && {
-                                    backgroundColor: isInward ? '#F48221' : '#4682B4',
-                                    borderColor: 'transparent',
-                                },
-                            ]}
-                            onPress={() => handleQuarterSelection(1)}>
-                            <Text
-                                style={[
-                                    styles.quarterItemTitle,
-                                    selectedQuarter === 'Q1' && styles.selectedTimeItemText,
-                                ]}>
-                                Q1
-                            </Text>
-                            <Text
-                                style={[
-                                    styles.quarterItemDates,
-                                    selectedQuarter === 'Q1' && styles.selectedTimeItemText,
-                                ]}>
-                                Jan-Mar
-                            </Text>
-                        </TouchableOpacity>
-                        
-                        <TouchableOpacity
-                            style={[
-                                styles.quarterItem,
-                                selectedQuarter === 'Q2' && {
-                                    backgroundColor: isInward ? '#F48221' : '#4682B4',
-                                    borderColor: 'transparent',
-                                },
-                            ]}
-                            onPress={() => handleQuarterSelection(2)}>
-                            <Text
-                                style={[
-                                    styles.quarterItemTitle,
-                                    selectedQuarter === 'Q2' && styles.selectedTimeItemText,
-                                ]}>
-                                Q2
-                            </Text>
-                            <Text
-                                style={[
-                                    styles.quarterItemDates,
-                                    selectedQuarter === 'Q2' && styles.selectedTimeItemText,
-                                ]}>
-                                Apr-Jun
-                            </Text>
-                        </TouchableOpacity>
-                        
-                        <TouchableOpacity
-                            style={[
-                                styles.quarterItem,
-                                selectedQuarter === 'Q3' && {
-                                    backgroundColor: isInward ? '#F48221' : '#4682B4',
-                                    borderColor: 'transparent',
-                                },
-                            ]}
-                            onPress={() => handleQuarterSelection(3)}>
-                            <Text
-                                style={[
-                                    styles.quarterItemTitle,
-                                    selectedQuarter === 'Q3' && styles.selectedTimeItemText,
-                                ]}>
-                                Q3
-                            </Text>
-                            <Text
-                                style={[
-                                    styles.quarterItemDates,
-                                    selectedQuarter === 'Q3' && styles.selectedTimeItemText,
-                                ]}>
-                                Jul-Sep
-                            </Text>
-                        </TouchableOpacity>
-                        
-                        <TouchableOpacity
-                            style={[
-                                styles.quarterItem,
-                                selectedQuarter === 'Q4' && {
-                                    backgroundColor: isInward ? '#F48221' : '#4682B4',
-                                    borderColor: 'transparent',
-                                },
-                            ]}
-                            onPress={() => handleQuarterSelection(4)}>
-                            <Text
-                                style={[
-                                    styles.quarterItemTitle,
-                                    selectedQuarter === 'Q4' && styles.selectedTimeItemText,
-                                ]}>
-                                Q4
-                            </Text>
-                            <Text
-                                style={[
-                                    styles.quarterItemDates,
-                                    selectedQuarter === 'Q4' && styles.selectedTimeItemText,
-                                ]}>
-                                Oct-Dec
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
+              <View style={styles.timePeriodSelectorContainer}>
+                <View style={styles.quartersGrid}>
+                  <TouchableOpacity
+                    style={[
+                      styles.quarterItem,
+                      selectedQuarter === 'Q1' && {
+                        backgroundColor: isInward ? '#F48221' : '#4682B4',
+                        borderColor: 'transparent',
+                        ...Platform.select({
+                          ios: {
+                            shadowColor: '#000',
+                            shadowOffset: {width: 0, height: 2},
+                            shadowOpacity: 0.1,
+                            shadowRadius: 3,
+                          },
+                          android: {
+                            elevation: 2,
+                          },
+                        }),
+                      },
+                    ]}
+                    onPress={() => handleQuarterSelection(1)}>
+                    <Text
+                      style={[
+                        styles.quarterItemTitle,
+                        selectedQuarter === 'Q1' && styles.selectedTimeItemText,
+                      ]}>
+                      Q1
+                    </Text>
+                    <Text
+                      style={[
+                        styles.quarterItemDates,
+                        selectedQuarter === 'Q1' && styles.selectedTimeItemText,
+                      ]}>
+                      Jan-Mar
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[
+                      styles.quarterItem,
+                      selectedQuarter === 'Q2' && {
+                        backgroundColor: isInward ? '#F48221' : '#4682B4',
+                        borderColor: 'transparent',
+                        ...Platform.select({
+                          ios: {
+                            shadowColor: '#000',
+                            shadowOffset: {width: 0, height: 2},
+                            shadowOpacity: 0.1,
+                            shadowRadius: 3,
+                          },
+                          android: {
+                            elevation: 2,
+                          },
+                        }),
+                      },
+                    ]}
+                    onPress={() => handleQuarterSelection(2)}>
+                    <Text
+                      style={[
+                        styles.quarterItemTitle,
+                        selectedQuarter === 'Q2' && styles.selectedTimeItemText,
+                      ]}>
+                      Q2
+                    </Text>
+                    <Text
+                      style={[
+                        styles.quarterItemDates,
+                        selectedQuarter === 'Q2' && styles.selectedTimeItemText,
+                      ]}>
+                      Apr-Jun
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[
+                      styles.quarterItem,
+                      selectedQuarter === 'Q3' && {
+                        backgroundColor: isInward ? '#F48221' : '#4682B4',
+                        borderColor: 'transparent',
+                        ...Platform.select({
+                          ios: {
+                            shadowColor: '#000',
+                            shadowOffset: {width: 0, height: 2},
+                            shadowOpacity: 0.1,
+                            shadowRadius: 3,
+                          },
+                          android: {
+                            elevation: 2,
+                          },
+                        }),
+                      },
+                    ]}
+                    onPress={() => handleQuarterSelection(3)}>
+                    <Text
+                      style={[
+                        styles.quarterItemTitle,
+                        selectedQuarter === 'Q3' && styles.selectedTimeItemText,
+                      ]}>
+                      Q3
+                    </Text>
+                    <Text
+                      style={[
+                        styles.quarterItemDates,
+                        selectedQuarter === 'Q3' && styles.selectedTimeItemText,
+                      ]}>
+                      Jul-Sep
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[
+                      styles.quarterItem,
+                      selectedQuarter === 'Q4' && {
+                        backgroundColor: isInward ? '#F48221' : '#4682B4',
+                        borderColor: 'transparent',
+                        ...Platform.select({
+                          ios: {
+                            shadowColor: '#000',
+                            shadowOffset: {width: 0, height: 2},
+                            shadowOpacity: 0.1,
+                            shadowRadius: 3,
+                          },
+                          android: {
+                            elevation: 2,
+                          },
+                        }),
+                      },
+                    ]}
+                    onPress={() => handleQuarterSelection(4)}>
+                    <Text
+                      style={[
+                        styles.quarterItemTitle,
+                        selectedQuarter === 'Q4' && styles.selectedTimeItemText,
+                      ]}>
+                      Q4
+                    </Text>
+                    <Text
+                      style={[
+                        styles.quarterItemDates,
+                        selectedQuarter === 'Q4' && styles.selectedTimeItemText,
+                      ]}>
+                      Oct-Dec
+                    </Text>
+                  </TouchableOpacity>
                 </View>
+              </View>
             )}
 
             {/* Half-Yearly View - shown only when Half-Yearly is selected */}
@@ -1726,28 +1794,61 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     justifyContent: 'center',
   },
+  toggleButtonEnhanced: {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: {
+          width: 0,
+          height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
   toggleCircle: {
     width: 22,
     height: 22,
     borderRadius: 11,
     position: 'absolute',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: {
+          width: 0,
+          height: 1,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.5,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   toggleText: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: '#333333',
   },
   toggleTextInactive: {
     opacity: 0.5,
   },
   // Add financialYearContainer style for the relocated component
   financialYearContainer: {
-    margin: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    marginHorizontal: 16,
     marginBottom: 10,
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
+  },
+  selectorWrapper: {
+    position: 'relative',
+    marginLeft: 8,
   },
   formContainer: {
     margin: 16,
@@ -1769,13 +1870,11 @@ const styles = StyleSheet.create({
     }),
   },
   inwardForm: {
-    // backgroundColor: '#FFF3E5', // Light orange
     backgroundColor: '#FFFBF6',
     borderColor: '#F48221',
     borderWidth: 1,
   },
   outwardForm: {
-    // backgroundColor: '#E5F0FF', // Light blue
     backgroundColor: '#F5F9FF',
     borderColor: '#4682B4',
     borderWidth: 1,
@@ -2279,79 +2378,68 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F48221',  // Default to inward color
     borderRadius: 8,
-    backgroundColor: '#FFFFFF',
-    padding: 12,
+    backgroundColor: '#FFFBF6',  // Default to inward background
+    padding: 5,
+    paddingHorizontal: 9,
+    width: 110,
   },
   financialYearText: {
-    fontSize: 16,
-    color: '#2C3E50',
+    fontSize: 14,
+    color: '#F48221',
     fontWeight: '500',
   },
   financialYearDropdown: {
-    marginTop: 8,
+    position: 'absolute',
+    top: 44,
+    left: 0,
+    width: 110,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F48221',
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
-    padding: 12,
+    overflow: 'hidden',
+    zIndex: 1000,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: {width: 0, height: 2},
+        shadowOffset: {width: 0, height: 4},
         shadowOpacity: 0.1,
-        shadowRadius: 3,
+        shadowRadius: 8,
       },
       android: {
-        elevation: 2,
+        elevation: 4,
       },
     }),
   },
-  yearNavigationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-  },
-  yearNavigationButton: {
-    padding: 4,
-  },
-  selectYearText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2C3E50',
-  },
-  financialYearGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginTop: 12,
-  },
   financialYearOption: {
-    width: '23%',
-    marginBottom: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 8,
-    backgroundColor: '#F8FAFC',
-    alignItems: 'center',
+    width: '100%',
+    padding: 10,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  firstYearOption: {
+    borderTopLeftRadius: 7,
+    borderTopRightRadius: 7,
+  },
+  lastYearOption: {
+    borderBottomWidth: 0,
+    borderBottomLeftRadius: 7,
+    borderBottomRightRadius: 7,
   },
   selectedFinancialYear: {
-    borderColor: '#F48221',
-    backgroundColor: '#FFF3E5',
+    backgroundColor: '#FFF3E0',
   },
   financialYearOptionText: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
+    fontSize: 14,
+    color: '#667080',
+    textAlign: 'left',
   },
   selectedFinancialYearText: {
-    fontWeight: '600',
-    color: '#F48221',
+    fontWeight: '500',
+    color: '#F48221',  // Will be overridden for outward
   },
   // Time Period Tabs
   timePeriodTabsContainer: {
