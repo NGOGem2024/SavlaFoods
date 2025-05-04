@@ -312,6 +312,11 @@ export type RootStackParamList = {
     customerID?: string;
     displayName?: string;
   };
+  LotReportScreen: {
+    lotNo?: string;
+    itemId?: string;
+    customerID?: string;
+  };
 };
 
 export type MainStackParamList = {
@@ -343,6 +348,7 @@ export type MainStackParamList = {
       AVAILABLE_QTY: number;
       ITEM_MARKS: string;
       VAKAL_NO: string;
+      UNIT_NAME: string;
     }>;
   };
   OrderHistoryScreen: {
@@ -381,6 +387,7 @@ export type MainStackParamList = {
       AVAILABLE_QTY: number;
       ITEM_MARKS: string;
       VAKAL_NO: string;
+      UNIT_NAME: string;
     }>;
   };
   EditOrderScreen: {
@@ -485,6 +492,7 @@ export type MainStackParamList = {
       items: Array<any>;
     };
   };
+
   ItemDetailsExpanded: {
     ItemID: number;
     itemName: string;
@@ -502,7 +510,7 @@ export type MainStackParamList = {
     forceRefresh?: number;
   };
   CartScreen: undefined;
-  LotReportScreen: undefined;
+  LotReportScreen: {lotNo?: string; itemId?: string; customerID?: string};
 };
 
 export type MainStackScreenProps<T extends keyof MainStackParamList> =
