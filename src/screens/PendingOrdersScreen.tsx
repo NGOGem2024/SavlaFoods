@@ -30,6 +30,7 @@ interface PendingOrder {
   customerName: string;
   totalItems: number;
   totalQuantity: number;
+  unitName: string;
   items: Array<{
     detailId: number;
     itemId: number;
@@ -40,6 +41,7 @@ interface PendingOrder {
     requestedQty: number;
     availableQty: number;
     status: string;
+    unitName: string;
   }>;
 }
 
@@ -113,6 +115,10 @@ const PendingOrdersScreen = () => {
               // Extract just the date part if it's an ISO string
               return dateString.split('T')[0];
             };
+
+            order.items.forEach((item, index) => {
+              console.log(`Item ${index + 1} unit:`, item.unitName);
+            });
 
             return {
               ...order,
@@ -287,10 +293,17 @@ const PendingOrdersScreen = () => {
     }
   };
 
+  // const handleViewDetails = (order: PendingOrder) => {
+  //   // Use "as any" to bypass the type checking since the component
+  //   // expects a different structure than the type definition
+  //   navigation.navigate('OrderDetailsScreen' as any, {order});
+  // };
+
   const handleViewDetails = (order: PendingOrder) => {
-    // Use "as any" to bypass the type checking since the component
-    // expects a different structure than the type definition
-    navigation.navigate('OrderDetailsScreen' as any, {order});
+    navigation.navigate('OrderDetailsScreen' as any, {
+      order,
+      unitName: order.unitName, // Add this line
+    });
   };
 
   const renderOrderCard = ({item}: {item: PendingOrder}) => (
@@ -304,13 +317,7 @@ const PendingOrdersScreen = () => {
           <Text style={styles.totalItems}>Items: {item.totalItems}</Text>
         </View>
         <View style={styles.statusContainer}>
-          <View
-            style={[
-              styles.statusBadge,
-              // {
-              //   backgroundColor: item.status === 'NEW' ? '#e0f2fe' : '#f3f4f6',
-              // },
-            ]}>
+          <View style={[styles.statusBadge]}>
             <Text
               style={[
                 styles.statusText,
@@ -451,6 +458,7 @@ const generateMockData = (): PendingOrder[] => {
         requestedQty: Math.floor(Math.random() * 50) + 10,
         availableQty: Math.floor(Math.random() * 100) + 20,
         status: 'NEW',
+        unitName: '',
       });
     }
 
@@ -467,6 +475,7 @@ const generateMockData = (): PendingOrder[] => {
       totalItems,
       totalQuantity: items.reduce((sum, item) => sum + item.requestedQty, 0),
       items,
+      unitName: '',
     });
   }
   return mockOrders;

@@ -42,6 +42,7 @@ interface OrderItem {
   NET_QUANTITY: number;
   ORDERED_QUANTITY: number;
   BatchNo?: string | null;
+  UNIT_ID?: number;
 }
 
 interface LaborCharge {
@@ -56,15 +57,22 @@ interface OrderResponse {
   success: boolean;
   message: string;
   data: {
-    orderId: number;
-    orderNo: string;
-    customerAddressId?: number;
-    customerName?: string;
-    orderDate?: string;
-    deliveryDate?: string;
-    itemCount?: number;
-    transporterName?: string;
-    CUST_DELIVERY_ADD?: string; // Add this field
+    orderDate: string;
+    deliveryDate: string;
+    ordersByUnit: {
+      orderId: number;
+      orderNo: string;
+      unitId: number;
+
+      itemCount: number;
+      items: {
+        ItemID: number;
+        LotNo: string;
+        Quantity: number;
+        AvailableQuantity: number;
+        unitName: string;
+      }[];
+    }[];
   };
 }
 
@@ -160,9 +168,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
   const [showValidationModal, setShowValidationModal] = useState(false);
   const [validationMessage, setValidationMessage] = useState('');
   const [successData, setSuccessData] = useState({
-    orderId: 0,
-    orderNo: '',
-    processedItems: [] as any[],
+    ordersByUnit: [] as any[],
     formattedTransporterName: '',
     selectedLabor: [] as any[],
   });
@@ -222,6 +228,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
         setSuccessData({
           orderId: 0,
           orderNo: '',
+          // ordersByUnit:'',
           processedItems: [],
           formattedTransporterName: '',
           selectedLabor: [],
@@ -305,6 +312,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
   // Update the date field handler to handle keyboard properly
   const handleDateFieldTap = () => {
     // Only dismiss keyboard for this specific interaction
+
     Keyboard.dismiss();
     // Show date picker after ensuring keyboard is dismissed
     setTimeout(() => {
@@ -441,6 +449,8 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
           BatchNo: item.BatchNo === '**null**' ? null : item.BatchNo,
           ItemMarks: item.ITEM_MARKS || '',
           VakalNo: item.VAKAL_NO || '',
+          UnitName: item.UNIT_NAME,
+          // UnitID: item.UNIT_ID || unitId,
         })),
         orderDate: orderDetails.orderDate,
         deliveryDate: orderDetails.deliveryDate,
@@ -477,24 +487,35 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
       }
 
       if (response.data.success === true) {
-        const {orderId, orderNo} = response.data.data;
+        const {ordersByUnit} = response.data.data;
 
-        if (!orderId || !orderNo) {
+        if (!ordersByUnit || !ordersByUnit.length) {
           throw new Error('Missing order details in success response');
         }
 
-        const processedItems = orderItems.map(item => ({
-          ...item,
-          FK_ORDER_ID: orderId,
-          FK_ITEM_ID: item.ITEM_ID,
-          STATUS: 'NEW',
-          REMARK: orderDetails.remarks,
-        }));
+        // Process each order by unit
+        const processedOrdersByUnit = ordersByUnit.map(unitOrder => {
+          // Map and filter the order items based on the current unit's items
+          const unitItemIds = new Set(unitOrder.items.map(item => item.ItemID));
+
+          const processedItems = orderItems
+            .filter(item => unitItemIds.has(item.ITEM_ID))
+            .map(item => ({
+              ...item,
+              FK_ORDER_ID: unitOrder.orderId,
+              FK_ITEM_ID: item.ITEM_ID,
+              STATUS: 'NEW',
+              REMARK: orderDetails.remarks,
+            }));
+
+          return {
+            ...unitOrder,
+            processedItems,
+          };
+        });
 
         setSuccessData({
-          orderId,
-          orderNo,
-          processedItems,
+          ordersByUnit: processedOrdersByUnit,
           formattedTransporterName: getFormattedTransporterName(),
           selectedLabor,
         });
@@ -749,9 +770,14 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
               <View key={index} style={styles.itemRow}>
                 <View style={styles.itemInfo}>
                   <MaterialIcons name="inventory" size={20} color="#4A5568" />
-                  <Text style={styles.itemName}>
-                    {item.ITEM_NAME || `Item ${item.ITEM_ID}`}
-                  </Text>
+                  <View style={styles.itemDetails}>
+                    <Text style={styles.itemName}>
+                      {item.ITEM_NAME || `Item ${item.ITEM_ID}`}
+                    </Text>
+                    <Text style={styles.unitName}>
+                      {item.UNIT_NAME || 'Unit not specified'}
+                    </Text>
+                  </View>
                 </View>
                 <View style={styles.quantityBadge}>
                   <Text style={styles.itemQuantity}>
@@ -835,33 +861,37 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
           onRequestClose={() => setShowSuccessModal(false)}>
           <View style={styles.successModalOverlay}>
             <View style={styles.successModalContent}>
-              <View style={styles.successIconContainer}>
+              <View style={styles.successHeader}>
                 <LinearGradient
                   colors={['#4CAF50', '#45a049']}
                   style={styles.successIconCircle}>
                   <Ionicons name="checkmark-sharp" size={40} color="#FFFFFF" />
                 </LinearGradient>
-              </View>
-              <View style={styles.successTextContainer}>
-                <Text style={styles.successEmoji}>🎉</Text>
                 <Text style={styles.successTitle}>
                   Order Placed Successfully!
                 </Text>
-                <View style={styles.orderNumberContainer}>
-                  <View style={styles.orderNumberRow}>
-                    <Text style={styles.orderNoLabel}>Order No:</Text>
-                    <Text style={styles.orderNoValue}>
-                      {successData.orderNo}
-                    </Text>
-                  </View>
-                </View>
               </View>
+
+              <View style={styles.ordersContainer}>
+                {successData.ordersByUnit.map((order, index) => (
+                  <View key={index} style={styles.compactOrderCard}>
+                    <View style={styles.compactOrderDetails}>
+                      <Text style={styles.orderNoText}>#{order.orderNo}</Text>
+                      <Text style={styles.unitText}>{order.unitName}</Text>
+                      <Text style={styles.itemCountText}>
+                        {order.itemCount} items
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+
               <View style={styles.successButtonsContainer}>
                 <TouchableOpacity
                   style={styles.viewOrderButton}
                   onPress={() => {
                     setShowSuccessModal(false);
-                    // First navigate to OrdersScreen
+                    // Navigate to Orders screen
                     navigation.navigate('BottomTabNavigator', {
                       screen: 'Orders',
                       customerID: customerID,
@@ -873,29 +903,38 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
                         },
                       },
                     });
-                    // Then navigate to PendingOrdersScreen
-                    setTimeout(() => {
-                      navigation.navigate('PendingOrdersScreen', {
-                        orderId: successData.orderId,
-                        orderNo: successData.orderNo,
-                        transporterName: successData.formattedTransporterName,
-                        deliveryDate: orderDetails.deliveryDate,
-                        deliveryAddress: orderDetails.CUST_DELIVERY_ADD,
-                        orderDate: orderDetails.orderDate,
-                        items: successData.processedItems,
-                        customerID: customerID,
-                      });
-                    }, 100);
+
+                    // If there's just one order, navigate directly to it
+                    if (successData.ordersByUnit.length > 1) {
+                      const order = successData.ordersByUnit[0];
+                      setTimeout(() => {
+                        return navigation.navigate('PendingOrdersScreen', {
+                          orderId: order.orderId,
+                          orderNo: order.orderNo,
+                          transporterName: successData.formattedTransporterName,
+                          deliveryDate: orderDetails.deliveryDate,
+                          deliveryAddress: orderDetails.CUST_DELIVERY_ADD,
+                          orderDate: orderDetails.orderDate,
+                          items: order.processedItems,
+                          customerID: customerID,
+                          // unitName: order.processedItems[0].UNIT_NAME,
+                        });
+                      }, 100);
+                    }
                   }}>
                   <LinearGradient
-                    colors={['#0284c7', '#0284c7']}
+                    colors={['#0284c7', '#0264a7']}
                     style={styles.viewOrderGradient}>
                     <MaterialIcons
                       name="visibility"
                       size={20}
                       color="#FFFFFF"
                     />
-                    <Text style={styles.viewOrderText}>View Order</Text>
+                    <Text style={styles.viewOrderText}>
+                      {successData.ordersByUnit.length > 1
+                        ? 'View Orders'
+                        : 'View Order'}
+                    </Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -1524,7 +1563,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 24,
-    width: '90%',
+    width: '100%',
     maxWidth: 400,
     alignItems: 'center',
     ...Platform.select({
@@ -1574,7 +1613,8 @@ const styles = StyleSheet.create({
     fontSize: Platform.OS === 'ios' ? 17 : 18,
     fontWeight: 'bold',
     color: '#1A202C',
-    marginBottom: 12,
+    marginBottom: 10,
+    marginTop: 5,
     textAlign: 'center',
     width: '100%',
   },
@@ -1846,6 +1886,182 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     marginLeft: 12,
+  },
+  multipleOrdersContainer: {
+    width: '100%',
+    marginTop: 10,
+  },
+  multipleOrdersText: {
+    fontSize: 15,
+    color: '#2C3E50',
+    fontWeight: '500',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  ordersScrollView: {
+    maxHeight: height * 0.3,
+  },
+  ordersScrollViewContent: {
+    paddingVertical: 5,
+  },
+  orderCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  orderUnitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  orderUnitLabel: {
+    fontSize: 14,
+    color: '#64748B',
+    marginRight: 5,
+  },
+  orderUnitValue: {
+    fontSize: 14,
+    color: '#2C3E50',
+    fontWeight: '500',
+  },
+  orderItemsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  orderItemsLabel: {
+    fontSize: 14,
+    color: '#64748B',
+    marginRight: 5,
+  },
+  orderItemsValue: {
+    fontSize: 14,
+    color: '#2C3E50',
+    fontWeight: '500',
+  },
+  // Add these to your existing styles object
+  itemDetails: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  unitName: {
+    fontSize: 12,
+    color: '#718096',
+    marginTop: 2,
+    marginLeft: 7,
+  },
+  successHeader: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    width: '100%',
+  },
+  singleOrderContainer: {
+    width: '100%',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
+  orderDetailCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  orderDetailRow: {
+    flexDirection: 'row',
+    // justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EDF2F7',
+  },
+  orderDetailLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4A5568',
+  },
+  orderDetailValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#2D3748',
+  },
+  orderCardGradient: {
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10,
+  },
+  orderCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  orderCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2D3748',
+    marginLeft: 8,
+  },
+  // Add these to your existing styles object
+  // successHeader: {
+  //   alignItems: 'center',
+  //   justifyContent: 'center',
+  //   paddingVertical: 16,
+  //   marginBottom: 10,
+  //   width: '100%',
+  // },
+  ordersContainer: {
+    width: '100%',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    paddingStart: 5,
+  },
+  compactOrderCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    marginBottom: 10,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  compactOrderDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  orderNoText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0284c7',
+    flex: 1,
+  },
+  unitText: {
+    fontSize: 14,
+    color: '#4A5568',
+    flex: 1,
+    textAlign: 'center',
+    marginLeft: 15,
+  },
+  itemCountText: {
+    fontSize: 14,
+    color: '#718096',
+    flex: 1,
+    textAlign: 'right',
   },
 });
 

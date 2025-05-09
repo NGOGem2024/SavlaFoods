@@ -32,7 +32,6 @@ interface DetailRowProps {
 }
 
 interface OrderItem {
-  // Added missing fields from backend
   ITEM_ID: number;
   ITEM_NAME: string;
   LOT_NO: string;
@@ -286,6 +285,7 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
         stockLotLocationId: route.params.stockLotLocationId,
         unitId: route.params.unitId || 3,
         finYearId: route.params.finYearId || 15,
+        unitName: '',
       });
     } catch (error: any) {
       const errorMessage =

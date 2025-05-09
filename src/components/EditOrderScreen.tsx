@@ -326,7 +326,7 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
     availableQty: number,
     itemId: number,
   ) => {
-    if (qty <= 0) {
+    if (qty < 0) {
       return 'Quantity must be greater than zero';
     }
 

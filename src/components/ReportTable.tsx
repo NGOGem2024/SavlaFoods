@@ -8,15 +8,6 @@ interface ReportTableProps {
 }
 
 const ReportTable = ({reportData, isInward, tableRef}: ReportTableProps) => {
-  // Debug log to check field names for the first item
-  if (reportData.length > 0) {
-    console.log('First report item fields:');
-    console.log('ITEM_MARK:', reportData[0].ITEM_MARK || reportData[0].ITEM_MARK_NAME || reportData[0].ITEMMARK || reportData[0].item_mark);
-    console.log('VAKKAL_NO:', reportData[0].VAKKAL_NO || reportData[0].VAKKAL_NUMBER || reportData[0].vakkal_no);
-    console.log('QTY:', reportData[0].QTY || reportData[0].QUANTITY || reportData[0].qty || reportData[0].quantity);
-    console.log('All fields:', Object.keys(reportData[0]).join(', '));
-  }
-
   return (
     <View style={styles.tableContainer}>
       <ScrollView
@@ -204,16 +195,16 @@ const ReportTable = ({reportData, isInward, tableRef}: ReportTableProps) => {
                 </Text>
                 <Text
                   style={[styles.tableCell, {width: 100, textAlign: 'center'}]}>
-                  {item.REMARK || item.REMARKS || '-'}
+                  {item.REMARK || '-'}
                 </Text>
                 <Text style={[styles.tableCell, {width: 100}]}>
-                  {item.ITEM_MARK || item.ITEM_MARKS || '-'}
+                  {item.ITEM_MARK || '-'}
                 </Text>
                 <Text style={[styles.tableCell, {width: 80}]}>
-                  {item.VAKKAL_NO || item.VAKAL_NO || '-'}
+                  {item.VAKKAL_NO || '-'}
                 </Text>
                 <Text style={[styles.tableCell, {width: 60}]}>
-                  {item.QTY || item.QUANTITY || (isInward ? '' : item.DC_QTY) || '-'}
+                  {item.QTY || '-'}
                 </Text>
                 <Text style={[styles.tableCell, {width: 120}]}>
                   {item.DELIVERED_TO || '-'}
