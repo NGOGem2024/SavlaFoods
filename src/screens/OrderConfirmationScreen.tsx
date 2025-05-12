@@ -905,7 +905,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
                     });
 
                     // If there's just one order, navigate directly to it
-                    if (successData.ordersByUnit.length === 1) {
+                    if (successData.ordersByUnit.length > 1) {
                       const order = successData.ordersByUnit[0];
                       setTimeout(() => {
                         return navigation.navigate('PendingOrdersScreen', {

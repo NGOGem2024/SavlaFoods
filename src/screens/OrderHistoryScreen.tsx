@@ -20,6 +20,7 @@ import {useCustomer} from '../contexts/DisplayNameContext';
 import {MainStackParamList} from '../../src/type/type';
 
 interface OrderHistory {
+  cancelledRemark: React.JSX.Element;
   deliveryAddress: string;
   orderId: number;
   orderNo: string;
@@ -176,10 +177,12 @@ const OrderHistoryScreen = () => {
         transporterName: params.transporterName || '',
         remarks: params.remarks || '',
         createdOn: params.createdOn || '',
+        CancelledRemarks: params.CancelledRemarks || '',
         customerName: params.customerName || '',
         customerMobile: params.customerMobile || 0,
         customerEmail: params.customerEmail || null,
         totalItems: params.items?.length || 0,
+
         totalQuantity:
           params.items?.reduce(
             (sum: any, item: {requestedQty: any}) =>
@@ -592,6 +595,21 @@ const OrderHistoryScreen = () => {
               <Text style={styles.remarksValue}>{item.remarks}</Text>
             </View>
           )}
+
+          {/* {item.cancelledRemark && (
+            <View style={styles.remarksContainer}>
+              <View style={styles.remarksHeader}>
+                <MaterialIcons
+                  name="comment"
+                  size={16}
+                  color="#4B5563"
+                  style={styles.remarksIcon}
+                />
+                <Text style={styles.remarksTitle}>Cancelled Remark</Text>
+              </View>
+              <Text style={styles.remarksValue}>{item.cancelledRemark}</Text>
+            </View>
+          )} */}
 
           {item.transporterName && (
             <View style={styles.transporterContainer}>

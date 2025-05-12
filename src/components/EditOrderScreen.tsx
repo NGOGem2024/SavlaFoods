@@ -24,6 +24,7 @@ import axios from 'axios';
 import {useCustomer} from '../contexts/DisplayNameContext';
 import {ParamListBase} from '@react-navigation/native';
 import {API_ENDPOINTS} from '../config/api.config';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 interface OrderItem {
   detailId: number;
@@ -75,11 +76,11 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
   // const navigation = useNavigation();
   const {customerID} = useCustomer();
   const {order} = route.params;
-
+  const [isDatePickerVisible, setDatePickerVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     transporterName: order.transporterName || '',
-    deliveryDate: order.deliveryDate || '',
+    deliveryDate: order.deliveryDate || new Date().toISOString(),
     remarks: order.remarks || '',
     deliveryAddress: order.deliveryAddress || '',
   });
@@ -89,6 +90,26 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
     transporterName: '',
     deliveryDate: '',
     requestedQty: {} as Record<number, string>,
+  });
+  // In useState initialization for selectedDate
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    if (order.deliveryDate) {
+      try {
+        // Handle ISO format dates (with T)
+        if (order.deliveryDate.includes('T')) {
+          return new Date(order.deliveryDate);
+        }
+
+        // Handle YYYY-MM-DD format
+        const [year, month, day] = order.deliveryDate.split('-');
+        if (year && month && day) {
+          return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        }
+      } catch (e) {
+        console.error('Error parsing date:', e);
+      }
+    }
+    return new Date(); // Default to today if parsing fails
   });
 
   const [orderItems, setOrderItems] = useState<OrderItem[]>([...order.items]);
@@ -139,6 +160,32 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
     }
   };
 
+  const showDatePicker = () => {
+    setDatePickerVisible(true);
+  };
+
+  const hideDatePicker = () => {
+    setDatePickerVisible(false);
+  };
+
+  const handleConfirm = (date: Date) => {
+    hideDatePicker();
+    if (!date) return;
+
+    // Store the selected date in state
+    setSelectedDate(date);
+
+    // Format date for API (YYYY-MM-DD)
+    const formattedDate = `${date.getFullYear()}-${String(
+      date.getMonth() + 1,
+    ).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+    // Update form data with the formatted date
+    setFormData(prev => ({...prev, deliveryDate: formattedDate}));
+
+    // Clear any validation errors for delivery date
+    setValidationErrors(prev => ({...prev, deliveryDate: ''}));
+  };
   // Format date for display (doesn't change date)
   const formatDateForDisplay = (dateString: string) => {
     try {
@@ -203,61 +250,33 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
   // Format date for API (YYYY-MM-DD)
   const formatDateForApi = (dateString: string) => {
     try {
-      if (!dateString) return '';
+      let date: Date;
 
-      // First, check if it's already in YYYY-MM-DD format
-      if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      // Handle different date formats
+      if (dateString.includes('T')) {
+        // ISO format
+        date = new Date(dateString);
+      } else if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // YYYY-MM-DD format
+        const [year, month, day] = dateString.split('-');
+        date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      } else {
+        // Month Day, Year format or other
+        date = new Date(dateString);
+      }
+
+      if (isNaN(date.getTime())) {
+        console.error('Invalid date:', dateString);
         return dateString;
       }
 
-      // For dates in "Month Day, Year" format (from the UI)
-      if (dateString.includes(',')) {
-        const parts = dateString.split(' ');
-        if (parts.length === 3) {
-          const monthNames = [
-            'January',
-            'February',
-            'March',
-            'April',
-            'May',
-            'June',
-            'July',
-            'August',
-            'September',
-            'October',
-            'November',
-            'December',
-          ];
-          const day = parseInt(parts[1].replace(',', ''));
-          const month = monthNames.indexOf(parts[0]) + 1;
-          const year = parseInt(parts[2]);
-
-          // Format directly to YYYY-MM-DD without creating Date object
-          return `${year}-${month.toString().padStart(2, '0')}-${day
-            .toString()
-            .padStart(2, '0')}`;
-        }
-      }
-
-      // For other date formats, manually extract and format
-      if (dateString.includes('T')) {
-        const [datePart] = dateString.split('T');
-        return datePart;
-      }
-
-      // Last resort - parse with Date object but avoid timezone issues
-      const [month, day, year] = new Date(dateString + 'T00:00:00')
-        .toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-        })
-        .split('/');
-
-      // Convert from MM/DD/YYYY to YYYY-MM-DD
-      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      // Format as YYYY-MM-DD
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+        2,
+        '0',
+      )}-${String(date.getDate()).padStart(2, '0')}`;
     } catch (error) {
-      console.log('Error formatting date for API:', error, dateString);
+      console.error('Error formatting date for API:', error, dateString);
       return dateString;
     }
   };
@@ -274,37 +293,55 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
   };
 
   // Modified validation for delivery date to ensure it's not before the order date
-  const validateDeliveryDate = (date: string) => {
-    if (!date.trim()) {
+  const validateDeliveryDate = (dateString: string) => {
+    if (!dateString.trim()) {
       return 'Delivery date is required';
     }
 
-    if (!isValidDateFormat(date)) {
-      return 'Invalid date format. Use YYYY-MM-DD or Month Day, Year';
-    }
-
-    // Format the dates properly before validation
     let deliveryDate: Date;
     let orderDate: Date;
 
     try {
-      const formattedDeliveryDate = formatDateForApi(date);
-      deliveryDate = new Date(formattedDeliveryDate);
+      // For ISO or YYYY-MM-DD format
+      if (dateString.includes('T') || dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        deliveryDate = new Date(dateString);
+      } else {
+        // For formatted dates like "May 10, 2025"
+        deliveryDate = new Date(dateString);
+      }
+
+      // Set hours to 0 for date comparison
       deliveryDate.setHours(0, 0, 0, 0);
 
-      const formattedOrderDate = formatDateForApi(order.orderDate);
-      orderDate = new Date(formattedOrderDate);
+      // Parse order date
+      if (order.orderDate.includes('T')) {
+        orderDate = new Date(order.orderDate);
+      } else {
+        const [year, month, day] = order.orderDate.split('-');
+        orderDate = new Date(
+          parseInt(year),
+          parseInt(month) - 1,
+          parseInt(day),
+        );
+      }
+
       orderDate.setHours(0, 0, 0, 0);
+
+      // Check if dates are valid
+      if (isNaN(deliveryDate.getTime()) || isNaN(orderDate.getTime())) {
+        return 'Invalid date format';
+      }
+
+      // Check if delivery date is before order date
+      if (deliveryDate < orderDate) {
+        return 'Delivery date cannot be before order date';
+      }
+
+      return '';
     } catch (error) {
+      console.error('Date validation error:', error);
       return 'Invalid date format';
     }
-
-    // Check if delivery date is before order date
-    if (deliveryDate < orderDate) {
-      return 'Delivery date cannot be before order date';
-    }
-
-    return '';
   };
 
   // Validate transporter name
@@ -326,7 +363,7 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
     availableQty: number,
     itemId: number,
   ) => {
-    if (qty <= 0) {
+    if (qty < 0) {
       return 'Quantity must be greater than zero';
     }
 
@@ -525,6 +562,20 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
     }
   };
 
+  const formatDisplayDate = (date: Date) => {
+    if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+      return 'Select Date';
+    }
+
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    };
+
+    return date.toLocaleDateString('en-US', options);
+  };
+
   // Extract the actual submission logic to avoid duplication
   const submitOrderUpdate = async (formattedDeliveryDate: string) => {
     try {
@@ -619,11 +670,11 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
 
           <View style={styles.formSection}>
             <Text style={styles.sectionTitle}>Delivery Information</Text>
-
             {/* Delivery Date Field */}
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Delivery Date</Text>
-              <View
+              <TouchableOpacity
+                onPress={showDatePicker}
                 style={[
                   styles.dateInput,
                   validationErrors.deliveryDate ? styles.inputError : null,
@@ -634,24 +685,48 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
                   color="#6B7280"
                   style={styles.inputIcon}
                 />
-                <TextInput
-                  style={styles.input}
-                  value={
-                    formData.deliveryDate
-                      ? formatDateForDisplay(formData.deliveryDate)
-                      : ''
-                  }
-                  placeholder="Enter delivery date (YYYY-MM-DD)"
-                  onChangeText={handleDeliveryDateChange}
-                  placeholderTextColor="#9CA3AF"
-                />
-              </View>
-              {validationErrors.deliveryDate ? (
+                <Text style={styles.dateDisplayText}>
+                  {formatDisplayDate(selectedDate)}
+                </Text>
+              </TouchableOpacity>
+              {validationErrors.deliveryDate && (
                 <Text style={styles.errorText}>
                   {validationErrors.deliveryDate}
                 </Text>
-              ) : null}
+              )}
             </View>
+
+            {/* Add the DateTimePickerModal component */}
+            <DateTimePickerModal
+              isVisible={isDatePickerVisible}
+              mode="date"
+              date={selectedDate}
+              onConfirm={handleConfirm}
+              onCancel={hideDatePicker}
+              display={Platform.OS === 'ios' ? 'inline' : 'default'}
+              themeVariant="light"
+              textColor="#111827"
+              backgroundColor="#FFFFFF"
+              isDarkModeEnabled={false}
+              minimumDate={new Date(order.orderDate)} // Prevent selecting dates before order date
+              customConfirmButtonIOS={() => null}
+              customCancelButtonIOS={() => null}
+              customHeaderIOS={() => (
+                <View style={styles.pickerHeader}>
+                  <TouchableOpacity
+                    onPress={hideDatePicker}
+                    style={styles.closeIconButton}>
+                    <MaterialIcons name="close" size={24} color="#6B7280" />
+                  </TouchableOpacity>
+                  <Text style={styles.pickerHeaderTitle}>Select Date</Text>
+                  <TouchableOpacity
+                    onPress={() => handleConfirm(selectedDate)}
+                    style={styles.confirmButton}>
+                    <Text style={styles.pickerConfirmButton}>Confirm</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            />
 
             {/* Transporter Field */}
             <View style={styles.inputGroup}>
@@ -681,7 +756,6 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
                 </Text>
               ) : null}
             </View>
-
             {/* Delivery Address Field - Removed validation */}
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Delivery Address</Text>
@@ -702,7 +776,6 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
                 />
               </View>
             </View>
-
             {/* Remarks Field */}
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Remarks</Text>
@@ -868,6 +941,7 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -909,6 +983,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  dateDisplayText: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#111827',
+  },
+
   orderHeaderText: {
     color: '#ffffff',
     fontSize: 18,
@@ -1200,6 +1282,38 @@ const styles = StyleSheet.create({
   inputError: {
     borderColor: '#ef4444',
     borderWidth: 1,
+  },
+ 
+  pickerCancelButton: {
+    color: '#6b7280',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  confirmButton: {
+    color: '#0284c7',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  closeIconButton: {
+    padding: 4,
+  },
+  pickerHeaderTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  pickerConfirmButton: {
+    color: '#0284c7',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

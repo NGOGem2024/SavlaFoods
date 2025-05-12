@@ -66,59 +66,6 @@ const ItemDetailScreen: React.FC<ItemDetailScreenProps> = ({
     fetchItems();
   }, [subcategoryId, customerID]);
 
-  // const fetchItems = useCallback(
-  //   async (showLoader = true) => {
-  //     if (showLoader) setLoading(true);
-  //     setError(null);
-
-  //     try {
-  //       console.log(
-  //         'Fetching items for subcategory ID:',
-  //         subcategoryId,
-  //         'CustomerID:',
-  //         customerID,
-  //       );
-
-  //       const payload = {
-  //         SubCategoryID: subcategoryId,
-  //         CustomerID: customerID,
-  //       };
-
-  //       console.log('Sending request with payload:', payload);
-  //       const response = await axios.post(API_ENDPOINTS.GET_ITEMS, payload, {
-  //         headers: {
-  //           'Content-Type': 'application/json',
-  //           Accept: 'application/json',
-  //         },
-  //         timeout: 10000,
-  //       });
-
-  //       console.log('API Response:', response.data);
-  //       if (
-  //         response.data?.status === 'success' &&
-  //         response.data?.output?.items
-  //       ) {
-  //         setItems(response.data.output.items);
-  //       } else {
-  //         setError(response.data?.message || 'No items available');
-  //         setItems([]);
-  //       }
-  //     } catch (err) {
-  //       const errorMessage = axios.isAxiosError(err)
-  //         ? err.response?.data?.message || err.message
-  //         : 'Unexpected error occurred';
-
-  //       setError(`Error: ${errorMessage}`);
-  //       console.error('Fetch Items Error:', err);
-  //       setItems([]);
-  //     } finally {
-  //       setLoading(false);
-  //       setRefreshing(false);
-  //     }
-  //   },
-  //   [subcategoryId, customerID],
-  // );
-
   const fetchItems = useCallback(
     async (showLoader = true) => {
       if (showLoader) setLoading(true);

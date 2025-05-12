@@ -336,6 +336,7 @@ export type MainStackParamList = {
     orderId: number;
     orderNo: string;
     transporterName: string;
+    remarks: String;
     orderDate: string;
     deliveryDate: string;
     deliveryAddress: string;
@@ -356,6 +357,7 @@ export type MainStackParamList = {
     orderId: number;
     orderNo: string;
     transporterName: string;
+    remarks: string;
     deliveryDate: string;
     deliveryAddress: string;
     orderDate: string;
@@ -377,6 +379,7 @@ export type MainStackParamList = {
     orderId: number;
     orderNo: string;
     transporterName: string;
+    remarks: string;
     deliveryDate: string;
     orderDate: string;
     isOrderUpdated?: boolean;
@@ -508,6 +511,11 @@ export type MainStackParamList = {
       ORDERED_QUANTITY: number;
     }[];
     forceRefresh?: number;
+    LotReportScreen: {
+      lotNo?: string;
+      itemId?: string;
+      customerID?: string;
+    };
   };
   CartScreen: undefined;
   LotReportScreen: {lotNo?: string; itemId?: string; customerID?: string};

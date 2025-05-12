@@ -1760,51 +1760,80 @@ const ReportSummaryScreen: React.FC = () => {
           Item-wise Summary ({itemWiseData.length} items)
         </Text>
 
-        <View style={styles.tableHeader}>
-          <Text style={styles.itemDetailsHeader}>Item Details</Text>
-          <Text style={styles.headerCell}>Inward Qty</Text>
-          <Text style={styles.headerCell}>Outward Qty</Text>
-          <Text style={styles.headerCell}>Requested Qty</Text>
-          <Text style={styles.headerCell}>Net Balance</Text>
-        </View>
-
-        <ScrollView style={{maxHeight: 500}}>
-          {itemWiseData.map((item, index) => (
-            <View
-              key={`${item.ITEM_ID || ''}-${index}`}
-              style={styles.tableRow}>
-              <View style={styles.itemNameColumn}>
-                <Text style={styles.itemName} numberOfLines={2}>
-                  {item.ITEM_NAME || 'Unknown Item'}
+        {/* Horizontal Scroll Container */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={true}>
+          {/* Table Container with Fixed Width */}
+          <View style={styles.tableContainer}>
+            {/* Table Header */}
+            <View style={styles.tableHeader}>
+              <View style={[styles.headerCell, {width: 200}]}>
+                <Text style={styles.headerText} numberOfLines={2}>
+                  Item Details
                 </Text>
-                <Text style={styles.itemCategory} numberOfLines={1}>
-                  {item.ITEM_CATEG_NAME || 'N/A'}
-                  {item.SUB_CATEGORY_NAME ? ` / ${item.SUB_CATEGORY_NAME}` : ''}
-                </Text>
-                {/* <Text style={styles.itemId}>ID: {item.ITEM_ID || 'N/A'}</Text> */}
               </View>
-              <Text style={styles.dataCell}>
-                {formatNumber(item.TOTAL_INWARD_QUANTITY)}
-              </Text>
-              <Text style={styles.dataCell}>
-                {formatNumber(item.TOTAL_OUTWARD_QUANTITY)}
-              </Text>
-              <Text style={styles.dataCell}>
-                {formatNumber(item.TOTAL_REQUESTED_QUANTITY)}
-              </Text>
-              <Text
-                style={[
-                  styles.dataCell,
-                  Number(item.NET_QUANTITY) > 0
-                    ? styles.positive
-                    : Number(item.NET_QUANTITY) < 0
-                    ? styles.negative
-                    : null,
-                ]}>
-                {formatNumber(item.NET_QUANTITY)}
-              </Text>
+              <View style={[styles.headerCell, {width: 100}]}>
+                <Text style={styles.headerText}>Inward Qty</Text>
+              </View>
+              <View style={[styles.headerCell, {width: 100}]}>
+                <Text style={styles.headerText}>Outward Qty</Text>
+              </View>
+              <View style={[styles.headerCell, {width: 120}]}>
+                <Text style={styles.headerText}>Requested Qty</Text>
+              </View>
+              <View style={[styles.headerCell, {width: 100}]}>
+                <Text style={styles.headerText}>Net Balance</Text>
+              </View>
             </View>
-          ))}
+
+            {/* Vertical Scroll for Rows */}
+            <ScrollView style={styles.verticalScroll}>
+              {itemWiseData.map((item, index) => (
+                <View key={`${item.ITEM_ID}-${index}`} style={styles.tableRow}>
+                  {/* Item Details Column */}
+                  <View style={[styles.dataCell, {width: 200}]}>
+                    <Text style={styles.itemName} numberOfLines={1}>
+                      {item.ITEM_NAME || 'Unknown Item'}
+                    </Text>
+                    <Text style={styles.itemCategory} numberOfLines={1}>
+                      {[item.ITEM_CATEG_NAME, item.SUB_CATEGORY_NAME]
+                        .filter(Boolean)
+                        .join(' / ')}
+                    </Text>
+                  </View>
+
+                  {/* Data Columns */}
+                  <View style={[styles.dataCell, {width: 100}]}>
+                    <Text style={styles.dataText}>
+                      {formatNumber(item.TOTAL_INWARD_QUANTITY)}
+                    </Text>
+                  </View>
+                  <View style={[styles.dataCell, {width: 100}]}>
+                    <Text style={styles.dataText}>
+                      {formatNumber(item.TOTAL_OUTWARD_QUANTITY)}
+                    </Text>
+                  </View>
+                  <View style={[styles.dataCell, {width: 120}]}>
+                    <Text style={styles.dataText}>
+                      {formatNumber(item.TOTAL_REQUESTED_QUANTITY)}
+                    </Text>
+                  </View>
+                  <View style={[styles.dataCell, {width: 100}]}>
+                    <Text
+                      style={[
+                        styles.dataText,
+                        Number(item.NET_QUANTITY) > 0
+                          ? styles.positive
+                          : Number(item.NET_QUANTITY) < 0
+                          ? styles.negative
+                          : null,
+                      ]}>
+                      {formatNumber(Math.abs(Number(item.NET_QUANTITY)))}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
         </ScrollView>
       </View>
     );
@@ -1850,7 +1879,7 @@ const ReportSummaryScreen: React.FC = () => {
         <Text style={styles.applyButtonText}> Apply Date Range</Text>
       </TouchableOpacity>
 
-      {/* Report Type Toggle */}
+      {/* Replace the individual radio buttons with this container */}
       <View style={styles.radioContainer}>
         <TouchableOpacity
           style={[
@@ -1858,10 +1887,20 @@ const ReportSummaryScreen: React.FC = () => {
             reportType === 'all' && styles.radioSelected,
           ]}
           onPress={() => handleReportTypeChange('all')}>
-          <View style={styles.radioCircle}>
+          <View
+            style={[
+              styles.radioCircle,
+              reportType === 'all' && {borderColor: '#F48221'},
+            ]}>
             {reportType === 'all' && <View style={styles.radioFill} />}
           </View>
-          <Text style={styles.radioLabel}>All</Text>
+          <Text
+            style={[
+              styles.radioLabel,
+              reportType === 'all' && styles.radioSelectedLabel,
+            ]}>
+            All
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -1870,10 +1909,20 @@ const ReportSummaryScreen: React.FC = () => {
             reportType === 'itemwise' && styles.radioSelected,
           ]}
           onPress={() => handleReportTypeChange('itemwise')}>
-          <View style={styles.radioCircle}>
+          <View
+            style={[
+              styles.radioCircle,
+              reportType === 'itemwise' && {borderColor: '#F48221'},
+            ]}>
             {reportType === 'itemwise' && <View style={styles.radioFill} />}
           </View>
-          <Text style={styles.radioLabel}>Item-wise</Text>
+          <Text
+            style={[
+              styles.radioLabel,
+              reportType === 'itemwise' && styles.radioSelectedLabel,
+            ]}>
+            Item-wise
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -1956,10 +2005,10 @@ const ReportSummaryScreen: React.FC = () => {
                   <Text style={styles.modalTitle}>Select To Date</Text>
 
                   <DateTimePicker
-                    value={tempFromDate}
+                    value={tempToDate}
                     mode="date"
                     display="spinner"
-                    onChange={onFromDateChange}
+                    onChange={onToDateChange}
                     style={styles.iosDatePicker}
                     minimumDate={new Date(2020, 0, 1)}
                     maximumDate={new Date()}
@@ -2002,13 +2051,15 @@ const ReportSummaryScreen: React.FC = () => {
 
           {showToDatePicker && (
             <DateTimePicker
-              value={tempToDate}
+              value={tempToDate} // Changed from tempFromDate to tempToDate
               mode="date"
-              is24Hour={true}
-              display="default"
-              onChange={onToDateChange}
-              minimumDate={tempFromDate}
+              display="spinner"
+              onChange={onToDateChange} // Changed from onFromDateChange to onToDateChange
+              style={styles.iosDatePicker}
+              minimumDate={new Date(2020, 0, 1)}
               maximumDate={new Date()}
+              textColor="#000000"
+              accentColor="#F48221"
             />
           )}
         </>
@@ -2122,10 +2173,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   positive: {
-    color: '#0b8043', // Green
+    color: '#333', // Green
+    fontWeight: 'bold',
   },
   negative: {
-    color: '#d23f31', // Red
+    color: '#333', // Red
+    fontWeight: 'bold',
   },
   loadingContainer: {
     flex: 1,
@@ -2137,6 +2190,54 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 14,
   },
+  radioContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 16,
+  },
+  radioButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    // borderWidth: 1,
+    // borderColor: '#ddd',
+    backgroundColor: '#fff',
+  },
+  radioCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#ddd',
+    marginRight: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  radioFill: {
+    width: 10,
+    height: 10,
+    borderRadius: 2,
+    backgroundColor: '#F48221',
+  },
+  radioLabel: {
+    fontSize: 16,
+    color: '#666',
+  },
+  radioSelected: {
+    borderColor: '#F48221',
+  },
+  radioSelectedLabel: {
+    color: '#F48221',
+  },
+
+  ioSelected: {
+    borderColor: '#F48221', // Orange border instead of background
+  },
+
   errorContainer: {
     padding: 16,
     backgroundColor: '#ffebee',
@@ -2235,64 +2336,29 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 12,
   },
-  radioContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  radioButton: {
-    padding: 12,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  radioSelected: {
-    backgroundColor: '#F48221',
-  },
-  radioCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    marginRight: 8,
-  },
-  radioFill: {
-    backgroundColor: 'white',
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-  },
-  radioLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    paddingHorizontal: 5,
-    borderBottomWidth: 2,
-    borderBottomColor: '#ddd',
-    marginBottom: 8,
-    backgroundColor: '#f2f2f2',
-    borderRadius: 4,
-    alignItems: 'center',
-    minHeight: 44,
-    width: '100%',
-  },
-  headerCell: {
-    fontWeight: 'bold',
-    fontSize: 13,
-    color: '#555',
-    textAlign: 'center',
-    paddingHorizontal: 2,
-    flex: 1,
-  },
+
+  // tableHeader: {
+  //   flexDirection: 'row',
+  //   justifyContent: 'space-between',
+  //   paddingVertical: 10,
+  //   paddingHorizontal: 5,
+  //   borderBottomWidth: 2,
+  //   borderBottomColor: '#ddd',
+  //   marginBottom: 8,
+  //   backgroundColor: '#f2f2f2',
+  //   borderRadius: 4,
+  //   alignItems: 'center',
+  //   minHeight: 44,
+  //   width: '100%',
+  // },
+  // headerCell: {
+  //   fontWeight: 'bold',
+  //   fontSize: 13,
+  //   color: '#555',
+  //   textAlign: 'center',
+  //   paddingHorizontal: 2,
+  //   flex: 1,
+  // },
   itemDetailsHeader: {
     fontWeight: 'bold',
     fontSize: 13,
@@ -2301,39 +2367,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     flex: 2.5,
   },
-  tableRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    alignItems: 'center',
-    minHeight: 64,
-  },
+  // tableRow: {
+  //   flexDirection: 'row',
+  //   justifyContent: 'space-between',
+  //   paddingVertical: 12,
+  //   paddingHorizontal: 5,
+  //   borderBottomWidth: 1,
+  //   borderBottomColor: '#eee',
+  //   alignItems: 'center',
+  //   minHeight: 64,
+  // },
   itemNameColumn: {
     paddingRight: 5,
     flex: 2.5,
     justifyContent: 'center',
   },
-  itemName: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '500',
-    textAlign: 'left',
-  },
-  itemCategory: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-    textAlign: 'left',
-  },
-  dataCell: {
-    fontSize: 13,
-    textAlign: 'center',
-    paddingHorizontal: 2,
-    flex: 1,
-  },
+
   itemId: {
     fontSize: 12,
     color: '#666',
@@ -2347,6 +2396,55 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  tableContainer: {
+    flexDirection: 'column',
+    minWidth: 620, // Total of all column widths
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#f8f8f8',
+    paddingVertical: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: '#ddd',
+  },
+  headerCell: {
+    paddingHorizontal: 8,
+    justifyContent: 'center',
+  },
+  headerText: {
+    fontWeight: '600',
+    fontSize: 12,
+    color: '#444',
+    textAlign: 'center',
+  },
+  verticalScroll: {
+    maxHeight: 400, // Adjust based on your needs
+  },
+  tableRow: {
+    flexDirection: 'row',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    alignItems: 'center',
+  },
+  dataCell: {
+    paddingHorizontal: 8,
+    justifyContent: 'center',
+  },
+  dataText: {
+    fontSize: 12,
+    color: '#333',
+    textAlign: 'center',
+  },
+  itemName: {
+    fontWeight: '500',
+    fontSize: 12,
+  },
+  itemCategory: {
+    fontSize: 11,
+    color: '#666',
+    marginTop: 4,
   },
 });
 
