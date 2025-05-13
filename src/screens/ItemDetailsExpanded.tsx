@@ -2,12 +2,15 @@ import {NavigationProp, RouteProp} from '@react-navigation/native';
 import axios from 'axios';
 import React, {useEffect, useState, useRef} from 'react';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import {Image} from 'react-native';
 
 import {API_ENDPOINTS, DEFAULT_HEADERS} from '../config/api.config';
 import {
   ActivityIndicator,
   Alert,
   Animated,
+  KeyboardAvoidingView,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -121,10 +124,12 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
     customerID?: number | string;
     item_marks: string;
   } | null>(null);
-  
+
   // Reference to highlighted item
   const highlightedItemRef = useRef<ScrollView>(null);
-  const [highlightedLotNoIndex, setHighlightedLotNoIndex] = useState<number | null>(null);
+  const [highlightedLotNoIndex, setHighlightedLotNoIndex] = useState<
+    number | null
+  >(null);
 
   const handleAddToCart = (lotNo: string | null) => {
     if (!lotNo) {
@@ -193,7 +198,7 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
           setStockDetails([]);
         } else {
           setItemDetails(itemDetails);
-          
+
           // Sort stockDetails to prioritize the searched lot number if exists
           if (searchedLotNo) {
             const sortedStockDetails = [...stockDetails].sort((a, b) => {
@@ -202,16 +207,18 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
               return 0;
             });
             setStockDetails(sortedStockDetails);
-            
+
             // Find the index of the searched lot number for highlighting
-            const index = sortedStockDetails.findIndex(item => item.LOT_NO === searchedLotNo);
+            const index = sortedStockDetails.findIndex(
+              item => item.LOT_NO === searchedLotNo,
+            );
             if (index !== -1) {
               setHighlightedLotNoIndex(index);
             }
           } else {
             setStockDetails(stockDetails);
           }
-          
+
           setError(null);
         }
       } else {
@@ -235,6 +242,10 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
     fetchStockDetails();
   }, [route.params.ItemID, customerID]);
 
+  // Add this new function here
+  const handleBack = () => {
+    navigation.goBack();
+  };
   const onRefresh = () => {
     setRefreshing(true);
     fetchStockDetails(false);
@@ -266,7 +277,7 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
       setTimeout(() => {
         highlightedItemRef.current?.scrollTo({
           y: highlightedLotNoIndex * 180, // Approximate height of a card
-          animated: true
+          animated: true,
         });
       }, 500);
     }
@@ -338,194 +349,244 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }>
-      {filteredStockDetails.map((stock, index) => {
-        const isHighlighted = searchedLotNo && stock.LOT_NO === searchedLotNo;
-        
-        return (
-          <Animated.View
-            key={index}
-            style={[
-              styles.stockCard,
-              isHighlighted && styles.highlightedCard,
-              {
-                opacity: fadeAnim,
-                transform: [
-                  {
-                    translateY: fadeAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [50, 0],
-                    }),
-                  },
-                ],
-              },
-            ]}
-            onLayout={() => fadeIn(index)}>
-            <View style={styles.stockHeader}>
-              <View style={styles.lotNoContainer}>
-                <Text style={styles.lotNoLabel}>LOT NO : </Text>
-                <TouchableOpacity
-                  style={styles.lotNoValueContainer}
-                  // onPress={() => navigation.navigate('LotReportScreen')}
-                >
-                  <Text style={[styles.lotNoValue, isHighlighted && styles.highlightedText]}>
-                    {stock.LOT_NO || 'N/A'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+      {filteredStockDetails.length > 0 ? (
+        filteredStockDetails.map((stock, index) => {
+          const isHighlighted = searchedLotNo && stock.LOT_NO === searchedLotNo;
 
-              <Animated.View
-                style={[
-                  styles.addToCartContainer,
-                  {
-                    transform: [
-                      {
-                        scale:
-                          cartAnimations[stock.LOT_NO || '']?.interpolate({
-                            inputRange: [0, 0.5, 1],
-                            outputRange: [1, 1.2, 1],
-                          }) || 1,
-                      },
-                    ],
-                  },
-                ]}>
-                <TouchableOpacity
-                  style={styles.addToCartButton}
-                  onPress={() => handleAddToCart(stock.LOT_NO)}>
-                  <View style={styles.cartIconWrapper}>
-                    <Text style={styles.cartIcon}>🛒</Text>
+          return (
+            <Animated.View
+              key={index}
+              style={[
+                styles.stockCard,
+                isHighlighted && styles.highlightedCard,
+                {
+                  opacity: fadeAnim,
+                  transform: [
+                    {
+                      translateY: fadeAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [50, 0],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+              onLayout={() => fadeIn(index)}>
+              <View style={styles.stockHeader}>
+                <View style={styles.lotNoContainer}>
+                  <Text style={styles.lotNoLabel}>LOT NO : </Text>
+                  <TouchableOpacity
+                    style={styles.lotNoValueContainer}
+                    // onPress={() => navigation.navigate('LotReportScreen')}
+                  >
+                    <Text
+                      style={[
+                        styles.lotNoValue,
+                        isHighlighted && styles.highlightedText,
+                      ]}>
+                      {stock.LOT_NO || 'N/A'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <Animated.View
+                  style={[
+                    styles.addToCartContainer,
+                    {
+                      transform: [
+                        {
+                          scale:
+                            cartAnimations[stock.LOT_NO || '']?.interpolate({
+                              inputRange: [0, 0.5, 1],
+                              outputRange: [1, 1.2, 1],
+                            }) || 1,
+                        },
+                      ],
+                    },
+                  ]}>
+                  <TouchableOpacity
+                    style={styles.addToCartButton}
+                    onPress={() => handleAddToCart(stock.LOT_NO)}>
+                    {/* <View style={styles.cartIconWrapper}>
+                      <Text style={styles.cartIcon}>🛒</Text>
+                    </View> */}
+
+                    <Image
+                      source={require('../assets/images/cart.png')}
+                      style={{width: 32, height: 32, alignSelf: 'center'}}
+                      resizeMode="contain"
+                    />
+                  </TouchableOpacity>
+                </Animated.View>
+              </View>
+              <View style={styles.detailsContainer}>
+                <View style={styles.detailRow}>
+                  <View style={styles.detailItem}>
+                    <Text style={styles.detailLabel}>Unit Name:</Text>
+                    <Text style={styles.detailValue}>
+                      {stock.UNIT_NAME || ''}
+                    </Text>
                   </View>
-                </TouchableOpacity>
-              </Animated.View>
-            </View>
-            <View style={styles.detailsContainer}>
-              <View style={styles.detailRow}>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Unit Name</Text>
-                  <Text style={styles.detailValue}>{stock.UNIT_NAME || ''}</Text>
+                  <View style={styles.detailItem}>
+                    <Text style={styles.detailLabel}>Vakal No:</Text>
+                    <Text style={styles.detailValue}>
+                      {stock.VAKAL_NO || ''}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Vakal No:</Text>
-                  <Text style={styles.detailValue}>{stock.VAKAL_NO || ''}</Text>
+                <View style={styles.detailRow}>
+                  <View style={styles.detailItem}>
+                    <Text style={styles.detailLabel}>Item Marks:</Text>
+                    <Text style={styles.detailValue}>
+                      {stock.ITEM_MARKS || ''}
+                    </Text>
+                  </View>
+                  <View style={styles.detailItem}>
+                    <Text style={styles.detailLabel}>Batch No:</Text>
+                    <Text style={styles.detailValue}>
+                      {stock.BATCH_NO || ''}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.detailRow}>
+                  <View style={styles.detailItem}>
+                    <Text style={styles.detailLabel}>Available Quantity:</Text>
+                    <Text style={styles.detailValue}>
+                      {formatQuantity(stock.AVAILABLE_QTY)}
+                    </Text>
+                  </View>
+                  <View style={styles.detailItem}>
+                    <Text style={styles.detailLabel}>Remarks:</Text>
+                    <Text style={styles.detailValue}>
+                      {stock.REMARKS || ''}
+                    </Text>
+                  </View>
                 </View>
               </View>
-              <View style={styles.detailRow}>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Item Marks</Text>
-                  <Text style={styles.detailValue}>{stock.ITEM_MARKS || ''}</Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Batch No</Text>
-                  <Text style={styles.detailValue}>{stock.BATCH_NO || ''}</Text>
-                </View>
-              </View>
-              <View style={styles.detailRow}>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Available Quantity</Text>
-                  <Text style={styles.detailValue}>
-                    {formatQuantity(stock.AVAILABLE_QTY)}
-                  </Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Remarks</Text>
-                  <Text style={styles.detailValue}>{stock.REMARKS || ''}</Text>
-                </View>
-              </View>
-            </View>
-          </Animated.View>
-        );
-      })}
-
-      {selectedStockItem && (
-        <QuantitySelectorModal
-          isVisible={isModalVisible}
-          item={selectedStockItem}
-          onClose={() => {
-            setModalVisible(false);
-            setSelectedStockItem(null);
-          }}
-        />
+            </Animated.View>
+          );
+        })
+      ) : (
+        <View style={styles.noResultsContainer}>
+          <Text style={styles.noResultsText}>
+            Please enter a valid Lot No. No matching items found.
+          </Text>
+        </View>
       )}
     </ScrollView>
   );
 
   const renderTableView = () => (
-    <ScrollView
-      style={styles.container}
-      horizontal={true}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }>
-      <View>
-        <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderCell, {width: 120}]}>Lot No</Text>
-          <Text style={[styles.tableHeaderCell, {width: 100}]}>Quantity</Text>
-          <Text style={[styles.tableHeaderCell, {width: 100}]}>Unit Name</Text>
-          <Text style={[styles.tableHeaderCell, {width: 100}]}>Vakal No</Text>
-          <Text style={[styles.tableHeaderCell, {width: 100}]}>Item Marks</Text>
-          <Text style={[styles.tableHeaderCell, {width: 120}]}>Batch No</Text>
-          <Text style={[styles.tableHeaderCell, {width: 100}]}>
-            Available Qty
-          </Text>
-          <Text style={[styles.tableHeaderCell, {width: 100}]}>Box Qty</Text>
-          <Text style={[styles.tableHeaderCell, {width: 150}]}>
-            Expiry Date
-          </Text>
-          <Text style={[styles.tableHeaderCell, {width: 100}]}>Remarks</Text>
-        </View>
-        <ScrollView>
-          {filteredStockDetails.map((stock, index) => {
-            const isHighlighted = searchedLotNo && stock.LOT_NO === searchedLotNo;
-            
-            return (
-              <View key={index} style={[styles.tableRow, isHighlighted && styles.highlightedTableRow]}>
-                <View style={[styles.tableCellContainer, {width: 120}]}>
-                  <Text style={[styles.tableCell, styles.lotNoTableCell, isHighlighted && styles.highlightedText]}>
-                    {stock.LOT_NO || 'N/A'}
-                  </Text>
-                </View>
-                <View style={[styles.tableCellContainer, {width: 100}]}>
-                  <Text style={[styles.tableCell, styles.quantityTableCell]}>
-                    {formatQuantity(stock.AVAILABLE_QTY)}
-                  </Text>
-                </View>
-                <View style={[styles.tableCellContainer, {width: 100}]}>
-                  <Text style={styles.tableCell}>{stock.UNIT_NAME || 'N/A'}</Text>
-                </View>
-                <View style={[styles.tableCellContainer, {width: 100}]}>
-                  <Text style={styles.tableCell}>{stock.VAKAL_NO || 'N/A'}</Text>
-                </View>
-                <View style={[styles.tableCellContainer, {width: 100}]}>
-                  <Text style={styles.tableCell}>
-                    {stock.ITEM_MARKS || 'N/A'}
-                  </Text>
-                </View>
-                <View style={[styles.tableCellContainer, {width: 120}]}>
-                  <Text style={styles.tableCell}>{stock.BATCH_NO || 'N/A'}</Text>
-                </View>
-                <View style={[styles.tableCellContainer, {width: 100}]}>
-                  <Text style={styles.tableCell}>
-                    {formatQuantity(stock.AVAILABLE_QTY)}
-                  </Text>
-                </View>
-                <View style={[styles.tableCellContainer, {width: 100}]}>
-                  <Text style={styles.tableCell}>
-                    {formatQuantity(stock.BOX_QUANTITY)}
-                  </Text>
-                </View>
-                <View style={[styles.tableCellContainer, {width: 150}]}>
-                  <Text style={styles.tableCell}>
-                    {formatDate(stock.EXPIRY_DATE)}
-                  </Text>
-                </View>
-                <View style={[styles.tableCellContainer, {width: 100}]}>
-                  <Text style={styles.tableCell}>{stock.REMARKS || 'N/A'}</Text>
-                </View>
-              </View>
-            );
-          })}
+    <View style={styles.tableContainer}>
+      {filteredStockDetails.length > 0 ? (
+        <ScrollView
+          horizontal
+          style={styles.horizontalScrollView}
+          scrollEnabled={true}>
+          <View>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableHeaderCell, {width: 120}]}>Lot No</Text>
+              <Text style={[styles.tableHeaderCell, {width: 100}]}>
+                Unit Name
+              </Text>
+              <Text style={[styles.tableHeaderCell, {width: 150}]}>
+                Vakal No
+              </Text>
+              <Text style={[styles.tableHeaderCell, {width: 150}]}>
+                Item Marks
+              </Text>
+              <Text style={[styles.tableHeaderCell, {width: 120}]}>
+                Batch No
+              </Text>
+              <Text style={[styles.tableHeaderCell, {width: 100}]}>
+                Available Qty
+              </Text>
+              <Text style={[styles.tableHeaderCell, {width: 100}]}>
+                Remarks
+              </Text>
+              <Text style={[styles.tableHeaderCell, {width: 80}]}>Action</Text>
+            </View>
+            <ScrollView
+              style={styles.verticalScrollView}
+              scrollEnabled={true}
+              nestedScrollEnabled={true}>
+              {filteredStockDetails.map((stock, index) => {
+                const isHighlighted =
+                  searchedLotNo && stock.LOT_NO === searchedLotNo;
+
+                return (
+                  <View
+                    key={index}
+                    style={[
+                      styles.tableRow,
+                      isHighlighted && styles.highlightedTableRow,
+                    ]}>
+                    <View style={[styles.tableCellContainer, {width: 120}]}>
+                      <Text
+                        style={[
+                          styles.tableCell,
+                          styles.lotNoTableCell,
+                          isHighlighted && styles.highlightedText,
+                        ]}>
+                        {stock.LOT_NO || 'N/A'}
+                      </Text>
+                    </View>
+                    <View style={[styles.tableCellContainer, {width: 100}]}>
+                      <Text style={styles.tableCell}>
+                        {stock.UNIT_NAME || 'N/A'}
+                      </Text>
+                    </View>
+                    <View style={[styles.tableCellContainer, {width: 150}]}>
+                      <Text style={styles.tableCell}>
+                        {stock.VAKAL_NO || 'N/A'}
+                      </Text>
+                    </View>
+                    <View style={[styles.tableCellContainer, {width: 150}]}>
+                      <Text style={styles.tableCell}>
+                        {stock.ITEM_MARKS || 'N/A'}
+                      </Text>
+                    </View>
+                    <View style={[styles.tableCellContainer, {width: 120}]}>
+                      <Text style={styles.tableCell}>
+                        {stock.BATCH_NO || 'N/A'}
+                      </Text>
+                    </View>
+                    <View style={[styles.tableCellContainer, {width: 100}]}>
+                      <Text style={styles.tableCell}>
+                        {formatQuantity(stock.AVAILABLE_QTY)}
+                      </Text>
+                    </View>
+                    <View style={[styles.tableCellContainer, {width: 100}]}>
+                      <Text style={styles.tableCell}>
+                        {stock.REMARKS || 'N/A'}
+                      </Text>
+                    </View>
+                    <View style={[styles.tableCellContainer, {width: 80}]}>
+                      <TouchableOpacity
+                        style={styles.tableAddToCartButton}
+                        onPress={() => handleAddToCart(stock.LOT_NO)}>
+                        <Image
+                          source={require('../assets/images/cart.png')}
+                          style={{width: 32, height: 32, alignSelf: 'center'}}
+                          resizeMode="contain"
+                        />
+                        {/* <Text style={styles.tableCartIcon}>🛒</Text> */}
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View>
         </ScrollView>
-      </View>
-    </ScrollView>
+      ) : (
+        <View style={styles.noResultsContainer}>
+          <Text style={styles.noResultsText}>
+            Please enter a valid Lot No. No matching items found.
+          </Text>
+        </View>
+      )}
+    </View>
   );
 
   if (loading) {
@@ -538,64 +599,123 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
 
   if (error) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-      </View>
+      <LayoutWrapper showHeader={true} showTabBar={true} route={route}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <Icon name="arrow-back" size={24} color="#007bff" />
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </LayoutWrapper>
     );
   }
 
   return (
     <LayoutWrapper showHeader={true} showTabBar={true} route={route}>
-      <View style={styles.mainContainer}>
-        <View style={styles.headerContainer}>
-          <View style={styles.searchContainer}>
-            <Icon name="search" size={24} style={{color:"#000"}} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by LotNo..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholderTextColor="#6B7280"
-            />
-          </View>
-          <View style={styles.rightHeaderSection}>
-            <View style={styles.toggleContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.toggleButton,
-                  !isTableView && styles.toggleButtonActive,
-                ]}
-                onPress={() => setIsTableView(false)}>
-                <Icon
-                  name="credit-card" // Change to the appropriate icon name
-                  size={23}
-                  style={{ color: !isTableView ? '#F48221' : '#F48221' }}
-
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.toggleButton,
-                  isTableView && styles.toggleButtonActive,
-                ]}
-                onPress={() => setIsTableView(true)}>
-                <Icon
-                  name="grid-on" // Change to the appropriate icon name
-                  size={23}
-                 style={{ color:isTableView ? '#007bff' : '#007bff'}}
-                />
-              </TouchableOpacity>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <View style={styles.mainContainer}>
+          <View style={styles.headerContainer}>
+            <View style={styles.searchContainer}>
+              <Icon name="search" size={24} style={{color: '#777'}} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search by lotno..."
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholderTextColor="#888"
+                keyboardType="numeric"
+              />
+            </View>
+            <View style={styles.rightHeaderSection}>
+              {isTableView &&
+                (refreshing ? (
+                  <ActivityIndicator
+                    size="small"
+                    color="#007bff"
+                    style={styles.refreshIndicator}
+                  />
+                ) : (
+                  <TouchableOpacity
+                    style={styles.refreshButton}
+                    onPress={onRefresh}>
+                    <Icon name="refresh" size={20} color="#007bff" />
+                  </TouchableOpacity>
+                ))}
+              <View style={styles.toggleContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.toggleButton,
+                    !isTableView && styles.toggleButtonActive,
+                  ]}
+                  onPress={() => setIsTableView(false)}>
+                  <Icon
+                    name="credit-card" // Change to the appropriate icon name
+                    size={23}
+                    style={{color: !isTableView ? '#F48221' : '#F48221'}}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.toggleButton,
+                    isTableView && styles.toggleButtonActive,
+                  ]}
+                  onPress={() => setIsTableView(true)}>
+                  <Icon
+                    name="grid-on" // Change to the appropriate icon name
+                    size={23}
+                    style={{color: isTableView ? '#007bff' : '#007bff'}}
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
 
-        {isTableView ? renderTableView() : renderCardView()}
-      </View>
+          {isTableView ? renderTableView() : renderCardView()}
+
+          {/* Render modal outside of the views to ensure it's always visible */}
+          {selectedStockItem && (
+            <QuantitySelectorModal
+              isVisible={isModalVisible}
+              item={selectedStockItem}
+              onClose={() => {
+                setModalVisible(false);
+                setSelectedStockItem(null);
+              }}
+            />
+          )}
+        </View>
+      </KeyboardAvoidingView>
     </LayoutWrapper>
   );
 };
 
 const styles = StyleSheet.create({
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  highlightedTableRow: {
+    backgroundColor: '#F9FAFB',
+  },
+  highlightedText: {
+    color: '#F48221',
+    fontWeight: '700',
+  },
+  highlightedCard: {},
+  backButtonText: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: '#007bff',
+    fontWeight: '500',
+  },
   mainContainer: {
     flex: 1,
     backgroundColor: '#f8f9fa',
@@ -630,6 +750,7 @@ const styles = StyleSheet.create({
     height: 40,
     fontSize: 14,
     color: '#1F2937',
+    paddingHorizontal: 5,
   },
   toggleContainer: {
     flexDirection: 'row',
@@ -684,10 +805,14 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   lotNoValueContainer: {
+    // backgroundColor: 'rgba(244, 130, 33, 0.2)',
     backgroundColor: '#F48221',
-    borderRadius: 4,
+    borderRadius: 7,
     padding: 6,
     width: '30%',
+    // color: 'F48221',
+    // borderWidth: 1,
+    // borderColor: '#F48221',
   },
   lotNoValue: {
     color: '#FFFFFF',
@@ -711,13 +836,20 @@ const styles = StyleSheet.create({
   detailLabel: {
     color: '#F48221',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
     marginBottom: 4,
   },
+
   detailValue: {
     color: '#1F2937',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
+  },
+  tableContainer: {
+    flex: 1,
+    position: 'relative',
+    marginLeft: 6,
+    marginEnd: 6,
   },
   tableHeader: {
     flexDirection: 'row',
@@ -726,12 +858,13 @@ const styles = StyleSheet.create({
     borderColor: '#dadce0',
   },
   tableHeaderCell: {
-    padding: 10,
+    paddingTop: 15,
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     borderRightWidth: 1,
     borderRightColor: '#4285f4',
+    paddingHorizontal: 10,
   },
   tableRow: {
     flexDirection: 'row',
@@ -744,7 +877,7 @@ const styles = StyleSheet.create({
   },
   tableCell: {
     padding: 10,
-    fontSize: 13,
+    fontSize: 15,
     color: '#1F2937',
     borderRightWidth: 2,
     borderRightColor: '#dadce0',
@@ -754,9 +887,22 @@ const styles = StyleSheet.create({
     borderRightColor: '#dadce0',
     justifyContent: 'center',
   },
+  tableAddToCartButton: {
+    // backgroundColor: '#FFFDD0',
+    borderRadius: 16,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 'auto',
+    alignSelf: 'center',
+  },
+  tableCartIcon: {
+    fontSize: 16,
+  },
   lotNoTableCell: {
     color: '#F48221',
-    fontWeight: '700',
+    fontWeight: '600',
   },
   quantityTableCell: {
     color: 'black',
@@ -797,15 +943,14 @@ const styles = StyleSheet.create({
   addToCartButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFDD0',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderRadius: 25,
+    paddingHorizontal: 5,
+    paddingVertical: 5,
+    // borderRadius: 22,
     elevation: 3,
-    shadowColor: '#000',
+    // shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.2,
-    shadowRadius: 3,
+    // shadowRadius: 3,
   },
   cartIconWrapper: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -852,6 +997,49 @@ const styles = StyleSheet.create({
   confirmButtonText1: {
     color: 'white',
     fontWeight: 'bold',
+  },
+
+  horizontalScrollView: {
+    flex: 1,
+  },
+  verticalScrollView: {
+    height: '100%',
+    maxHeight: '100%',
+  },
+  refreshIndicator: {
+    marginRight: 10,
+  },
+  refreshButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    marginRight: 10,
+  },
+  noResultsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    marginTop: 50,
+  },
+  noResultsText: {
+    fontSize: 16,
+    color: '#ff5733',
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  tableCartButtonContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100%',
+    paddingHorizontal: 5,
+  },
+  keyboardAvoidView: {
+    flex: 1,
+    width: '100%',
   },
 });
 
