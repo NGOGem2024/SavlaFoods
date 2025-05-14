@@ -209,7 +209,7 @@ const StockReportScreen: React.FC = () => {
   const [itemSubCategory, setItemSubCategory] = useState<string[]>([]);
   const [itemSubCategoryText, setItemSubCategoryText] = useState('');
   const [itemMarks, setItemMarks] = useState('');
-  const [unit, setUnit] = useState<string[]>([]);
+  const [unit, setUnit] = useState('');
   const [toDate, setToDate] = useState<Date | null>(null);
   const [tempToDate, setTempToDate] = useState<Date>(new Date());
   const [showToDatePicker, setShowToDatePicker] = useState<boolean>(false);
@@ -293,9 +293,9 @@ const StockReportScreen: React.FC = () => {
     setItemMarks(value);
   };
 
-  const logAndSetUnit = (values: string[]) => {
-    console.log('Unit changed:', values);
-    setUnit(values);
+  const logAndSetUnit = (value: string) => {
+    console.log('Unit changed:', value);
+    setUnit(value);
   };
 
   const logAndSetToDate = (date: Date) => {
@@ -393,7 +393,8 @@ const StockReportScreen: React.FC = () => {
       value: item.SUBCATID.toString(),
     }));
 
-  const unitOptions = [
+  const unitOptions: DropdownOption[] = [
+    {label: '--SELECT--', value: ''},
     {label: 'D-39', value: 'D-39'},
     {label: 'D-514', value: 'D-514'},
   ];
@@ -419,7 +420,7 @@ const StockReportScreen: React.FC = () => {
         vakalNo: vakalNo || null,
         itemSubCategory: itemSubCategoryText || null,
         itemMarks: itemMarks || null,
-        unit: unit.length > 0 ? unit.join(', ') : null,
+        unit: unit || null,
         toDate: formatApiDate(toDate),
         qtyLessThan: qtyLessThan ? Number(qtyLessThan) : null,
       };
@@ -519,7 +520,7 @@ const StockReportScreen: React.FC = () => {
     setItemSubCategory([]);
     setItemSubCategoryText('');
     setItemMarks('');
-    setUnit([]);
+    setUnit('');
     setToDate(null);
     setIsDateSelected(false);
     setQtyLessThan('');
@@ -810,12 +811,11 @@ const StockReportScreen: React.FC = () => {
 
         <View style={styles.formColumn}>
           <Text style={styles.label}>Unit</Text>
-          <MultiSelect
+          <CustomDropdown
             options={unitOptions}
-            selectedValues={unit}
-            onSelectChange={logAndSetUnit}
+            selectedValue={unit}
+            onSelect={logAndSetUnit}
             placeholder="--SELECT--"
-            primaryColor="#E87830"
           />
         </View>
       </View>
