@@ -1,16 +1,24 @@
+// //Mine
 // import React, {createContext, useContext, useState} from 'react';
 // import {StyleSheet, View, TouchableOpacity, Text} from 'react-native';
 // import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+// import {createStackNavigator} from '@react-navigation/stack';
 // import {useNavigation, CommonActions} from '@react-navigation/native';
 // import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 // import {ParamListBase} from '@react-navigation/native';
 
 // // Import your screens
 // import HomeScreen from '../screens/HomeScreen';
-// import AnnouncementScreen from '../screens/AnnouncementScreen';
 // import AlertScreen from '../screens/AlertScreen';
-// import SearchScreen from '../screens/SearchScreen';
+// import OrdersScreen from '../screens/OrdersScreen';
+// import OrderHistoryScreen from '../screens/OrderHistoryScreen';
+// import InwardOutwardReportScreen from '../screens/InwardOutwardReportScreen';
 // import {CustomerProvider} from '../contexts/DisplayNameContext';
+// import PendingOrdersScreen from '../screens/PendingOrdersScreen';
+
+// import StockReportScreen from '../screens/stocks/StockReportScreen';
+// import LotReportScreen from '../screens/LotReportScreen';
+// import ReportSummaryScreen from '../screens/stocks/ReportSummaryScreen';
 
 // type TabParamList = {
 //   Home: undefined;
@@ -19,7 +27,129 @@
 //   Search: {
 //     customerID?: string;
 //   };
+//   Reports: undefined;
+//   Orders: undefined;
+//   OrderHistory: undefined;
+//   PendingOrders: undefined;
 // } & ParamListBase;
+
+// // Create Stack Navigator for Orders section
+// const OrdersStack = createStackNavigator<TabParamList>();
+// const ReportsStack = createStackNavigator<TabParamList>();
+
+// const OrdersStackNavigator = () => {
+//   return (
+//     <OrdersStack.Navigator
+//       screenOptions={{
+//         headerStyle: {
+//           // backgroundColor: '#F48221',
+//           backgroundColor: '#fff',
+//         },
+//         headerTintColor: '#F48221',
+//       }}>
+//       <OrdersStack.Screen
+//         name="OrdersHome" // Renamed to avoid duplicate name
+//         component={OrdersScreen}
+//         options={{headerShown: false}}
+//       />
+//       <OrdersStack.Screen name="OrderHistory" component={OrderHistoryScreen} />
+
+//       <OrdersStack.Screen
+//         name="PendingOrders"
+//         component={PendingOrdersScreen}
+//         options={{title: 'Pending Orders'}}
+//       />
+//     </OrdersStack.Navigator>
+//   );
+// };
+
+// const ReportsStackNavigator = () => {
+//   return (
+//     <ReportsStack.Navigator
+//       screenOptions={{
+//         headerStyle: {
+//           backgroundColor: '#fff',
+//         },
+//         headerTintColor: '#F48221',
+//       }}>
+//       <ReportsStack.Screen
+//         name="Reports"
+//         component={ReportsScreen}
+//         options={{title: 'Reports'}}
+//       />
+//       <ReportsStack.Screen
+//         name="StockReport"
+//         component={StockReportScreen}
+//         options={{title: 'Stock Report'}}
+//       />
+//       <ReportsStack.Screen
+//         name="LotReport"
+//         component={LotReportScreen}
+//         options={{title: 'Lot Report'}}
+//       />
+//       <ReportsStack.Screen
+//         name="InwardOutwardReport"
+//         component={InwardOutwardReportScreen}
+//         options={{title: 'Inward/Outward Report'}}
+//       />
+//       <ReportsStack.Screen
+//         name="ReportSummary"
+//         component={ReportSummaryScreen}
+//         options={{title: 'Report Summary'}}
+//       />
+//     </ReportsStack.Navigator>
+//   );
+// };
+
+// // Temporary Reports Screen until individual report screens are created
+// const ReportsScreen = ({navigation}: {navigation: any}) => {
+//   const reportItems = [
+//     {
+//       name: 'StockReport',
+//       title: 'Stock Report',
+//       icon: 'inventory',
+//     },
+//     {
+//       name: 'LotReport',
+//       title: 'Lot Report',
+//       icon: 'list',
+//     },
+//     {
+//       name: 'InwardOutwardReport',
+//       title: 'Inward/Outward Report',
+//       icon: 'swap-horiz',
+//     },
+//     {
+//       name: 'ReportSummary',
+//       title: 'Summary',
+//       icon: 'summarize',
+//     },
+//   ];
+//   return (
+//     <View style={{flex: 1, padding: 16}}>
+//       {reportItems.map(item => (
+//         <TouchableOpacity
+//           key={item.name}
+//           style={{
+//             flexDirection: 'row',
+//             alignItems: 'center',
+//             padding: 16,
+//             borderBottomWidth: 1,
+//             borderBottomColor: '#ddd',
+//           }}
+//           onPress={() => navigation.navigate(item.name)}>
+//           <MaterialIcons
+//             name={item.icon}
+//             size={24}
+//             color="#F48221"
+//             style={{marginRight: 16}}
+//           />
+//           <Text style={{fontSize: 16}}>{item.title}</Text>
+//         </TouchableOpacity>
+//       ))}
+//     </View>
+//   );
+// };
 
 // interface OrderContextType {
 //   orderDetails: any;
@@ -70,14 +200,19 @@
 // };
 
 // export const TabBar = (props: any) => {
-//   const navigation = useNavigation();
+//   const navigation = useNavigation<any>();
 //   const {getPreviousRoute, addToHistory} = useContext(NavigationHistoryContext);
 
 //   const tabs = [
 //     {name: 'Home', icon: 'home', label: 'Home'},
-//     {name: 'Search', icon: 'search', label: 'Search'},
-
-//     {name: 'Alert', icon: 'notifications', label: 'Alerts'},
+//     {name: 'Reports', icon: 'assessment', label: 'Reports'},
+//     {
+//       name: 'Alert',
+//       icon:
+//         props.route?.name === 'Alert' ? 'notifications' : 'notifications-none',
+//       label: 'Alerts',
+//     },
+//     {name: 'Orders', icon: 'list-alt', label: 'Orders'},
 //   ];
 
 //   // Enhanced tab press handler with route history
@@ -91,7 +226,7 @@
 //       addToHistory(props.route.name);
 //     }
 
-//     if (['Home', 'Announcement', 'Alert', 'Search'].includes(routeName)) {
+//     if (['Home', 'Alert', 'Orders', 'Reports'].includes(routeName)) {
 //       const currentParams = props.route?.params;
 //       const navigationParams: any = {
 //         screen: routeName,
@@ -152,18 +287,17 @@
 //   );
 // };
 
-// // const Tab = createBottomTabNavigator<TabParamList>();
-
 // const BottomTabNavigator: React.FC = () => {
 //   const getIconName = (routeName: string, focused: boolean): string => {
 //     switch (routeName) {
 //       case 'Home':
 //         return 'home';
-//       case 'Search':
-//         return 'search';
-
+//       case 'Reports':
+//         return 'assessment';
 //       case 'Alert':
-//         return focused ? 'notifications' : 'notifications-none';
+//         return 'notifications-none';
+//       case 'Orders':
+//         return 'list-alt';
 //       default:
 //         return 'circle';
 //     }
@@ -187,21 +321,20 @@
 //             tabBarHideOnKeyboard: true,
 //           })}>
 //           <Tab.Screen name="Home" component={HomeScreen} />
-//           <Tab.Screen
+//           {/* <Tab.Screen
 //             name="Search"
 //             component={SearchScreen}
 //             options={{
 //               headerShown: false,
 //             }}
+//           /> */}
+//           <Tab.Screen
+//             name="Reports"
+//             component={ReportsStackNavigator}
+//             options={{headerShown: false}}
 //           />
-//           {/* <Tab.Screen
-//           name="Announcement"
-//           component={AnnouncementScreen}
-//           options={{
-//             headerShown: true,
-//           }}
-//         /> */}
 //           <Tab.Screen name="Alert" component={AlertScreen} />
+//           <Tab.Screen name="Orders" component={OrdersStackNavigator} />
 //         </Tab.Navigator>
 //       </NavigationHistoryProvider>
 //     </CustomerProvider>
@@ -242,26 +375,75 @@
 
 // export default BottomTabNavigator;
 
-
-
 import React, {createContext, useContext, useState} from 'react';
 import {StyleSheet, View, TouchableOpacity, Text} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createStackNavigator} from '@react-navigation/stack';
-import {useNavigation, CommonActions} from '@react-navigation/native';
+import {useNavigation, CommonActions, useRoute} from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {ParamListBase} from '@react-navigation/native';
 
 // Import your screens
 import HomeScreen from '../screens/HomeScreen';
-import AnnouncementScreen from '../screens/AnnouncementScreen';
 import AlertScreen from '../screens/AlertScreen';
-import SearchScreen from '../screens/SearchScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import OrderHistoryScreen from '../screens/OrderHistoryScreen';
-// import PendingOrdersScreen from '../screens/';
 import InwardOutwardReportScreen from '../screens/InwardOutwardReportScreen';
 import {CustomerProvider} from '../contexts/DisplayNameContext';
+import PendingOrdersScreen from '../screens/PendingOrdersScreen';
+
+import StockReportScreen from '../screens/stocks/StockReportScreen';
+import LotReportScreen from '../screens/LotReportScreen';
+import ReportSummaryScreen from '../screens/stocks/ReportSummaryScreen';
+import EditOrderScreen from './EditOrderScreen';
+import OrderDetailsScreen from '../screens/OrderDetailsScreen';
+import {LayoutWrapper} from './AppLayout';
+import ReportsScreen from '../screens/stocks/ReportsScreen';
+import ZeroStockReportScreen from '../screens/stocks/ZeroStockReportScreen';
+
+interface OrderItem {
+  detailId?: number;
+  itemId?: number;
+  itemName: string;
+  lotNo: string | number;
+  itemMarks: string;
+  vakalNo: string;
+  requestedQty: number;
+  availableQty: number;
+  status: string;
+  unitName?: string;
+  netQuantity?: number;
+  batchNo?: string | null;
+  supervisorName?: string | null;
+  mukadamName?: string | null;
+}
+
+interface Order {
+  orderId: number;
+  orderNo: string;
+  orderDate: string;
+  deliveryDate: string;
+  status: string;
+  transporterName: string;
+  remarks: string | null;
+  deliveryAddress: string | null;
+  createdOn?: string;
+  customerName: string;
+  customerMobile?: number;
+  customerEmail?: string | null;
+  totalItems: number;
+  totalQuantity: number;
+  items: OrderItem[];
+}
+
+type OrdersStackParamList = {
+  OrdersHome: undefined;
+  OrderDetails: {order: Order};
+  OrderDetailsScreen: {order: Order; onGoBack?: (updatedOrder: Order) => void};
+  EditOrderScreen: {order: Order};
+  OrderHistory: undefined;
+  PendingOrders: undefined;
+};
 
 type TabParamList = {
   Home: undefined;
@@ -270,14 +452,20 @@ type TabParamList = {
   Search: {
     customerID?: string;
   };
-  Orders: undefined;
+  Orders: {
+    screen: keyof OrdersStackParamList;
+    params?: any;
+  };
   OrderHistory: undefined;
   PendingOrders: undefined;
-  InwardOutwardReport: undefined;
+
+  OrderDetails: {order: Order};
+  EditOrderScreen: {order: Order};
 } & ParamListBase;
 
 // Create Stack Navigator for Orders section
 const OrdersStack = createStackNavigator<TabParamList>();
+const ReportsStack = createStackNavigator<TabParamList>();
 
 const OrdersStackNavigator = () => {
   return (
@@ -287,17 +475,84 @@ const OrdersStackNavigator = () => {
           // backgroundColor: '#F48221',
           backgroundColor: '#fff',
         },
+        headerTintColor: '#0284c7',
+      }}>
+      <OrdersStack.Screen
+        name="OrdersHome" // Renamed to avoid duplicate name
+        component={OrdersScreen}
+        options={{headerShown: false}}
+      />
+      <OrdersStack.Screen
+        name="OrderDetails" // Make sure this screen is registered
+        component={OrderDetailsScreen}
+        options={{headerShown: false}}
+      />
+      <OrdersStack.Screen
+        name="EditOrderScreen"
+        component={EditOrderScreen}
+        options={{headerShown: false}}
+      />
+
+      <OrdersStack.Screen name="OrderHistory" component={OrderHistoryScreen} />
+
+      <OrdersStack.Screen
+        name="PendingOrders"
+        component={PendingOrdersScreen}
+        options={{title: 'Pending Orders'}}
+      />
+    </OrdersStack.Navigator>
+  );
+};
+
+const ReportsStackNavigator = () => {
+  return (
+    <ReportsStack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: '#fff',
+        },
         headerTintColor: '#F48221',
       }}>
-      <OrdersStack.Screen name="Orders" component={OrdersScreen} />
-      <OrdersStack.Screen name="OrderHistory" component={OrderHistoryScreen} />
-      {/* <OrdersStack.Screen name="PendingOrders" component={PendingOrdersScreen} /> */}
-      <OrdersStack.Screen
+      <ReportsStack.Screen
+        name="Reports"
+        component={ReportsScreen}
+        // options={{
+        //   title: 'Reports',
+        //   headerTitleStyle: {
+        //     fontSize: 24, // set your desired font size here
+        //     fontWeight: 'bold', // optional
+        //     color: '#000', // optional
+        //   },
+        // }}
+        options={{headerShown: false}}
+      />
+
+      <ReportsStack.Screen
+        name="StockReportScreen"
+        component={StockReportScreen}
+        options={{title: 'Stock Report'}}
+      />
+      <ReportsStack.Screen
+        name="LotReport"
+        component={LotReportScreen}
+        options={{title: 'Lot Report'}}
+      />
+      <ReportsStack.Screen
         name="InwardOutwardReport"
         component={InwardOutwardReportScreen}
         options={{title: 'Inward/Outward Report'}}
       />
-    </OrdersStack.Navigator>
+      <ReportsStack.Screen
+        name="ReportSummary"
+        component={ReportSummaryScreen}
+        options={{title: 'Report Summary'}}
+      />
+      <ReportsStack.Screen
+        name="ZeroStockReport"
+        component={ZeroStockReportScreen}
+        options={{title: 'Zero Stock Summary'}}
+      />
+    </ReportsStack.Navigator>
   );
 };
 
@@ -350,15 +605,20 @@ export const NavigationHistoryProvider: React.FC<{
 };
 
 export const TabBar = (props: any) => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const {getPreviousRoute, addToHistory} = useContext(NavigationHistoryContext);
 
   const tabs = [
     {name: 'Home', icon: 'home', label: 'Home'},
-    {name: 'Search', icon: 'search', label: 'Search'},
-    {name: 'Alert', icon: 'notifications', label: 'Alerts'},
+    // {name: 'Search', icon: 'search', label: 'Search'},
+    {name: 'Reports', icon: 'assessment', label: 'Reports'},
+    {
+      name: 'Alert',
+      icon:
+        props.route?.name === 'Alert' ? 'notifications' : 'notifications-none',
+      label: 'Alerts',
+    },
     {name: 'Orders', icon: 'list-alt', label: 'Orders'},
-   
   ];
 
   // Enhanced tab press handler with route history
@@ -372,9 +632,9 @@ export const TabBar = (props: any) => {
       addToHistory(props.route.name);
     }
 
-    if (['Home', 'Announcement', 'Alert', 'Search', 'Orders'].includes(routeName)) {
+    if (['Home', 'Alert', 'Orders', 'Reports'].includes(routeName)) {
       const currentParams = props.route?.params;
-      const navigationParams: any = {
+      const navigationParams = {
         screen: routeName,
         params: {
           previousRoute: props.route?.name,
@@ -390,7 +650,7 @@ export const TabBar = (props: any) => {
     ) {
       props.customTabNavigation[routeName]();
     } else {
-      navigation.navigate(routeName as never);
+      navigation.navigate(routeName);
     }
   };
 
@@ -440,11 +700,12 @@ const BottomTabNavigator: React.FC = () => {
         return 'home';
       case 'Search':
         return 'search';
-      
       case 'Alert':
-        return focused ? 'notifications' : 'notifications-none';
+        return 'notifications-none';
       case 'Orders':
         return 'list-alt';
+      case 'Reports':
+        return 'assessment';
       default:
         return 'circle';
     }
@@ -461,6 +722,10 @@ const BottomTabNavigator: React.FC = () => {
                 <MaterialIcons name={iconName} size={size} color={color} />
               );
             },
+            tabBarLabelStyle: {
+              fontSize: 13, // 🔁 update this to your desired size
+              // fontWeight: 'bold', // optional
+            },
             tabBarActiveTintColor: '#F48221',
             tabBarInactiveTintColor: 'black',
             tabBarStyle: styles.tabBar,
@@ -468,19 +733,20 @@ const BottomTabNavigator: React.FC = () => {
             tabBarHideOnKeyboard: true,
           })}>
           <Tab.Screen name="Home" component={HomeScreen} />
-          <Tab.Screen
+          {/* <Tab.Screen
             name="Search"
             component={SearchScreen}
             options={{
               headerShown: false,
             }}
+          /> */}
+          <Tab.Screen
+            name="Reports"
+            component={ReportsStackNavigator}
+            options={{title: 'Reports'}}
           />
-          
           <Tab.Screen name="Alert" component={AlertScreen} />
-          <Tab.Screen 
-            name="Orders" 
-            component={OrdersStackNavigator} 
-          />
+          <Tab.Screen name="Orders" component={OrdersStackNavigator} />
         </Tab.Navigator>
       </NavigationHistoryProvider>
     </CustomerProvider>

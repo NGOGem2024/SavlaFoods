@@ -17,12 +17,17 @@ import ItemDetailScreen from './src/screens/ItemDetailScreen';
 import ItemDetailsExpanded from './src/screens/ItemDetailsExpanded';
 import LotReportScreen from './src/screens/LotReportScreen';
 import QuantitySelectorModal from './src/components/QuantitySelectorModal';
+import GrnDetailsScreen from './src/screens/GrnDetailsScreen';
 
 // Contexts
-import {  DisplayNameProvider} from './src/contexts/DisplayNameContext';
+import {DisplayNameProvider} from './src/contexts/DisplayNameContext';
 import {CartProvider} from './src/contexts/CartContext';
 import {NotificationProvider} from './src/contexts/NotificationContext';
-import { CustomerProvider } from './src/contexts/DisplayNameContext';
+import {CustomerProvider} from './src/contexts/DisplayNameContext';
+import {NetworkProvider} from './src/contexts/NetworkContext';
+
+// Components
+import OfflineNotice from './src/components/OfflineNotice.tsx';
 
 // Types
 import {RootStackParamList, MainStackParamList} from './src/type/type';
@@ -31,97 +36,116 @@ import BottomTabNavigator from './src/components/BottomTabNavigator';
 import OrderConfirmationScreen from './src/screens/OrderConfirmationScreen';
 import OrderHistoryScreen from './src/screens/OrderHistoryScreen';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
- 
+import OrderDetailsScreen from './src/screens/OrderDetailsScreen';
+import PendingOrdersScreen from './src/screens/PendingOrdersScreen';
+import EditOrderScreen from './src/components/EditOrderScreen.tsx';
 
 const RootStack = createStackNavigator<RootStackParamList>();
 const MainStack = createStackNavigator<MainStackParamList>();
 
 const MainStackNavigator: React.FC = () => {
   return (
-    <CustomerProvider> 
-    <MainStack.Navigator>
-      <MainStack.Screen
-        name="BottomTabNavigator"
-        component={BottomTabNavigator}
-        options={{headerShown: false}}
-      />
+    <CustomerProvider>
+      <MainStack.Navigator>
+        <MainStack.Screen
+          name="BottomTabNavigator"
+          component={BottomTabNavigator}
+          options={{headerShown: false}}
+        />
 
-      <MainStack.Screen
-        name="PlaceOrderScreen"
-        component={PlaceOrderScreen}
-        options={({navigation}) => ({
-          headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={{marginLeft: 15}}>
-              <MaterialIcons name="arrow-back" size={24} color="#663399" />
-            </TouchableOpacity>
-          ),
-          headerTitle: '',
-          animation: 'slide_from_right',
-          headerShown: false,
-        })}
-      />
+        <MainStack.Screen
+          name="PlaceOrderScreen"
+          component={PlaceOrderScreen}
+          options={({navigation}) => ({
+            headerLeft: () => (
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={{marginLeft: 15}}>
+                <MaterialIcons name="arrow-back" size={24} color="#663399" />
+              </TouchableOpacity>
+            ),
+            headerTitle: '',
+            animation: 'slide_from_right',
+            headerShown: false,
+          })}
+        />
 
-      <MainStack.Screen
-        name="OrderConfirmationScreen"
-        component={OrderConfirmationScreen}
-        options={({navigation}) => ({
-          headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={{marginLeft: 15}}>
-              <MaterialIcons name="arrow-back" size={24} color="#4CAF50" />
-            </TouchableOpacity>
-          ),
-          headerTitle: '',
-          animation: 'slide_from_right',
-        })}
-      />
+        <MainStack.Screen
+          name="OrderConfirmationScreen"
+          component={OrderConfirmationScreen}
+          options={{headerShown: false}}
+        />
 
-      <MainStack.Screen
-        name="SubCategory"
-        component={SubCategory}
-        options={{headerShown: false}}
-        // options={({route}) => ({
-        //   title: route.params.category,
-        // })}
-      />
-      <MainStack.Screen
-        name="ItemDetailScreen"
-        component={ItemDetailScreen}
-        options={{headerShown: false}}
-        // options={({route}) => ({
-        //   title: route.params.subcategoryName,
-        // })}
-      />
-      <MainStack.Screen
-        name="ItemDetailsExpanded"
-        component={ItemDetailsExpanded}
-        options={{headerShown: false}}
-        // options={({route}) => ({
-        //   title: route.params.itemName,
-        // })}
-      />
-      <MainStack.Screen
-        name="LotReportScreen"
-        component={LotReportScreen}
-        options={{title: 'Lot Report'}}
-      />
-      <MainStack.Screen
-        name="OrderHistoryScreen"
-        component={OrderHistoryScreen}
-        options={{title: ''}}
-      />
-      <MainStack.Screen
-        name="QuantitySelectorModal"
-        component={QuantitySelectorModal}
-        options={{
-          presentation: 'modal',
-          title: 'Select Quantity',
-        }}
-      />
-    </MainStack.Navigator>
+        <MainStack.Screen
+          name="SubCategory"
+          component={SubCategory}
+          options={{headerShown: false}}
+          // options={({route}) => ({
+          //   title: route.params.category,
+          // })}
+        />
+        <MainStack.Screen
+          name="ItemDetailScreen"
+          component={ItemDetailScreen}
+          options={{headerShown: false}}
+          // options={({route}) => ({
+          //   title: route.params.subcategoryName,
+          // })}
+        />
+        <MainStack.Screen
+          name="OrderDetailsScreen"
+          component={OrderDetailsScreen}
+          options={{headerShown: false}}
+          // options={({route}) => ({
+          //   title: route.params.subcategoryName,
+          // })}
+        />
+        <MainStack.Screen
+          name="ItemDetailsExpanded"
+          component={ItemDetailsExpanded}
+          options={{headerShown: false}}
+        />
+        <MainStack.Screen
+          name="LotReportScreen"
+          component={LotReportScreen}
+          options={{title: 'Lot Report'}}
+        />
+        <MainStack.Screen
+          name="PendingOrdersScreen"
+          component={PendingOrdersScreen}
+          options={{title: 'Pending Orders'}}
+        />
+
+        <MainStack.Screen
+          name="EditOrderScreen"
+          component={EditOrderScreen}
+          options={{headerShown: false}}
+        />
+
+        <MainStack.Screen
+          name="OrderHistoryScreen"
+          component={OrderHistoryScreen}
+          options={{headerShown: false}}
+        />
+        <MainStack.Screen
+          name="GrnDetailsScreen"
+          component={GrnDetailsScreen}
+          options={{title: 'GRN Details'}}
+        />
+        <RootStack.Screen
+          name="HomeScreen"
+          component={MainStackNavigator}
+          options={{headerShown: false}}
+        />
+        <MainStack.Screen
+          name="QuantitySelectorModal"
+          component={QuantitySelectorModal}
+          options={{
+            presentation: 'modal',
+            title: 'Select Quantity',
+          }}
+        />
+      </MainStack.Navigator>
     </CustomerProvider>
   );
 };
@@ -134,33 +158,36 @@ function App(): JSX.Element {
           <NotificationProvider>
             <CartProvider>
               <CustomerProvider>
-              <NavigationContainer>
-                <RootStack.Navigator
-                  initialRouteName="SplashScreen"
-                  screenOptions={{
-                    headerShown: false,
-                    gestureEnabled: false,
-                  }}>
-                  <RootStack.Screen
-                    name="SplashScreen"
-                    component={SplashScreen}
-                  />
-                  <RootStack.Screen
-                    name="OtpVerificationScreen"
-                    component={OtpVerificationScreen}
-                    options={{headerShown: false}}
-                  />
-                  <RootStack.Screen
-                    name="Main"
-                    component={MainStackNavigator}
-                  />
-                  <RootStack.Screen
-                    name="HomeScreen"
-                    component={MainStackNavigator}
-                    options={{headerShown: false}}
-                  />
-                </RootStack.Navigator>
-              </NavigationContainer>
+                <NetworkProvider>
+                  <NavigationContainer>
+                    <RootStack.Navigator
+                      initialRouteName="SplashScreen"
+                      screenOptions={{
+                        headerShown: false,
+                        gestureEnabled: false,
+                      }}>
+                      <RootStack.Screen
+                        name="SplashScreen"
+                        component={SplashScreen}
+                      />
+                      <RootStack.Screen
+                        name="OtpVerificationScreen"
+                        component={OtpVerificationScreen}
+                        options={{headerShown: false}}
+                      />
+                      <RootStack.Screen
+                        name="Main"
+                        component={MainStackNavigator}
+                      />
+                      {/* <RootStack.Screen
+                        name="HomeScreen"
+                        component={MainStackNavigator}
+                        options={{headerShown: false}}
+                      /> */}
+                    </RootStack.Navigator>
+                  </NavigationContainer>
+                  <OfflineNotice />
+                </NetworkProvider>
               </CustomerProvider>
             </CartProvider>
           </NotificationProvider>

@@ -121,6 +121,14 @@ dependencies {
     }
 }
 
+// Add configuration to handle dependency conflicts
+configurations.all {
+    resolutionStrategy {
+        force "androidx.core:core:1.13.1"
+        // Force using only AndroidX dependencies (no support library)
+        exclude group: 'com.android.support'
+    }
+}
 
 project.ext.vectoricons = [
    iconFontNames: [
