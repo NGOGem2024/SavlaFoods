@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
+  Keyboard
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {
@@ -671,6 +672,7 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        
         style={styles.keyboardView}>
         <View style={styles.header}>
           <TouchableOpacity
@@ -682,7 +684,9 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
           <View style={styles.placeholder} />
         </View>
 
-        <ScrollView style={styles.scrollView}>
+        <ScrollView style={styles.scrollView}
+        keyboardShouldPersistTaps="always"
+        keyboardDismissMode="none">
           <View style={styles.purpleHeaderCard}>
             <View style={styles.purpleHeader}>
               <View style={styles.headerContent}>
