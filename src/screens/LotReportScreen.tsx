@@ -1080,6 +1080,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {API_ENDPOINTS} from '../config/api.config';
 import apiClient from '../utils/apiClient';
 import {RootStackParamList} from '../type/type';
+import {LayoutWrapper} from '../components/AppLayout';
 
 // Updated API response type definitions
 interface LotDetails {
@@ -1382,223 +1383,229 @@ const LotReportScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Fixed Search Container at the top */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <MaterialIcons
-            name="search"
-            size={24}
-            color="#777"
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Enter Lot No."
-            placeholderTextColor="#777"
-            value={searchLotNo}
-            onChangeText={text => {
-              // Allow only numbers by removing non-numeric characters
-              const cleanedText = text.replace(/[^0-9]/g, '');
-              setSearchLotNo(cleanedText);
-            }}
-            keyboardType="number-pad"
-            onSubmitEditing={handleSearch}
-          />
+    <LayoutWrapper showHeader={true} showTabBar={false} route={route}>
+      <View style={styles.container}>
+        {/* Fixed Search Container at the top */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputContainer}>
+            <MaterialIcons
+              name="search"
+              size={24}
+              color="#777"
+              style={styles.searchIcon}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Enter Lot No."
+              placeholderTextColor="#777"
+              value={searchLotNo}
+              onChangeText={text => {
+                // Allow only numbers by removing non-numeric characters
+                const cleanedText = text.replace(/[^0-9]/g, '');
+                setSearchLotNo(cleanedText);
+              }}
+              keyboardType="number-pad"
+              onSubmitEditing={handleSearch}
+            />
+          </View>
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <Text style={styles.searchButtonText}>Search</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={handleRefresh}>
+            <MaterialIcons name="refresh" size={24} color="#fff" />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-          <Text style={styles.searchButtonText}>Search</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.refreshButton} onPress={handleRefresh}>
-          <MaterialIcons name="refresh" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
 
-      {/* Content with Keyboard Handling */}
-      <KeyboardAvoidingView
-        style={{flex: 1}}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#007bff" />
-            <Text style={styles.loadingText}>Loading lot details...</Text>
-          </View>
-        ) : error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : lotDetails ? (
-          <ScrollView
-            style={styles.mainScrollView}
-            contentContainerStyle={styles.scrollViewContent}
-            showsVerticalScrollIndicator={false}>
-            <View style={styles.detailsContainer}>
-              <View style={styles.lotHeader}>
-                <Text style={styles.lotNo}>
-                  Lot No:{' '}
-                  <Text style={styles.lotNoHighlight}>
-                    {lotDetails?.LOT_NO}
+        {/* Content with Keyboard Handling */}
+        <KeyboardAvoidingView
+          style={{flex: 1}}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#007bff" />
+              <Text style={styles.loadingText}>Loading lot details...</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : lotDetails ? (
+            <ScrollView
+              style={styles.mainScrollView}
+              contentContainerStyle={styles.scrollViewContent}
+              showsVerticalScrollIndicator={false}>
+              <View style={styles.detailsContainer}>
+                <View style={styles.lotHeader}>
+                  <Text style={styles.lotNo}>
+                    Lot No:{' '}
+                    <Text style={styles.lotNoHighlight}>
+                      {lotDetails?.LOT_NO}
+                    </Text>
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.summaryIconButton}
+                    onPress={toggleSummaryModal}>
+                    <MaterialIcons name="bar-chart" size={26} color="#F28C28" />
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={styles.detailText}>
+                  Unit Name:{' '}
+                  <Text style={styles.detailBold}>{lotDetails?.UNIT_NAME}</Text>
+                </Text>
+                <Text style={styles.detailText}>
+                  Item Name:{' '}
+                  <Text style={styles.detailBold}>
+                    {lotDetails?.ITEM_NAME || lotDetails?.DESCRIPTION}
                   </Text>
                 </Text>
+                <Text style={styles.detailText}>
+                  Category:{' '}
+                  <Text style={styles.detailBold}>
+                    {lotDetails?.ITEM_CATEG_NAME}
+                  </Text>
+                </Text>
+                <Text style={styles.detailText}>
+                  Sub Category:{' '}
+                  <Text style={styles.detailBold}>
+                    {lotDetails?.SUB_CATEGORY_NAME}
+                  </Text>
+                </Text>
+                <Text style={styles.detailText}>
+                  Item Mark:{' '}
+                  <Text style={styles.detailBold}>
+                    {lotDetails?.ITEM_MARKS}
+                  </Text>
+                </Text>
+                <Text style={styles.detailText}>
+                  Vakkal:{' '}
+                  <Text style={styles.detailBold}>{lotDetails?.VAKAL_NO}</Text>
+                </Text>
+                {lotDetails?.BATCH_NO && (
+                  <Text style={styles.detailText}>
+                    Batch No:{' '}
+                    <Text style={styles.detailBold}>{lotDetails.BATCH_NO}</Text>
+                  </Text>
+                )}
+                <Text style={styles.detailText}>
+                  Available Qty:{' '}
+                  <Text style={styles.detailBold}>
+                    {lotDetails?.AVAILABLE_QTY}
+                  </Text>
+                </Text>
+                {lotDetails?.EXPIRY_DATE && (
+                  <Text style={styles.detailText}>
+                    Expiry Date:{' '}
+                    <Text style={styles.detailBold}>
+                      {new Date(lotDetails.EXPIRY_DATE).toLocaleDateString()}
+                    </Text>
+                  </Text>
+                )}
+                {lotDetails?.REMARKS && (
+                  <Text style={styles.detailText}>
+                    Remarks:{' '}
+                    <Text style={styles.detailBold}>{lotDetails.REMARKS}</Text>
+                  </Text>
+                )}
+              </View>
+
+              <View style={styles.tabContainer}>
                 <TouchableOpacity
-                  style={styles.summaryIconButton}
-                  onPress={toggleSummaryModal}>
-                  <MaterialIcons name="bar-chart" size={26} color="#F28C28" />
+                  style={[
+                    styles.inwardTabButton,
+                    selectedTab === 'Inwards' && styles.activeInwardTab,
+                  ]}
+                  onPress={() => setSelectedTab('Inwards')}>
+                  <Text
+                    style={[
+                      styles.tabText,
+                      selectedTab === 'Inwards' && styles.activeTabText,
+                    ]}>
+                    Inwards ({summary?.inwardCount || 0})
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.outwardTabButton,
+                    selectedTab === 'Outwards' && styles.activeOutwardTab,
+                  ]}
+                  onPress={() => setSelectedTab('Outwards')}>
+                  <Text
+                    style={[
+                      styles.tabText,
+                      selectedTab === 'Outwards' && styles.activeTabText,
+                    ]}>
+                    Outwards ({summary?.outwardCount || 0})
+                  </Text>
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.detailText}>
-                Unit Name:{' '}
-                <Text style={styles.detailBold}>{lotDetails?.UNIT_NAME}</Text>
-              </Text>
-              <Text style={styles.detailText}>
-                Item Name:{' '}
-                <Text style={styles.detailBold}>
-                  {lotDetails?.ITEM_NAME || lotDetails?.DESCRIPTION}
-                </Text>
-              </Text>
-              <Text style={styles.detailText}>
-                Category:{' '}
-                <Text style={styles.detailBold}>
-                  {lotDetails?.ITEM_CATEG_NAME}
-                </Text>
-              </Text>
-              <Text style={styles.detailText}>
-                Sub Category:{' '}
-                <Text style={styles.detailBold}>
-                  {lotDetails?.SUB_CATEGORY_NAME}
-                </Text>
-              </Text>
-              <Text style={styles.detailText}>
-                Item Mark:{' '}
-                <Text style={styles.detailBold}>{lotDetails?.ITEM_MARKS}</Text>
-              </Text>
-              <Text style={styles.detailText}>
-                Vakkal:{' '}
-                <Text style={styles.detailBold}>{lotDetails?.VAKAL_NO}</Text>
-              </Text>
-              {lotDetails?.BATCH_NO && (
-                <Text style={styles.detailText}>
-                  Batch No:{' '}
-                  <Text style={styles.detailBold}>{lotDetails.BATCH_NO}</Text>
-                </Text>
-              )}
-              <Text style={styles.detailText}>
-                Available Qty:{' '}
-                <Text style={styles.detailBold}>
-                  {lotDetails?.AVAILABLE_QTY}
-                </Text>
-              </Text>
-              {lotDetails?.EXPIRY_DATE && (
-                <Text style={styles.detailText}>
-                  Expiry Date:{' '}
-                  <Text style={styles.detailBold}>
-                    {new Date(lotDetails.EXPIRY_DATE).toLocaleDateString()}
-                  </Text>
-                </Text>
-              )}
-              {lotDetails?.REMARKS && (
-                <Text style={styles.detailText}>
-                  Remarks:{' '}
-                  <Text style={styles.detailBold}>{lotDetails.REMARKS}</Text>
-                </Text>
-              )}
-            </View>
-
-            <View style={styles.tabContainer}>
-              <TouchableOpacity
+              <View
                 style={[
-                  styles.inwardTabButton,
-                  selectedTab === 'Inwards' && styles.activeInwardTab,
-                ]}
-                onPress={() => setSelectedTab('Inwards')}>
-                <Text
-                  style={[
-                    styles.tabText,
-                    selectedTab === 'Inwards' && styles.activeTabText,
-                  ]}>
-                  Inwards ({summary?.inwardCount || 0})
+                  styles.scrollHintContainer,
+                  {backgroundColor: '#f8f8f8'},
+                ]}>
+                <MaterialIcons name="swipe" size={16} color="#64748B" />
+                <Text style={styles.scrollHintText}>
+                  Swipe horizontally to see all columns
                 </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.outwardTabButton,
-                  selectedTab === 'Outwards' && styles.activeOutwardTab,
-                ]}
-                onPress={() => setSelectedTab('Outwards')}>
-                <Text
-                  style={[
-                    styles.tabText,
-                    selectedTab === 'Outwards' && styles.activeTabText,
-                  ]}>
-                  Outwards ({summary?.outwardCount || 0})
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <View
-              style={[
-                styles.scrollHintContainer,
-                {backgroundColor: '#f8f8f8'},
-              ]}>
-              <MaterialIcons name="swipe" size={16} color="#64748B" />
-              <Text style={styles.scrollHintText}>
-                Swipe horizontally to see all columns
-              </Text>
-            </View>
-
-            <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-              <View style={styles.tableContainer}>
-                {selectedTab === 'Inwards' ? (
-                  <>
-                    <View style={styles.inwardTableHeader}>
-                      <Text style={styles.headerCell}>GRN No</Text>
-                      <Text style={styles.headerCell}>
-                        Transaction{'\n'}Date
-                      </Text>
-                      <Text style={styles.headerCell}>Quantity</Text>
-                      <Text style={styles.headerCell}>Item Marks</Text>
-                      <Text style={styles.headerCell}>Vakal No</Text>
-                      <Text style={styles.headerCell}>Unit Name</Text>
-                      <Text style={styles.headerCell}>Remarks</Text>
-                      <Text style={styles.headerCell}>Vehicle No</Text>
-                    </View>
-                  </>
-                ) : (
-                  <>
-                    <View style={styles.outwardTableHeader}>
-                      <Text style={[styles.headerCell, {width: 110}]}>
-                        Delivery{'\n'}Challan No
-                      </Text>
-                      <Text style={styles.headerCell}>
-                        Transaction{'\n'}Date
-                      </Text>
-                      <Text style={styles.headerCell}>Quantity</Text>
-                      <Text style={styles.headerCell}>Item Marks</Text>
-                      <Text style={styles.headerCell}>Vakal No</Text>
-                      <Text style={styles.headerCell}>Unit Name</Text>
-                      <Text style={styles.headerCell}>Remarks</Text>
-                      <Text style={styles.headerCell}>Delivered To</Text>
-                      <Text style={styles.headerCell}>Vehicle No</Text>
-                    </View>
-                  </>
-                )}
-                {renderTransactionRows()}
               </View>
+
+              <ScrollView horizontal showsHorizontalScrollIndicator={true}>
+                <View style={styles.tableContainer}>
+                  {selectedTab === 'Inwards' ? (
+                    <>
+                      <View style={styles.inwardTableHeader}>
+                        <Text style={styles.headerCell}>GRN No</Text>
+                        <Text style={styles.headerCell}>
+                          Transaction{'\n'}Date
+                        </Text>
+                        <Text style={styles.headerCell}>Quantity</Text>
+                        <Text style={styles.headerCell}>Item Marks</Text>
+                        <Text style={styles.headerCell}>Vakal No</Text>
+                        <Text style={styles.headerCell}>Unit Name</Text>
+                        <Text style={styles.headerCell}>Remarks</Text>
+                        <Text style={styles.headerCell}>Vehicle No</Text>
+                      </View>
+                    </>
+                  ) : (
+                    <>
+                      <View style={styles.outwardTableHeader}>
+                        <Text style={[styles.headerCell, {width: 110}]}>
+                          Delivery{'\n'}Challan No
+                        </Text>
+                        <Text style={styles.headerCell}>
+                          Transaction{'\n'}Date
+                        </Text>
+                        <Text style={styles.headerCell}>Quantity</Text>
+                        <Text style={styles.headerCell}>Item Marks</Text>
+                        <Text style={styles.headerCell}>Vakal No</Text>
+                        <Text style={styles.headerCell}>Unit Name</Text>
+                        <Text style={styles.headerCell}>Remarks</Text>
+                        <Text style={styles.headerCell}>Delivered To</Text>
+                        <Text style={styles.headerCell}>Vehicle No</Text>
+                      </View>
+                    </>
+                  )}
+                  {renderTransactionRows()}
+                </View>
+              </ScrollView>
             </ScrollView>
-          </ScrollView>
-        ) : (
-          <View style={styles.initialStateContainer}>
-            <MaterialIcons name="search" size={50} color="#CCCCCC" />
-            <Text style={styles.initialStateText}>
-              Enter a Lot Number and press Search
-            </Text>
-          </View>
-        )}
-      </KeyboardAvoidingView>
-      {renderSummaryModal()}
-    </View>
+          ) : (
+            <View style={styles.initialStateContainer}>
+              <MaterialIcons name="search" size={50} color="#CCCCCC" />
+              <Text style={styles.initialStateText}>
+                Enter a Lot Number and press Search
+              </Text>
+            </View>
+          )}
+        </KeyboardAvoidingView>
+        {renderSummaryModal()}
+      </View>
+    </LayoutWrapper>
   );
 };
 

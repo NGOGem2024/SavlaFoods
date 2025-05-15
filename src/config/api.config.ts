@@ -47,6 +47,12 @@ export const API_ENDPOINTS = {
 
   //LotReport
   GET_LOT_REPORT: `${API_BASE_URL}/lots/getLotReport`,
+
+  //GRNdetails
+  GET_GRN_DETAILS: `${API_BASE_URL}/reports/GRNdetails`,
+
+  //ZeroStockReport
+  GET_ZERO_STOCK_REPORT: `${API_BASE_URL}/zerostock/getZeroStock`,
 };
 
 export const BASE_IMAGE_PATH = `${API_BASE_URL}/assets/images`;

@@ -543,7 +543,7 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
                     <Ionicons
                       name="arrow-forward"
                       size={20}
-                      style={{color: '#FFFFFF'}}
+                      style={{color: '#FFFFFF', alignItems: 'center'}}
                     />
                   </>
                 )}
@@ -707,6 +707,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     marginRight: 8,
+    marginBottom: 3,
   },
   loadingContainer: {
     flexDirection: 'row',

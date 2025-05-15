@@ -1,9 +1,12 @@
 import React from 'react';
 import {View, Text, FlatList, StyleSheet, TouchableOpacity} from 'react-native';
 import {useNotification} from '../contexts/NotificationContext';
+import {LayoutWrapper} from '../components/AppLayout';
+import {useRoute} from '@react-navigation/core';
 
 const Alerts = () => {
   const {notifications, clearNotifications} = useNotification();
+  const route = useRoute();
 
   const renderNotification = ({item}: {item: any}) => (
     <View style={styles.notificationItem}>
@@ -15,25 +18,30 @@ const Alerts = () => {
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Alerts</Text>
-      {notifications.length > 0 ? (
-        <>
-          <FlatList
-            data={notifications}
-            renderItem={renderNotification}
-            keyExtractor={item => item.id}
-          />
-          <TouchableOpacity
-            onPress={clearNotifications}
-            style={styles.clearButton}>
-            <Text style={styles.clearButtonText}>Clear All Notifications</Text>
-          </TouchableOpacity>
-        </>
-      ) : (
-        <Text style={styles.noNotifications}>No new notifications</Text>
-      )}
-    </View>
+    <LayoutWrapper showHeader={true} showTabBar={false} route={route}>
+      {' '}
+      <View style={styles.container}>
+        <Text style={styles.title}>Alerts</Text>
+        {notifications.length > 0 ? (
+          <>
+            <FlatList
+              data={notifications}
+              renderItem={renderNotification}
+              keyExtractor={item => item.id}
+            />
+            <TouchableOpacity
+              onPress={clearNotifications}
+              style={styles.clearButton}>
+              <Text style={styles.clearButtonText}>
+                Clear All Notifications
+              </Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <Text style={styles.noNotifications}>No new notifications</Text>
+        )}
+      </View>
+    </LayoutWrapper>
   );
 };
 

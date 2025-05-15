@@ -38,6 +38,8 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import OrderDetailsScreen from './src/screens/OrderDetailsScreen';
 import PendingOrdersScreen from './src/screens/PendingOrdersScreen';
 import EditOrderScreen from './src/components/EditOrderScreen.tsx';
+import GrnDetailsScreen from './src/screens/GRNDetailsScreen.tsx';
+import ZeroStockReportScreen from './src/screens/stocks/ZeroStockReportScreen.tsx';
 
 const RootStack = createStackNavigator<RootStackParamList>();
 const MainStack = createStackNavigator<MainStackParamList>();
@@ -72,6 +74,18 @@ const MainStackNavigator: React.FC = () => {
         <MainStack.Screen
           name="OrderConfirmationScreen"
           component={OrderConfirmationScreen}
+          options={{headerShown: false}}
+        />
+
+        <MainStack.Screen
+          name="GrnDetailsScreen"
+          component={GrnDetailsScreen}
+          options={{headerShown: false}}
+        />
+
+        <MainStack.Screen
+          name="ZeroStockReportScreen"
+          component={ZeroStockReportScreen}
           options={{headerShown: false}}
         />
 
@@ -117,7 +131,7 @@ const MainStackNavigator: React.FC = () => {
         <MainStack.Screen
           name="PendingOrdersScreen"
           component={PendingOrdersScreen}
-          options={{title: 'Pending Orders'}}
+          options={{headerShown: false}}
         />
 
         <MainStack.Screen
@@ -172,7 +186,7 @@ function App(): JSX.Element {
                       <RootStack.Screen
                         name="OtpVerificationScreen"
                         component={OtpVerificationScreen}
-                        options={{headerShown: false}}
+                        options={{headerShown: false, gestureEnabled: false}}
                       />
                       <RootStack.Screen
                         name="Main"

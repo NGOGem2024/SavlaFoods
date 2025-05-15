@@ -1,13 +1,25 @@
 import React from 'react';
-import {View, Text, ScrollView, StyleSheet} from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
 
 interface ReportTableProps {
   reportData: any[];
   isInward: boolean;
   tableRef: React.RefObject<ScrollView>;
+  onInwardOutwardNoPress?: (item: any) => void;
 }
 
-const ReportTable = ({reportData, isInward, tableRef}: ReportTableProps) => {
+const ReportTable = ({
+  reportData,
+  isInward,
+  tableRef,
+  onInwardOutwardNoPress,
+}: ReportTableProps) => {
   return (
     <View style={styles.tableContainer}>
       <ScrollView
@@ -178,9 +190,33 @@ const ReportTable = ({reportData, isInward, tableRef}: ReportTableProps) => {
                     ? new Date(item.OUTWARD_DATE).toLocaleDateString()
                     : '-'}
                 </Text>
-                <Text style={[styles.tableCell, {width: 100}]}>
-                  {isInward ? item.GRN_NO || '-' : item.OUTWARD_NO || '-'}
-                </Text>
+                {isInward ? (
+                  <TouchableOpacity
+                    style={[styles.tableCellContainer, {width: 100}]}
+                    onPress={() =>
+                      onInwardOutwardNoPress && onInwardOutwardNoPress(item)
+                    }
+                    disabled={!(onInwardOutwardNoPress && item.GRN_NO)}>
+                    <Text
+                      style={[
+                        styles.tableCell,
+                        styles.clickableCell,
+                        {
+                          color:
+                            onInwardOutwardNoPress && item.GRN_NO
+                              ? '#F48221'
+                              : '#334155',
+                          width: '100%',
+                        },
+                      ]}>
+                      {item.GRN_NO || '-'}
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <Text style={[styles.tableCell, {width: 100}]}>
+                    {item.OUTWARD_NO || '-'}
+                  </Text>
+                )}
                 <Text style={[styles.tableCell, {width: 150}]}>
                   {item.CUSTOMER_NAME || '-'}
                 </Text>
@@ -255,6 +291,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     textAlign: 'center',
+  },
+  tableCellContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clickableCell: {
+    textDecorationLine: 'underline',
+    fontWeight: '500',
   },
 });
 

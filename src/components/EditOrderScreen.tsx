@@ -121,6 +121,25 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
   const toastOpacity = React.useRef(new Animated.Value(0)).current;
   const toastOffset = React.useRef(new Animated.Value(300)).current;
 
+  // Add new state variables for the separate transporter fields
+  const [transporterFields, setTransporterFields] = useState({
+    name: '',
+    vehicleNo: '',
+    shopNo: '',
+  });
+
+  // Initialize the transporter fields from the original format
+  useEffect(() => {
+    if (order.transporterName) {
+      const parts = order.transporterName.split('|').map(part => part.trim());
+      setTransporterFields({
+        name: parts[0] || '',
+        vehicleNo: parts.length > 1 ? parts[1] : '',
+        shopNo: parts.length > 2 ? parts[2] : '',
+      });
+    }
+  }, [order.transporterName]);
+
   // Helper function to check if there are unsaved changes
   const checkForUnsavedChanges = () => {
     return (
@@ -185,6 +204,34 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
 
     // Clear any validation errors for delivery date
     setValidationErrors(prev => ({...prev, deliveryDate: ''}));
+  };
+
+  // Format date for display (doesn't change the date value)
+  const formatDisplayDate = (date: Date) => {
+    if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+      return 'Select Date';
+    }
+
+    const monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    const day = date.getDate();
+    const month = monthNames[date.getMonth()];
+    const year = date.getFullYear();
+
+    return `${month} ${day}, ${year}`;
   };
   // Format date for display (doesn't change date)
   const formatDateForDisplay = (dateString: string) => {
@@ -292,6 +339,42 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
     );
   };
 
+  // Modify validateTransporterName function to not accept empty names
+  const validateTransporterName = (name: string) => {
+    if (!name.trim()) {
+      return 'Transporter name is required';
+    }
+    return '';
+  };
+
+  // Update handleTransporterNameChange to include validation
+  const handleTransporterNameChange = (
+    field: 'name' | 'vehicleNo' | 'shopNo',
+    text: string,
+  ) => {
+    setTransporterFields(prev => ({
+      ...prev,
+      [field]: text,
+    }));
+
+    // Construct the combined transporter name for the form data
+    const updatedFields = {...transporterFields, [field]: text};
+    const combinedName = `${updatedFields.name}${
+      updatedFields.vehicleNo ? ' | ' + updatedFields.vehicleNo : ''
+    }${updatedFields.shopNo ? ' | ' + updatedFields.shopNo : ''}`;
+
+    setFormData(prev => ({
+      ...prev,
+      transporterName: combinedName,
+    }));
+
+    // Add validation for transporter name field only
+    if (field === 'name') {
+      const error = validateTransporterName(text);
+      setValidationErrors(prev => ({...prev, transporterName: error}));
+    }
+  };
+
   // Modified validation for delivery date to ensure it's not before the order date
   const validateDeliveryDate = (dateString: string) => {
     if (!dateString.trim()) {
@@ -344,19 +427,6 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
     }
   };
 
-  // Validate transporter name
-  const validateTransporterName = (name: string) => {
-    if (!name.trim()) {
-      return 'Transporter name is required';
-    }
-
-    if (name.trim().length < 3) {
-      return 'Transporter name must be at least 3 characters';
-    }
-
-    return '';
-  };
-
   // Validate requested quantity
   const validateRequestedQty = (
     qty: number,
@@ -403,13 +473,6 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
     setOrderItems(updatedItems);
   };
 
-  // Handle transporter name change with validation
-  const handleTransporterNameChange = (text: string) => {
-    setFormData({...formData, transporterName: text});
-    const error = validateTransporterName(text);
-    setValidationErrors(prev => ({...prev, transporterName: error}));
-  };
-
   // Handle delivery date change with validation
   const handleDeliveryDateChange = (text: string) => {
     setFormData({...formData, deliveryDate: text});
@@ -425,7 +488,7 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
 
   // Validate all form fields
   const validateForm = () => {
-    const transporterError = validateTransporterName(formData.transporterName);
+    // Remove transporter validation
     const deliveryDateError = validateDeliveryDate(formData.deliveryDate);
 
     // Validate all items
@@ -446,18 +509,18 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
 
     // Update validation errors state
     setValidationErrors({
-      transporterName: transporterError,
+      transporterName: '', // Always empty now
       deliveryDate: deliveryDateError,
       requestedQty: qtyErrors,
     });
 
     // Check if there are any errors
-    return !(transporterError || deliveryDateError || hasQtyError);
+    return !(deliveryDateError || hasQtyError);
   };
 
   // Initial validation on component mount
   useEffect(() => {
-    handleTransporterNameChange(formData.transporterName);
+    // No need to validate transporter name
     handleDeliveryDateChange(formData.deliveryDate);
 
     // Validate all quantities
@@ -474,16 +537,20 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
     setToastType(type);
     setToastVisible(true);
 
-    // Animate toast in
+    // Reset animation values
+    toastOpacity.setValue(0);
+    toastOffset.setValue(-100); // Start from above the screen
+
+    // Animate toast down from top
     Animated.parallel([
       Animated.timing(toastOpacity, {
         toValue: 1,
-        duration: 400,
+        duration: 300,
         useNativeDriver: true,
       }),
       Animated.timing(toastOffset, {
-        toValue: 0,
-        duration: 400,
+        toValue: 40, // Final position from top
+        duration: 300,
         useNativeDriver: true,
       }),
     ]).start();
@@ -493,12 +560,12 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
       Animated.parallel([
         Animated.timing(toastOpacity, {
           toValue: 0,
-          duration: 350,
+          duration: 250,
           useNativeDriver: true,
         }),
         Animated.timing(toastOffset, {
-          toValue: 300,
-          duration: 350,
+          toValue: -100, // Move back above screen
+          duration: 250,
           useNativeDriver: true,
         }),
       ]).start(() => {
@@ -510,6 +577,19 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
   const handleUpdateOrder = async () => {
     if (!customerID) {
       showToast('Customer ID not found. Please login again.', 'error');
+      return;
+    }
+
+    // Check if any requested quantity exceeds available quantity
+    const exceedsAvailable = orderItems.some(
+      item => item.requestedQty > item.availableQty,
+    );
+
+    if (exceedsAvailable) {
+      Alert.alert(
+        'Validation Failed',
+        'Requested quantity exceeds available quantity for some items. Please adjust them before saving.',
+      );
       return;
     }
 
@@ -525,32 +605,8 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
       // Format the delivery date for API
       const formattedDeliveryDate = formatDateForApi(formData.deliveryDate);
 
-      // Check if any requested quantity exceeds available quantity
-      const exceedsAvailable = orderItems.some(
-        item => item.requestedQty > item.availableQty,
-      );
-
-      if (exceedsAvailable) {
-        // Show confirmation dialog for quantities exceeding available amounts
-        Alert.alert(
-          'Warning',
-          'Some requested quantities exceed available quantities. Do you want to proceed anyway?',
-          [
-            {
-              text: 'Cancel',
-              style: 'cancel',
-              onPress: () => setIsLoading(false),
-            },
-            {
-              text: 'Proceed',
-              onPress: () => submitOrderUpdate(formattedDeliveryDate),
-            },
-          ],
-        );
-      } else {
-        // No quantity issues, proceed with update
-        await submitOrderUpdate(formattedDeliveryDate);
-      }
+      // Proceed with the update since there are no exceeded quantities
+      await submitOrderUpdate(formattedDeliveryDate);
     } catch (error: any) {
       console.error('Error updating order:', error);
       const errorMessage =
@@ -562,29 +618,20 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
     }
   };
 
-  const formatDisplayDate = (date: Date) => {
-    if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
-      return 'Select Date';
-    }
-
-    const options: Intl.DateTimeFormatOptions = {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    };
-
-    return date.toLocaleDateString('en-US', options);
-  };
-
-  // Extract the actual submission logic to avoid duplication
+  // Modify the submitOrderUpdate function to ensure the transporter name is correctly formatted
   const submitOrderUpdate = async (formattedDeliveryDate: string) => {
     try {
+      // Format the combined transporter name
+      const combinedTransporterName = `${transporterFields.name}${
+        transporterFields.vehicleNo ? ' | ' + transporterFields.vehicleNo : ''
+      }${transporterFields.shopNo ? ' | ' + transporterFields.shopNo : ''}`;
+
       // Prepare the request payload according to the API requirements
       const requestPayload = {
         orderId: order.orderId,
         customer_id: customerID,
         deliveryDate: formattedDeliveryDate,
-        transporterName: formData.transporterName.trim(),
+        transporterName: combinedTransporterName.trim(),
         remarks: formData.remarks.trim(),
         deliveryAddress: formData.deliveryAddress.trim(),
         items: orderItems.map(item => ({
@@ -656,7 +703,10 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
           <View style={styles.placeholder} />
         </View>
 
-        <ScrollView style={styles.scrollView}>
+        <ScrollView
+          style={styles.scrollView}
+          keyboardShouldPersistTaps="always"
+          keyboardDismissMode="none">
           <View style={styles.purpleHeaderCard}>
             <View style={styles.purpleHeader}>
               <View style={styles.headerContent}>
@@ -695,8 +745,8 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
                 </Text>
               )}
             </View>
-
             {/* Add the DateTimePickerModal component */}
+
             <DateTimePickerModal
               isVisible={isDatePickerVisible}
               mode="date"
@@ -705,12 +755,10 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
               onCancel={hideDatePicker}
               display={Platform.OS === 'ios' ? 'inline' : 'default'}
               themeVariant="light"
-              textColor="#111827"
-              backgroundColor="#FFFFFF"
               isDarkModeEnabled={false}
               minimumDate={new Date(order.orderDate)} // Prevent selecting dates before order date
-              customConfirmButtonIOS={() => null}
-              customCancelButtonIOS={() => null}
+              // customConfirmButtonIOS={() => null} // Remove default confirm button
+              customCancelButtonIOS={() => null} // Remove default cancel button
               customHeaderIOS={() => (
                 <View style={styles.pickerHeader}>
                   <TouchableOpacity
@@ -719,21 +767,42 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
                     <MaterialIcons name="close" size={24} color="#6B7280" />
                   </TouchableOpacity>
                   <Text style={styles.pickerHeaderTitle}>Select Date</Text>
-                  <TouchableOpacity
-                    onPress={() => handleConfirm(selectedDate)}
-                    style={styles.confirmButton}>
-                    <Text style={styles.pickerConfirmButton}>Confirm</Text>
-                  </TouchableOpacity>
                 </View>
               )}
             />
-
-            {/* Transporter Field */}
+            {/* Transporter Fields - Modified to have three separate inputs */}
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Transporter</Text>
+              <Text style={styles.inputLabel}>Transporter Name</Text>
+
+              {/* Transporter Name Field */}
               <View
                 style={[
                   styles.textInput,
+                  styles.transporterInput,
+                  validationErrors.transporterName ? styles.inputError : null,
+                ]}>
+                <MaterialIcons
+                  name="person"
+                  size={20}
+                  color="#6B7280"
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  value={transporterFields.name}
+                  placeholder="Enter transporter name"
+                  onChangeText={text =>
+                    handleTransporterNameChange('name', text)
+                  }
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
+
+              {/* Vehicle Number Field */}
+              <View
+                style={[
+                  styles.textInput,
+                  styles.transporterInput,
                   validationErrors.transporterName ? styles.inputError : null,
                 ]}>
                 <MaterialIcons
@@ -744,12 +813,39 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
                 />
                 <TextInput
                   style={styles.input}
-                  value={formData.transporterName}
-                  placeholder="Enter transporter name"
-                  onChangeText={handleTransporterNameChange}
+                  value={transporterFields.vehicleNo}
+                  placeholder="Enter vehicle number"
+                  onChangeText={text =>
+                    handleTransporterNameChange('vehicleNo', text)
+                  }
                   placeholderTextColor="#9CA3AF"
                 />
               </View>
+
+              {/* Shop Number Field */}
+              <View
+                style={[
+                  styles.textInput,
+                  styles.transporterInput,
+                  validationErrors.transporterName ? styles.inputError : null,
+                ]}>
+                <MaterialIcons
+                  name="store"
+                  size={20}
+                  color="#6B7280"
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  value={transporterFields.shopNo}
+                  placeholder="Enter shop number"
+                  onChangeText={text =>
+                    handleTransporterNameChange('shopNo', text)
+                  }
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
+
               {validationErrors.transporterName ? (
                 <Text style={styles.errorText}>
                   {validationErrors.transporterName}
@@ -758,7 +854,7 @@ const EditOrderScreen = ({route, navigation}: EditOrderScreenProps) => {
             </View>
             {/* Delivery Address Field - Removed validation */}
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Delivery Address</Text>
+              <Text style={styles.inputLabel}>Delivery Location</Text>
               <View style={styles.textInput}>
                 <MaterialIcons
                   name="location-on"
@@ -1165,7 +1261,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#111827',
-    marginRight: 10,
+    marginHorizontal: 30,
+    alignItems: 'center',
   },
   quantityInputContainer: {
     flexDirection: 'row',
@@ -1239,28 +1336,34 @@ const styles = StyleSheet.create({
   disabledButton: {
     backgroundColor: '#93c5fd',
   },
+
   toast: {
     position: 'absolute',
-    bottom: 40,
-    left: 20,
+    top: 40, // Adjust this value based on your header height
     right: 20,
-    borderRadius: 10,
+    borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
+    width: '80%', // Set a max width for better appearance
   },
   successToast: {
     backgroundColor: '#dcfce7',
+    borderLeftColor: '#22c55e',
+    borderLeftWidth: 4,
   },
   errorToast: {
     backgroundColor: '#fee2e2',
+    borderLeftColor: '#ef4444',
+    borderLeftWidth: 4,
   },
   toastContent: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
+    paddingVertical: 14,
   },
   toastMessage: {
     fontSize: 14,
@@ -1283,7 +1386,7 @@ const styles = StyleSheet.create({
     borderColor: '#ef4444',
     borderWidth: 1,
   },
- 
+
   pickerCancelButton: {
     color: '#6b7280',
     fontSize: 16,
@@ -1314,6 +1417,9 @@ const styles = StyleSheet.create({
     color: '#0284c7',
     fontSize: 16,
     fontWeight: '600',
+  },
+  transporterInput: {
+    marginBottom: 8,
   },
 });
 

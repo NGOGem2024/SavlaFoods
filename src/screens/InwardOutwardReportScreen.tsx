@@ -1,1309 +1,3 @@
-// import React, {useState, useEffect, useRef} from 'react';
-// import {
-//   StyleSheet,
-//   View,
-//   Text,
-//   TouchableOpacity,
-//   ScrollView,
-//   Platform,
-//   Alert,
-//   SafeAreaView,
-//   StatusBar,
-//   ActivityIndicator,
-// } from 'react-native';
-// import DateTimePicker from '@react-native-community/datetimepicker';
-// import {Picker} from '@react-native-picker/picker';
-// import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-// import ViewShot from 'react-native-view-shot';
-// // Custom components
-// import ReportTable from '../components/ReportTable';
-// import IOSPickerModal from '../components/IOSPickerModal';
-// import IOSDatePickerModal from '../components/IOSDatePickerModal';
-// // Custom hooks
-// import {useReportData, ReportFilters} from '../hooks/useReportData';
-// import {usePdfGeneration} from '../hooks/usePdfGeneration';
-// // Initialize notifications
-// import PushNotification from 'react-native-push-notification';
-// import PushNotificationIOS from '@react-native-community/push-notification-ios';
-// // Utilities
-// import {openPdf} from '../utils/ReportPdfUtils';
-
-// const InwardOutwardReportScreen = () => {
-//   // Mode state
-//   const [isInward, setIsInward] = useState(true);
-
-//   // Form states
-//   const [fromDate, setFromDate] = useState(new Date());
-//   const [toDate, setToDate] = useState(new Date());
-//   const [showFromDatePicker, setShowFromDatePicker] = useState(false);
-//   const [showToDatePicker, setShowToDatePicker] = useState(false);
-//   const [itemCategory, setItemCategory] = useState('');
-//   const [itemSubcategory, setItemSubcategory] = useState('');
-//   const [unit, setUnit] = useState('');
-
-//   // UI states
-//   const [showReport, setShowReport] = useState(false);
-//   const [showForm, setShowForm] = useState(true);
-
-//   // Modal visibility state for iOS pickers
-//   const [isPickerVisible, setIsPickerVisible] = useState(false);
-//   const [currentPicker, setCurrentPicker] = useState('');
-
-//   // Sample data for units dropdown
-//   const units = ['D-39', 'D-514'];
-
-//   // Refs
-//   const tableRef = useRef<ScrollView>(null);
-//   const viewshotRef = useRef(null);
-
-//   // Use custom hooks
-//   const {
-//     apiCategories,
-//     apiSubcategories,
-//     reportData,
-//     customerName,
-//     loading,
-//     isReportLoading,
-//     isSearching,
-//     fetchReport,
-//     formatDate,
-//     formatDateForFilename,
-//   } = useReportData({isInward});
-
-//   const {
-//     pdfGenerating: isPdfDownloading,
-//     downloadProgress,
-//     statusMessage,
-//     generatePdf,
-//     updateProgressUI,
-//   } = usePdfGeneration({isInward});
-
-//   // Date picker handlers with platform-specific implementation
-//   const showDatePicker = (pickerType: 'from' | 'to') => {
-//     if (pickerType === 'from') {
-//       setShowFromDatePicker(true);
-//     } else {
-//       setShowToDatePicker(true);
-//     }
-//   };
-
-//   const onFromDateChange = (event: any, selectedDate?: Date) => {
-//     const currentDate = selectedDate || fromDate;
-//     setShowFromDatePicker(Platform.OS === 'ios');
-//     setFromDate(currentDate);
-//   };
-
-//   const onToDateChange = (event: any, selectedDate?: Date) => {
-//     const currentDate = selectedDate || toDate;
-//     setShowToDatePicker(Platform.OS === 'ios');
-//     setToDate(currentDate);
-//   };
-
-//   // Helper function to show picker modal (for iOS)
-//   const openPicker = (pickerName: string) => {
-//     setCurrentPicker(pickerName);
-//     setIsPickerVisible(true);
-//   };
-
-//   // Handle clear button
-//   const handleClear = () => {
-//     setFromDate(new Date());
-//     setToDate(new Date());
-//     setItemCategory('');
-//     setItemSubcategory('');
-//     setUnit('');
-//   };
-
-//   // Handle search button
-//   const handleSearch = async () => {
-//     const filters: ReportFilters = {
-//       fromDate,
-//       toDate,
-//       itemCategory,
-//       itemSubcategory,
-//       unit,
-//     };
-
-//     const success = await fetchReport(filters);
-//     if (success) {
-//       setShowReport(true);
-//       setShowForm(false);
-//     }
-//   };
-
-//   // Handle PDF download
-//   const handlePdfDownload = async () => {
-//     if (reportData.length === 0) {
-//       Alert.alert('No Data', 'There is no data to download.');
-//       return;
-//     }
-
-//     try {
-//       // Create PDF with all necessary parameters
-//       await generatePdf(reportData, fromDate, toDate, customerName, {
-//         unit,
-//         itemCategory,
-//         itemSubcategory,
-//       });
-//     } catch (err) {
-//       console.error('Error in PDF download flow:', err);
-//     }
-//   };
-
-//   // Add a function to go back to the form
-//   const handleBackToForm = () => {
-//     setShowForm(true);
-//     setShowReport(false);
-//   };
-
-//   // Reset subcategory when category changes
-//   useEffect(() => {
-//     if (itemCategory) {
-//       setItemSubcategory('');
-//     }
-//   }, [itemCategory]);
-
-//   // Configure notifications on component mount
-//   useEffect(() => {
-//     // Initialize push notifications
-//     PushNotification.configure({
-//       // (required) Called when a remote or local notification is opened or received
-//       onNotification: function (notification: any) {
-//         console.log('NOTIFICATION:', notification);
-
-//         // Try to open the PDF file when notification is pressed
-//         if (notification.userInfo?.filePath) {
-//           openPdf(notification.userInfo.filePath);
-//         }
-
-//         // Required on iOS only
-//         if (Platform.OS === 'ios') {
-//           notification.finish(PushNotificationIOS.FetchResult.NoData);
-//         }
-//       },
-
-//       // Android only: GCM or FCM Sender ID
-//       senderID: '',
-
-//       // iOS only: permission to use notifications
-//       permissions: {
-//         alert: true,
-//         badge: true,
-//         sound: true,
-//       },
-
-//       // Should the initial notification be popped automatically
-//       popInitialNotification: true,
-
-//       // Requesting permissions on iOS
-//       requestPermissions: Platform.OS === 'ios',
-//     });
-
-//     // For iOS, register notification categories with actions
-//     if (Platform.OS === 'ios') {
-//       PushNotificationIOS.setNotificationCategories([
-//         {
-//           id: 'pdf-download',
-//           actions: [{id: 'view', title: 'View', options: {foreground: true}}],
-//         },
-//       ]);
-//     }
-
-//     return () => {
-//       // Clean up notifications on component unmount if needed
-//       PushNotification.unregister();
-//     };
-//   }, []);
-
-//   // Render appropriate picker components for iOS
-//   const renderIOSPicker = () => {
-//     switch (currentPicker) {
-//       case 'category':
-//         return (
-//           <Picker
-//             selectedValue={itemCategory}
-//             onValueChange={value => setItemCategory(value)}
-//             style={styles.iosPicker}
-//             itemStyle={styles.iosPickerItem}>
-//             <Picker.Item label="Select Category" value="" color="black" />
-//             {apiCategories.map((category, index) => (
-//               <Picker.Item
-//                 key={index}
-//                 label={category}
-//                 value={category}
-//                 color="black"
-//               />
-//             ))}
-//           </Picker>
-//         );
-//       case 'subcategory':
-//         return (
-//           <Picker
-//             selectedValue={itemSubcategory}
-//             onValueChange={value => setItemSubcategory(value)}
-//             style={styles.iosPicker}
-//             itemStyle={styles.iosPickerItem}>
-//             <Picker.Item label="Select Subcategory" value="" />
-//             {itemCategory &&
-//               apiSubcategories[itemCategory] &&
-//               apiSubcategories[itemCategory].map(
-//                 (subcategory: string, index: number) => (
-//                   <Picker.Item
-//                     key={index}
-//                     label={subcategory}
-//                     value={subcategory}
-//                     color="#333333"
-//                   />
-//                 ),
-//               )}
-//           </Picker>
-//         );
-//       case 'unit':
-//         return (
-//           <Picker
-//             selectedValue={unit}
-//             onValueChange={value => setUnit(value)}
-//             style={styles.iosPicker}
-//             itemStyle={styles.iosPickerItem}>
-//             <Picker.Item label="Select Unit" value="" />
-//             {units.map((unit, index) => (
-//               <Picker.Item key={index} label={unit} value={unit} />
-//             ))}
-//           </Picker>
-//         );
-//       default:
-//         return null;
-//     }
-//   };
-
-//   // Render picker based on platform
-//   const renderPicker = (
-//     pickerType: string,
-//     value: string,
-//     label: string,
-//     items: string[],
-//     onValueChange: (value: string) => void,
-//     enabled: boolean = true,
-//   ) => {
-//     if (Platform.OS === 'ios') {
-//       return (
-//         <TouchableOpacity
-//           style={[styles.pickerContainer, !enabled && styles.disabledPicker]}
-//           onPress={() => {
-//             if (enabled) openPicker(pickerType);
-//           }}
-//           disabled={!enabled}>
-//           <Text
-//             style={value ? styles.pickerTextSelected : styles.pickerPlaceholder}
-//             numberOfLines={1}
-//             ellipsizeMode="tail">
-//             {value || `Select ${label}`}
-//           </Text>
-//           <MaterialIcons name="arrow-drop-down" size={24} color="#555" />
-//         </TouchableOpacity>
-//       );
-//     } else {
-//       // For Android, create better contrast with a dark background
-//       return (
-//         <View
-//           style={[
-//             styles.androidPickerContainer,
-//             !enabled && styles.disabledAndroidPicker,
-//           ]}>
-//           {/* The text that shows the selected value */}
-//           <Text
-//             style={[
-//               styles.androidSelectedText,
-//               !enabled && styles.disabledAndroidText,
-//             ]}
-//             numberOfLines={1}
-//             ellipsizeMode="tail">
-//             {value || `Select ${label}`}
-//           </Text>
-
-//           {/* Dropdown arrow icon */}
-//           <MaterialIcons
-//             name="arrow-drop-down"
-//             size={28}
-//             color="#2C3E50"
-//             style={styles.androidDropdownIcon}
-//           />
-
-//           {/* The actual picker is transparent and overlays the text */}
-//           <Picker
-//             selectedValue={value}
-//             onValueChange={onValueChange}
-//             enabled={enabled}
-//             mode="dropdown"
-//             prompt={`Select ${label}`}
-//             style={styles.androidPicker}>
-//             <Picker.Item label={`Select ${label}`} value="" color="#FFFFFF" />
-//             {items.map((item, index) => (
-//               <Picker.Item key={index} label={item} value={item} />
-//             ))}
-//           </Picker>
-//         </View>
-//       );
-//     }
-//   };
-
-//   return (
-//     <SafeAreaView style={styles.safeArea}>
-//       <StatusBar
-//         backgroundColor={isInward ? '#F48221' : '#4682B4'}
-//         barStyle="light-content"
-//       />
-
-//       {showForm ? (
-//         // Form Section
-//         <ScrollView style={styles.container}>
-//           {/* Toggle Button */}
-//           <View style={styles.toggleContainer}>
-//             <Text
-//               style={[
-//                 styles.toggleText,
-//                 !isInward && styles.toggleTextInactive,
-//               ]}>
-//               Inward
-//             </Text>
-//             <TouchableOpacity
-//               style={[
-//                 styles.toggleButton,
-//                 {backgroundColor: isInward ? '#F48221' : '#4682B4'},
-//               ]}
-//               onPress={() => setIsInward(!isInward)}>
-//               <View
-//                 style={[
-//                   styles.toggleCircle,
-//                   {
-//                     left: isInward ? 4 : 36,
-//                     backgroundColor: '#FFFFFF',
-//                   },
-//                 ]}
-//               />
-//             </TouchableOpacity>
-//             <Text
-//               style={[
-//                 styles.toggleText,
-//                 isInward && styles.toggleTextInactive,
-//               ]}>
-//               Outward
-//             </Text>
-//           </View>
-
-//           <View
-//             style={[
-//               styles.formContainer,
-//               isInward ? styles.inwardForm : styles.outwardForm,
-//             ]}>
-//             <Text
-//               style={[
-//                 styles.formTitle,
-//                 {color: isInward ? '#F48221' : '#4682B4'},
-//               ]}>
-//               {isInward ? 'Inward Report' : 'Outward Report'}
-//             </Text>
-
-//             {/* Loading Indicator */}
-//             {loading && (
-//               <View style={styles.loadingContainer}>
-//                 <ActivityIndicator
-//                   size="large"
-//                   color={isInward ? '#F48221' : '#4682B4'}
-//                 />
-//                 <Text style={styles.loadingText}>Loading categories...</Text>
-//               </View>
-//             )}
-
-//             {/* Date Fields with Calendar Pickers */}
-//             <View style={styles.formGroup}>
-//               <Text style={styles.label}>From Date</Text>
-//               <TouchableOpacity
-//                 style={styles.dateInputContainer}
-//                 onPress={() => showDatePicker('from')}>
-//                 <View style={styles.dateInputContent}>
-//                   <MaterialIcons
-//                     name="event"
-//                     size={20}
-//                     color="#718096"
-//                     style={styles.inputIcon}
-//                   />
-//                   <Text style={styles.dateText}>{formatDate(fromDate)}</Text>
-//                 </View>
-//               </TouchableOpacity>
-//               {showFromDatePicker && Platform.OS === 'android' && (
-//                 <DateTimePicker
-//                   testID="fromDatePicker"
-//                   value={fromDate}
-//                   mode="date"
-//                   display="default"
-//                   onChange={onFromDateChange}
-//                 />
-//               )}
-//             </View>
-
-//             <View style={styles.formGroup}>
-//               <Text style={styles.label}>To Date</Text>
-//               <TouchableOpacity
-//                 style={styles.dateInputContainer}
-//                 onPress={() => showDatePicker('to')}>
-//                 <View style={styles.dateInputContent}>
-//                   <MaterialIcons
-//                     name="event-available"
-//                     size={20}
-//                     color="#718096"
-//                     style={styles.inputIcon}
-//                   />
-//                   <Text style={styles.dateText}>{formatDate(toDate)}</Text>
-//                 </View>
-//               </TouchableOpacity>
-//               {showToDatePicker && Platform.OS === 'android' && (
-//                 <DateTimePicker
-//                   testID="toDatePicker"
-//                   value={toDate}
-//                   mode="date"
-//                   display="default"
-//                   onChange={onToDateChange}
-//                 />
-//               )}
-//             </View>
-
-//             {/* Category Picker */}
-//             <View style={styles.formGroup}>
-//               <Text style={styles.label}>Category</Text>
-//               {renderPicker(
-//                 'category',
-//                 itemCategory,
-//                 'Category',
-//                 apiCategories,
-//                 value => setItemCategory(value),
-//               )}
-//             </View>
-
-//             {/* Subcategory Picker - Only enabled if category is selected */}
-//             <View style={styles.formGroup}>
-//               <Text style={styles.label}>Subcategory</Text>
-//               {renderPicker(
-//                 'subcategory',
-//                 itemSubcategory,
-//                 'Subcategory',
-//                 itemCategory && apiSubcategories[itemCategory]
-//                   ? apiSubcategories[itemCategory]
-//                   : [],
-//                 value => setItemSubcategory(value),
-//                 itemCategory !== '',
-//               )}
-//             </View>
-
-//             {/* Unit Picker */}
-//             <View style={styles.formGroup}>
-//               <Text style={styles.label}>Unit</Text>
-//               {renderPicker('unit', unit, 'Unit', units, value =>
-//                 setUnit(value),
-//               )}
-//             </View>
-
-//             {/* Buttons */}
-//             <View style={styles.buttonContainer}>
-//               <TouchableOpacity
-//                 style={[
-//                   styles.button,
-//                   {backgroundColor: '#718096'}, // Grey for clear
-//                   isSearching && styles.disabledButton,
-//                 ]}
-//                 onPress={handleClear}
-//                 disabled={isSearching}>
-//                 <Text style={styles.buttonText}>Clear</Text>
-//               </TouchableOpacity>
-//               <TouchableOpacity
-//                 style={[
-//                   styles.button,
-//                   {backgroundColor: isInward ? '#F48221' : '#4682B4'},
-//                   isSearching && styles.disabledButton,
-//                 ]}
-//                 onPress={handleSearch}
-//                 disabled={isSearching}>
-//                 {isSearching ? (
-//                   <ActivityIndicator color="#FFFFFF" size="small" />
-//                 ) : (
-//                   <Text style={styles.buttonText}>Search</Text>
-//                 )}
-//               </TouchableOpacity>
-//             </View>
-//           </View>
-//         </ScrollView>
-//       ) : showReport ? (
-//         // Report Section
-//         <View style={styles.reportContainer}>
-//           <ViewShot
-//             ref={viewshotRef}
-//             options={{
-//               fileName: 'inward-outward-report',
-//               format: 'jpg',
-//               quality: 0.9,
-//             }}
-//             style={styles.reportContent}>
-//             {/* Report Header */}
-//             <View style={styles.reportHeader}>
-//               <View style={styles.reportHeaderLeft}>
-//                 <TouchableOpacity
-//                   onPress={handleBackToForm}
-//                   style={[
-//                     styles.backButton,
-//                     {
-//                       backgroundColor: '#FFFFFF',
-//                       borderColor: isInward ? '#F48221' : '#4682B4',
-//                     },
-//                   ]}>
-//                   <MaterialIcons
-//                     name="arrow-back"
-//                     size={20}
-//                     color={isInward ? '#F48221' : '#4682B4'}
-//                   />
-//                   <Text
-//                     style={[
-//                       styles.backButtonText,
-//                       {color: isInward ? '#F48221' : '#4682B4'},
-//                     ]}>
-//                     Back
-//                   </Text>
-//                 </TouchableOpacity>
-//               </View>
-//               <View style={styles.reportHeaderCenter}>
-//                 <Text
-//                   style={[
-//                     styles.reportTitle,
-//                     {color: isInward ? '#F48221' : '#4682B4'},
-//                   ]}>
-//                   {isInward ? 'Inward Report' : 'Outward Report'}
-//                 </Text>
-//               </View>
-//               <View style={styles.reportHeaderRight}>
-//                 <TouchableOpacity
-//                   onPress={handlePdfDownload}
-//                   disabled={isPdfDownloading || reportData.length === 0}
-//                   style={[
-//                     styles.pdfButton,
-//                     {
-//                       backgroundColor:
-//                         reportData.length === 0
-//                           ? '#CBD5E1'
-//                           : isInward
-//                           ? '#F48221'
-//                           : '#4682B4',
-//                     },
-//                     isPdfDownloading && styles.disabledButton,
-//                   ]}>
-//                   <MaterialIcons
-//                     name="picture-as-pdf"
-//                     size={20}
-//                     color="#FFFFFF"
-//                   />
-//                   <Text style={styles.pdfButtonText}>PDF</Text>
-//                 </TouchableOpacity>
-//               </View>
-//             </View>
-
-//             {/* Report Sub Header */}
-//             <View style={styles.reportSubHeader}>
-//               {isPdfDownloading ? (
-//                 <View style={styles.loadingIndicatorContainer}>
-//                   <ActivityIndicator
-//                     size="small"
-//                     color={isInward ? '#F48221' : '#4682B4'}
-//                   />
-//                   <Text style={styles.loadingIndicatorText}>
-//                     Generating PDF...
-//                   </Text>
-//                 </View>
-//               ) : reportData.length > 0 ? (
-//                 <View style={styles.resultsSummaryContainer}>
-//                   <MaterialIcons name="list-alt" size={20} color="#64748B" />
-//                   <Text
-//                     style={[
-//                       styles.reportCountText,
-//                       {color: isInward ? '#F48221' : '#4682B4'},
-//                     ]}>
-//                     {reportData.length} records found
-//                   </Text>
-//                 </View>
-//               ) : null}
-//             </View>
-
-//             {/* Scrolling Hint */}
-//             {reportData.length > 0 && (
-//               <View style={styles.scrollHintContainer}>
-//                 <MaterialIcons name="swipe" size={18} color="#64748B" />
-//                 <Text style={styles.scrollHintText}>
-//                   Scroll horizontally to view all data
-//                 </Text>
-//               </View>
-//             )}
-
-//             {/* Report Table Section */}
-//             {reportData.length > 0 ? (
-//               <ReportTable
-//                 reportData={reportData}
-//                 isInward={isInward}
-//                 tableRef={tableRef}
-//               />
-//             ) : (
-//               <View style={styles.emptyTableContainer}>
-//                 <MaterialIcons name="search-off" size={48} color="#CBD5E1" />
-//                 <Text style={styles.emptyTableText}>
-//                   No records found matching your filters.
-//                 </Text>
-//               </View>
-//             )}
-//           </ViewShot>
-//         </View>
-//       ) : (
-//         // Empty State
-//         <View style={styles.emptyStateContainer}>
-//           <MaterialIcons name="error-outline" size={64} color="#E2E8F0" />
-//           <Text style={styles.emptyStateTitle}>Something went wrong</Text>
-//           <Text style={styles.emptyStateText}>
-//             Please go back and try again with different filters.
-//           </Text>
-//         </View>
-//       )}
-
-//       {/* iOS Picker Modal */}
-//       <IOSPickerModal
-//         isVisible={isPickerVisible}
-//         currentPicker={currentPicker}
-//         itemCategory={itemCategory}
-//         itemSubcategory={itemSubcategory}
-//         unit={unit}
-//         apiCategories={apiCategories}
-//         apiSubcategories={apiSubcategories}
-//         units={units}
-//         setItemCategory={setItemCategory}
-//         setItemSubcategory={setItemSubcategory}
-//         setUnit={setUnit}
-//         onClose={() => setIsPickerVisible(false)}
-//       />
-
-//       {/* iOS Date Picker Modal */}
-//       <IOSDatePickerModal
-//         visible={showFromDatePicker && Platform.OS === 'ios'}
-//         date={fromDate}
-//         isInward={isInward}
-//         title="Select From Date"
-//         onClose={() => setShowFromDatePicker(false)}
-//         onDateChange={(event: any, date?: Date) => {
-//           if (date) setFromDate(date);
-//         }}
-//         onConfirm={() => {
-//           onFromDateChange({}, fromDate);
-//           setShowFromDatePicker(false);
-//         }}
-//       />
-
-//       <IOSDatePickerModal
-//         visible={showToDatePicker && Platform.OS === 'ios'}
-//         date={toDate}
-//         isInward={isInward}
-//         title="Select To Date"
-//         onClose={() => setShowToDatePicker(false)}
-//         onDateChange={(event: any, date?: Date) => {
-//           if (date) setToDate(date);
-//         }}
-//         onConfirm={() => {
-//           onToDateChange({}, toDate);
-//           setShowToDatePicker(false);
-//         }}
-//       />
-
-//       {/* PDF Loading Overlay */}
-//       {isPdfDownloading && (
-//         <View style={styles.pdfLoadingOverlay}>
-//           <View style={styles.pdfLoadingCard}>
-//             <Text style={styles.pdfLoadingText}>Generating PDF</Text>
-//             <View style={styles.progressBarContainer}>
-//               <View
-//                 style={[
-//                   styles.progressBar,
-//                   {
-//                     width: `${downloadProgress}%`,
-//                     backgroundColor: isInward ? '#F48221' : '#4682B4',
-//                   },
-//                 ]}
-//               />
-//             </View>
-//             <Text style={styles.progressText}>{statusMessage}</Text>
-//           </View>
-//         </View>
-//       )}
-//     </SafeAreaView>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   safeArea: {
-//     flex: 1,
-//     backgroundColor: '#f8f8f8',
-//     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-//   },
-//   container: {
-//     flex: 1,
-//     backgroundColor: '#f8f8f8',
-//   },
-//   toggleContainer: {
-//     flexDirection: 'row',
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     marginVertical: 20,
-//     marginHorizontal: 20,
-//   },
-//   toggleButton: {
-//     width: 62,
-//     height: 30,
-//     borderRadius: 15,
-//     marginHorizontal: 10,
-//     justifyContent: 'center',
-//   },
-//   toggleCircle: {
-//     width: 22,
-//     height: 22,
-//     borderRadius: 11,
-//     position: 'absolute',
-//   },
-//   toggleText: {
-//     fontSize: 16,
-//     fontWeight: 'bold',
-//   },
-//   toggleTextInactive: {
-//     opacity: 0.5,
-//   },
-//   formContainer: {
-//     margin: 16,
-//     padding: 16,
-//     borderRadius: 10,
-//     ...Platform.select({
-//       ios: {
-//         shadowColor: '#000',
-//         shadowOffset: {
-//           width: 0,
-//           height: 2,
-//         },
-//         shadowOpacity: 0.23,
-//         shadowRadius: 2.62,
-//       },
-//       android: {
-//         elevation: 4,
-//       },
-//     }),
-//   },
-//   inwardForm: {
-//     // backgroundColor: '#FFF3E5', // Light orange
-//     backgroundColor: '#FFFBF6',
-//     borderColor: '#F48221',
-//     borderWidth: 1,
-//   },
-//   outwardForm: {
-//     // backgroundColor: '#E5F0FF', // Light blue
-//     backgroundColor: '#F5F9FF',
-//     borderColor: '#4682B4',
-//     borderWidth: 1,
-//   },
-//   formTitle: {
-//     fontSize: 18,
-//     fontWeight: 'bold',
-//     marginBottom: 16,
-//     textAlign: 'center',
-//   },
-//   formGroup: {
-//     marginBottom: 16,
-//   },
-//   label: {
-//     fontSize: 14,
-//     fontWeight: '600',
-//     marginBottom: 8,
-//     color: '#555',
-//   },
-//   dateInputContainer: {
-//     backgroundColor: '#F8FAFC',
-//     borderColor: '#E2E8F0',
-//     borderWidth: 1,
-//     borderRadius: 12,
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     height: 48,
-//     paddingHorizontal: 12,
-//   },
-//   dateInputContent: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     color: '#2C3E50',
-//     flex: 1,
-//   },
-//   dateText: {
-//     fontSize: 16,
-//     color: '#2C3E50',
-//     marginLeft: 1,
-//   },
-//   inputIcon: {
-//     marginRight: 12,
-//   },
-//   pickerContainer: {
-//     position: 'relative',
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//     backgroundColor: '#FFFFFF',
-//     borderRadius: 8,
-//     borderWidth: 1,
-//     borderColor: '#DDD',
-//     height: 48,
-//     paddingHorizontal: 12,
-//     overflow: 'hidden',
-//   },
-//   disabledPicker: {
-//     backgroundColor: '#F5F5F5',
-//     opacity: 0.7,
-//   },
-//   picker: {
-//     height: 48,
-//     width: '100%',
-//   },
-//   pickerText: {
-//     fontSize: 14,
-//     color: '#333',
-//   },
-//   pickerPlaceholder: {
-//     fontSize: 14,
-//     color: '#999',
-//   },
-//   pickerTextSelected: {
-//     fontSize: 15,
-//     color: '#262626',
-//     fontWeight: 'bold',
-//     flex: 1,
-//   },
-//   pickerTextContainer: {
-//     flex: 1,
-//     paddingVertical: 12,
-//   },
-
-//   buttonContainer: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     marginTop: 24,
-//   },
-//   button: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//     paddingVertical: 12,
-//     paddingHorizontal: 16,
-//     borderRadius: 8,
-//     flex: 1,
-//     marginHorizontal: 4,
-//   },
-//   clearButton: {
-//     backgroundColor: '#888888',
-//   },
-//   buttonText: {
-//     color: '#FFFFFF',
-//     fontWeight: 'bold',
-//     marginLeft: 4,
-//   },
-//   // Loading styles
-//   loadingContainer: {
-//     padding: 20,
-//     alignItems: 'center',
-//   },
-//   loadingText: {
-//     marginTop: 10,
-//     fontSize: 14,
-//     color: '#666',
-//   },
-//   // iOS Modal Styles
-//   modalContainer: {
-//     flex: 1,
-//     justifyContent: 'flex-end',
-//     backgroundColor: 'rgba(0,0,0,0.5)',
-//   },
-//   pickerModalContent: {
-//     backgroundColor: '#FFFFFF',
-//     borderTopLeftRadius: 15,
-//     borderTopRightRadius: 15,
-//     paddingBottom: 20,
-//     color: 'black',
-//   },
-//   pickerHeader: {
-//     flexDirection: 'row',
-//     justifyContent: 'flex-end',
-//     padding: 15,
-//     borderBottomWidth: 1,
-//     borderBottomColor: '#EEEEEE',
-//   },
-//   doneButton: {
-//     paddingHorizontal: 10,
-//     paddingVertical: 5,
-//   },
-//   doneButtonText: {
-//     color: '#007AFF',
-//     fontSize: 16,
-//     fontWeight: '600',
-//   },
-//   // iOS date picker modal styles
-//   iosPicker: {
-//     width: '100%',
-//     height: 200,
-//     backgroundColor: '#FFFFFF', // Add white background
-//   },
-//   iosPickerItem: {
-//     color: '#000000',
-//     fontSize: 16,
-//     // color: 'red',
-//     backgroundColor: '#FFFFFF', // Ensure item background
-//   },
-//   iosDatePickerModal: {
-//     flex: 1,
-//     justifyContent: 'flex-end',
-//     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-//   },
-//   iosDatePickerContainer: {
-//     backgroundColor: '#FFFFFF',
-//     borderTopLeftRadius: 20,
-//     borderTopRightRadius: 20,
-//     padding: 16,
-//     ...Platform.select({
-//       ios: {
-//         shadowColor: '#000',
-//         shadowOffset: {width: 0, height: -2},
-//         shadowOpacity: 0.1,
-//         shadowRadius: 4,
-//       },
-//     }),
-//   },
-//   iosDatePickerHeader: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//     paddingBottom: 16,
-//     borderBottomWidth: 1,
-//     borderBottomColor: '#E2E8F0',
-//   },
-//   iosDatePickerTitle: {
-//     fontSize: 18,
-//     fontWeight: '600',
-//     color: '#2C3E50',
-//   },
-//   iosDatePickerDoneBtn: {
-//     fontSize: 16,
-//     fontWeight: '600',
-//     color: '#F48221',
-//   },
-//   iosDatePicker: {
-//     height: 200,
-//     marginTop: 10,
-//   },
-//   iosDatePickerConfirmBtn: {
-//     backgroundColor: '#F48221',
-//     borderRadius: 12,
-//     padding: 16,
-//     alignItems: 'center',
-//     marginTop: 16,
-//     marginBottom: 5,
-//   },
-//   iosDatePickerConfirmText: {
-//     color: '#FFFFFF',
-//     fontSize: 16,
-//     fontWeight: '600',
-//   },
-//   // Android picker styles
-//   androidPickerContainer: {
-//     borderWidth: 1,
-//     borderColor: '#E2E8F0',
-//     borderRadius: 8,
-//     backgroundColor: '#F8FAFC',
-//     height: 50,
-//     position: 'relative',
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     justifyContent: 'space-between',
-//     marginBottom: 8,
-//     paddingHorizontal: 12,
-//   },
-//   disabledAndroidPicker: {
-//     opacity: 0.7,
-//     backgroundColor: '#F0F0F0',
-//     borderColor: '#E0E0E0',
-//   },
-//   androidSelectedText: {
-//     color: '#2C3E50',
-//     fontSize: 15,
-//     maxWidth: '90%',
-//   },
-//   androidPicker: {
-//     width: '100%',
-//     height: 50,
-//     position: 'absolute',
-
-//     top: 0,
-//     left: 0,
-//     right: 0,
-//     bottom: 0,
-//     opacity: 0, // Make the picker transparent but still functional
-//   },
-//   androidDropdownIcon: {
-//     position: 'absolute',
-//     right: 12,
-//   },
-//   disabledAndroidText: {
-//     color: '#A0A0A0',
-//   },
-//   reportContainer: {
-//     flex: 1,
-//     backgroundColor: '#FFFFFF',
-//     marginTop: -24, // Increased negative margin to further reduce space above header
-//   },
-//   reportHeader: {
-//     padding: 0,
-//     paddingTop: 50,
-//     paddingBottom: 12,
-//     paddingHorizontal: 16,
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//     borderBottomWidth: 1,
-//     borderBottomColor: '#E2E8F0',
-//     ...Platform.select({
-//       ios: {
-//         shadowColor: '#000',
-//         shadowOffset: {width: 0, height: 1},
-//         shadowOpacity: 0.1,
-//         shadowRadius: 2,
-//       },
-//       android: {
-//         elevation: 2,
-//       },
-//     }),
-//   },
-//   reportTitle: {
-//     fontSize: 18,
-//     fontWeight: 'bold',
-//     flex: 1,
-//     textAlign: 'center',
-//     // marginTop: 10,
-//   },
-//   backButton: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     paddingVertical: 8,
-//     paddingHorizontal: 11,
-//     borderRadius: 4,
-//     borderWidth: 1,
-//     ...Platform.select({
-//       ios: {
-//         shadowColor: '#000',
-//         shadowOffset: {width: 0, height: 1},
-//         shadowOpacity: 0.1,
-//         shadowRadius: 1,
-//       },
-//       android: {
-//         elevation: 1,
-//       },
-//     }),
-//   },
-//   backButtonText: {
-//     marginLeft: 6,
-//     fontSize: 14,
-//     fontWeight: '600',
-//   },
-//   pdfButton: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     paddingVertical: 7,
-//     paddingHorizontal: 15,
-//     borderRadius: 4,
-//   },
-//   pdfButtonText: {
-//     color: '#FFFFFF',
-//     fontWeight: 'bold',
-//     fontSize: 14,
-//     marginLeft: 4,
-//   },
-//   reportSubHeader: {
-//     padding: 8,
-//     borderBottomWidth: 1,
-//     borderBottomColor: '#E2E8F0',
-//     flexDirection: 'row',
-//     justifyContent: 'flex-end',
-//     alignItems: 'center',
-//   },
-//   loadingIndicatorContainer: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//   },
-//   loadingIndicatorText: {
-//     marginLeft: 8,
-//     fontSize: 14,
-//     color: '#64748B',
-//   },
-//   resultsSummaryContainer: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//   },
-//   reportCountText: {
-//     marginLeft: 8,
-//     fontSize: 14,
-//     fontWeight: '500',
-//   },
-//   scrollHintContainer: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//     paddingVertical: 8,
-//     backgroundColor: '#f8f8f8',
-//     borderBottomWidth: 1,
-//     borderBottomColor: '#E2E8F0',
-//   },
-//   scrollHintText: {
-//     fontSize: 13,
-//     color: '#64748B',
-//     marginLeft: 6,
-//   },
-//   tableContainer: {
-//     flex: 1,
-//     borderWidth: 1,
-//     borderColor: '#E2E8F0',
-//     margin: 0,
-//     borderRadius: 0,
-//   },
-//   horizontalScrollContainer: {
-//     flex: 1,
-//   },
-//   tableWrapper: {
-//     flexDirection: 'column',
-//   },
-//   tableHeader: {
-//     flexDirection: 'row',
-//     paddingVertical: 14,
-//     paddingHorizontal: 0,
-//     borderBottomWidth: 1,
-//     borderBottomColor: '#CBD5E1',
-//   },
-//   tableHeaderCell: {
-//     fontSize: 14,
-//     fontWeight: 'bold',
-//     paddingHorizontal: 6,
-//     textAlign: 'center',
-//   },
-//   tableRow: {
-//     flexDirection: 'row',
-//     paddingVertical: 14,
-//     paddingHorizontal: 8,
-//     borderBottomWidth: 1,
-//     borderBottomColor: '#E2E8F0',
-//   },
-//   tableCell: {
-//     fontSize: 14,
-//     color: '#334155',
-//     paddingHorizontal: 6,
-//     paddingVertical: 2,
-//     textAlign: 'center',
-//   },
-//   emptyTableContainer: {
-//     padding: 40,
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//   },
-//   emptyTableText: {
-//     fontSize: 16,
-//     color: '#94A3B8',
-//     textAlign: 'center',
-//   },
-//   emptyStateContainer: {
-//     flex: 1,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     padding: 20,
-//   },
-//   emptyStateTitle: {
-//     fontSize: 18,
-//     fontWeight: 'bold',
-//     color: '#64748B',
-//     marginTop: 16,
-//   },
-//   emptyStateText: {
-//     fontSize: 14,
-//     color: '#94A3B8',
-//     textAlign: 'center',
-//     marginTop: 8,
-//     maxWidth: 300,
-//   },
-//   pdfLoadingOverlay: {
-//     position: 'absolute',
-//     top: 0,
-//     left: 0,
-//     right: 0,
-//     bottom: 0,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-//     zIndex: 1000,
-//   },
-//   pdfLoadingCard: {
-//     backgroundColor: '#FFFFFF',
-//     padding: 20,
-//     borderRadius: 10,
-//     alignItems: 'center',
-//   },
-//   pdfLoadingText: {
-//     fontSize: 18,
-//     fontWeight: 'bold',
-//     marginBottom: 20,
-//   },
-//   progressBarContainer: {
-//     width: '100%',
-//     height: 20,
-//     backgroundColor: '#E2E8F0',
-//     borderRadius: 10,
-//     marginBottom: 10,
-//   },
-//   progressBar: {
-//     height: '100%',
-//     borderRadius: 10,
-//   },
-//   progressText: {
-//     fontSize: 14,
-//     fontWeight: 'bold',
-//   },
-//   disabledButton: {
-//     opacity: 0.5,
-//   },
-//   // iOS date picker styling
-//   inwardDatePicker: {
-//     borderColor: '#F48221',
-//     borderWidth: 1,
-//   },
-//   outwardDatePicker: {
-//     borderColor: '#4682B4',
-//     borderWidth: 1,
-//   },
-//   reportContent: {
-//     flex: 1,
-//   },
-//   reportHeaderLeft: {
-//     flex: 1,
-//     alignItems: 'flex-start',
-//   },
-//   reportHeaderCenter: {
-//     flex: 2,
-//     alignItems: 'center',
-//   },
-//   reportHeaderRight: {
-//     flex: 1,
-//     alignItems: 'flex-end',
-//   },
-// });
-
-// export default InwardOutwardReportScreen;
-
 import React, {useState, useEffect, useRef} from 'react';
 import {
   StyleSheet,
@@ -1316,16 +10,21 @@ import {
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
+  TextInput,
+  Modal,
+  FlatList,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {Picker} from '@react-native-picker/picker';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ViewShot from 'react-native-view-shot';
 import axios from 'axios';
+import {useNavigation} from '@react-navigation/native';
 // Custom components
 import ReportTable from '../components/ReportTable';
 import IOSPickerModal from '../components/IOSPickerModal';
 import IOSDatePickerModal from '../components/IOSDatePickerModal';
+import MultiSelect from '../components/Multiselect';
 // Custom hooks
 import {useReportData, ReportFilters} from '../hooks/useReportData';
 import {usePdfGeneration} from '../hooks/usePdfGeneration';
@@ -1336,11 +35,31 @@ import PushNotificationIOS from '@react-native-community/push-notification-ios';
 import {openPdf} from '../utils/ReportPdfUtils';
 // API constants
 import {API_ENDPOINTS, DEFAULT_HEADERS} from '../config/api.config';
+import {LayoutWrapper} from '../components/AppLayout';
 
 // Time period types for the report
 type TimePeriod = 'Weekly' | 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Custom';
 
+// Interface for dropdown option
+interface DropdownOption {
+  label: string;
+  value: string;
+}
+
+// Custom dropdown component props interface
+interface CustomDropdownProps {
+  options: DropdownOption[];
+  selectedValue: string;
+  onSelect: (value: string) => void;
+  placeholder: string;
+  disabled?: boolean;
+  primaryColor?: string;
+}
+
 const InwardOutwardReportScreen = () => {
+  // Get navigation
+  const navigation = useNavigation<any>();
+  const route = useState();
   // Mode state
   const [isInward, setIsInward] = useState(true);
 
@@ -1349,8 +68,9 @@ const InwardOutwardReportScreen = () => {
   const [toDate, setToDate] = useState(new Date());
   const [showFromDatePicker, setShowFromDatePicker] = useState(false);
   const [showToDatePicker, setShowToDatePicker] = useState(false);
-  const [itemCategory, setItemCategory] = useState('');
-  const [itemSubcategory, setItemSubcategory] = useState('');
+  // Change from single selection to arrays
+  const [itemCategories, setItemCategories] = useState<string[]>([]);
+  const [itemSubcategories, setItemSubcategories] = useState<string[]>([]);
   const [unit, setUnit] = useState('');
 
   // Time period selection states
@@ -1382,6 +102,110 @@ const InwardOutwardReportScreen = () => {
   // Refs
   const tableRef = useRef<ScrollView>(null);
   const viewshotRef = useRef(null);
+
+  // Handler for Inward/Outward No cell press
+  const handleInwardOutwardNoPress = (item: any) => {
+    if (isInward && item.GRN_NO) {
+      // For inward items, navigate to GrnDetailsScreen with the GRN_NO
+      console.log('Navigating to GrnDetailsScreen with GRN_NO:', item.GRN_NO);
+      // Pass all the item data to the detail screen
+      navigation.navigate('GrnDetailsScreen', {
+        grnNo: item.GRN_NO,
+        item: item,
+        customerId: item.CUSTOMER_ID,
+      });
+    }
+    // Future implementation for outward items can be added here
+  };
+
+  // Custom dropdown component defined inside the main component
+  // to access the isInward state
+  const CustomDropdown = ({
+    options,
+    selectedValue,
+    onSelect,
+    placeholder,
+    disabled = false,
+    primaryColor,
+  }: CustomDropdownProps) => {
+    const [isVisible, setIsVisible] = useState(false);
+
+    // Use the isInward state if primaryColor is not provided
+    const color = primaryColor || (isInward ? '#F48221' : '#4682B4');
+
+    const selectedOption = options.find(
+      option => option.value === selectedValue,
+    );
+    const displayText = selectedOption ? selectedOption.label : placeholder;
+
+    return (
+      <View
+        style={[
+          styles.customDropdownContainer,
+          disabled && styles.disabledDropdown,
+        ]}>
+        <TouchableOpacity
+          style={styles.customDropdownButton}
+          onPress={() => !disabled && setIsVisible(true)}
+          disabled={disabled}>
+          <Text
+            style={
+              selectedOption
+                ? styles.customDropdownSelectedText
+                : styles.customDropdownPlaceholderText
+            }
+            numberOfLines={1}
+            ellipsizeMode="tail">
+            {displayText}
+          </Text>
+          <MaterialIcons name="arrow-drop-down" size={24} color="#555" />
+        </TouchableOpacity>
+
+        <Modal
+          visible={isVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setIsVisible(false)}>
+          <TouchableOpacity
+            style={styles.customModalOverlay}
+            activeOpacity={1}
+            onPress={() => setIsVisible(false)}>
+            <View style={styles.customModalContent}>
+              <FlatList
+                data={options}
+                keyExtractor={(item, index) => `${item.value}-${index}`}
+                style={{width: '100%'}}
+                renderItem={({item}) => (
+                  <TouchableOpacity
+                    style={[
+                      styles.customOptionItem,
+                      selectedValue === item.value && {
+                        backgroundColor: '#f4f4f4',
+                      },
+                    ]}
+                    onPress={() => {
+                      onSelect(item.value);
+                      setIsVisible(false);
+                    }}>
+                    <Text
+                      style={[
+                        styles.customOptionText,
+                        selectedValue === item.value && {
+                          color,
+                          fontWeight: '500',
+                        },
+                      ]}>
+                      {item.label}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      </View>
+    );
+  };
 
   // Use custom hooks
   const {
@@ -1446,8 +270,8 @@ const InwardOutwardReportScreen = () => {
   const handleClear = () => {
     setFromDate(new Date());
     setToDate(new Date());
-    setItemCategory('');
-    setItemSubcategory('');
+    setItemCategories([]);
+    setItemSubcategories([]);
     setUnit('');
     setTimePeriod('Custom');
     setSelectedWeek(null);
@@ -1783,6 +607,7 @@ const InwardOutwardReportScreen = () => {
       setIsReportLoading(true);
       setShowReport(true);
       setShowForm(false);
+      setLocalReportData([]); // Clear previous data
 
       // Format dates for API (YYYY-MM-DD)
       const formatDateForApi = (date: Date) => {
@@ -1792,13 +617,21 @@ const InwardOutwardReportScreen = () => {
         )}-${String(date.getDate()).padStart(2, '0')}`;
       };
 
-      // Build request data with optional fields as null when not selected
-      const requestData = {
+      // Build request data with arrays for categories and subcategories
+      const requestData: {
+        fromDate: string;
+        toDate: string;
+        customerName: string;
+        itemCategoryName: string[] | null;
+        itemSubCategoryName: string[] | null;
+        unitName: string | null;
+      } = {
         fromDate: formatDateForApi(fromDate),
         toDate: formatDateForApi(toDate),
         customerName: customerName, // Use customer name from state
-        itemCategoryName: itemCategory ? itemCategory.trim() : null,
-        itemSubCategoryName: itemSubcategory ? itemSubcategory.trim() : null,
+        itemCategoryName: itemCategories.length > 0 ? itemCategories : null,
+        itemSubCategoryName:
+          itemSubcategories.length > 0 ? itemSubcategories : null,
         unitName: unit ? unit.trim() : null,
       };
 
@@ -1810,11 +643,15 @@ const InwardOutwardReportScreen = () => {
       console.log('customerName exact value:', requestData.customerName);
       console.log(
         'itemCategoryName exact value:',
-        requestData.itemCategoryName,
+        requestData.itemCategoryName
+          ? JSON.stringify(requestData.itemCategoryName)
+          : null,
       );
       console.log(
         'itemSubCategoryName exact value:',
-        requestData.itemSubCategoryName,
+        requestData.itemSubCategoryName
+          ? JSON.stringify(requestData.itemSubCategoryName)
+          : null,
       );
       console.log('unitName exact value:', requestData.unitName);
 
@@ -1877,15 +714,21 @@ const InwardOutwardReportScreen = () => {
             '- Unit match:',
             sampleRecord.UNIT_NAME === requestData.unitName,
           );
-        if (itemCategory)
+        if (itemCategories.length > 0)
           console.log(
             '- Category match:',
-            sampleRecord.ITEM_CATEG_NAME === requestData.itemCategoryName,
+            requestData.itemCategoryName &&
+              requestData.itemCategoryName.includes(
+                sampleRecord.ITEM_CATEG_NAME,
+              ),
           );
-        if (itemSubcategory)
+        if (itemSubcategories.length > 0)
           console.log(
             '- Subcategory match:',
-            sampleRecord.SUB_CATEGORY_NAME === requestData.itemSubCategoryName,
+            requestData.itemSubCategoryName &&
+              requestData.itemSubCategoryName.includes(
+                sampleRecord.SUB_CATEGORY_NAME,
+              ),
           );
         console.log(
           '- Customer match:',
@@ -1906,12 +749,17 @@ const InwardOutwardReportScreen = () => {
           const unitMatch =
             requestData.unitName === null ||
             item.UNIT_NAME === requestData.unitName;
+
+          // Safe filtering for category and subcategory arrays
           const categoryMatch =
-            requestData.itemCategoryName === null ||
-            item.ITEM_CATEG_NAME === requestData.itemCategoryName;
+            !requestData.itemCategoryName ||
+            (requestData.itemCategoryName &&
+              requestData.itemCategoryName.includes(item.ITEM_CATEG_NAME));
+
           const subcategoryMatch =
-            requestData.itemSubCategoryName === null ||
-            item.SUB_CATEGORY_NAME === requestData.itemSubCategoryName;
+            !requestData.itemSubCategoryName ||
+            (requestData.itemSubCategoryName &&
+              requestData.itemSubCategoryName.includes(item.SUB_CATEGORY_NAME));
 
           return (
             customerMatch && unitMatch && categoryMatch && subcategoryMatch
@@ -1985,8 +833,8 @@ const InwardOutwardReportScreen = () => {
       // Create PDF with all necessary parameters
       await generatePdf(localReportData, fromDate, toDate, customerName, {
         unit,
-        itemCategory,
-        itemSubcategory,
+        itemCategories,
+        itemSubcategories,
       });
     } catch (err) {
       console.error('Error in PDF download flow:', err);
@@ -2006,12 +854,13 @@ const InwardOutwardReportScreen = () => {
     return `${startYear}-${endYear.toString().slice(-2)}`;
   };
 
-  // Reset subcategory when category changes
+  // Reset subcategories when categories change
   useEffect(() => {
-    if (itemCategory) {
-      setItemSubcategory('');
+    // Clear subcategories when categories change
+    if (itemCategories.length === 0) {
+      setItemSubcategories([]);
     }
-  }, [itemCategory]);
+  }, [itemCategories]);
 
   // Configure notifications on component mount
   useEffect(() => {
@@ -2065,68 +914,7 @@ const InwardOutwardReportScreen = () => {
     };
   }, []);
 
-  // Render appropriate picker components for iOS
-  const renderIOSPicker = () => {
-    switch (currentPicker) {
-      case 'category':
-        return (
-          <Picker
-            selectedValue={itemCategory}
-            onValueChange={value => setItemCategory(value)}
-            style={styles.iosPicker}
-            itemStyle={styles.iosPickerItem}>
-            <Picker.Item label="Select Category" value="" color="black" />
-            {apiCategories.map((category, index) => (
-              <Picker.Item
-                key={index}
-                label={category}
-                value={category}
-                color="black"
-              />
-            ))}
-          </Picker>
-        );
-      case 'subcategory':
-        return (
-          <Picker
-            selectedValue={itemSubcategory}
-            onValueChange={value => setItemSubcategory(value)}
-            style={styles.iosPicker}
-            itemStyle={styles.iosPickerItem}>
-            <Picker.Item label="Select Subcategory" value="" />
-            {itemCategory &&
-              apiSubcategories[itemCategory] &&
-              apiSubcategories[itemCategory].map(
-                (subcategory: string, index: number) => (
-                  <Picker.Item
-                    key={index}
-                    label={subcategory}
-                    value={subcategory}
-                    color="#333333"
-                  />
-                ),
-              )}
-          </Picker>
-        );
-      case 'unit':
-        return (
-          <Picker
-            selectedValue={unit}
-            onValueChange={value => setUnit(value)}
-            style={styles.iosPicker}
-            itemStyle={styles.iosPickerItem}>
-            <Picker.Item label="Select Unit" value="" />
-            {units.map((unit, index) => (
-              <Picker.Item key={index} label={unit} value={unit} />
-            ))}
-          </Picker>
-        );
-      default:
-        return null;
-    }
-  };
-
-  // Render picker based on platform
+  // Updated renderPicker that uses the CustomDropdown component
   const renderPicker = (
     pickerType: string,
     value: string,
@@ -2135,66 +923,23 @@ const InwardOutwardReportScreen = () => {
     onValueChange: (value: string) => void,
     enabled: boolean = true,
   ) => {
-    if (Platform.OS === 'ios') {
-      return (
-        <TouchableOpacity
-          style={[styles.pickerContainer, !enabled && styles.disabledPicker]}
-          onPress={() => {
-            if (enabled) openPicker(pickerType);
-          }}
-          disabled={!enabled}>
-          <Text
-            style={value ? styles.pickerTextSelected : styles.pickerPlaceholder}
-            numberOfLines={1}
-            ellipsizeMode="tail">
-            {value || `Select ${label}`}
-          </Text>
-          <MaterialIcons name="arrow-drop-down" size={24} color="#555" />
-        </TouchableOpacity>
-      );
-    } else {
-      // For Android, create better contrast with a dark background
-      return (
-        <View
-          style={[
-            styles.androidPickerContainer,
-            !enabled && styles.disabledAndroidPicker,
-          ]}>
-          {/* The text that shows the selected value */}
-          <Text
-            style={[
-              styles.androidSelectedText,
-              !enabled && styles.disabledAndroidText,
-            ]}
-            numberOfLines={1}
-            ellipsizeMode="tail">
-            {value || `Select ${label}`}
-          </Text>
+    // Convert items array to DropdownOption format
+    const options: DropdownOption[] = [
+      {label: `Select ${label}`, value: ''},
+      ...items.map(item => ({label: item, value: item})),
+    ];
 
-          {/* Dropdown arrow icon */}
-          <MaterialIcons
-            name="arrow-drop-down"
-            size={28}
-            color="#2C3E50"
-            style={styles.androidDropdownIcon}
-          />
-
-          {/* The actual picker is transparent and overlays the text */}
-          <Picker
-            selectedValue={value}
-            onValueChange={onValueChange}
-            enabled={enabled}
-            mode="dropdown"
-            prompt={`Select ${label}`}
-            style={styles.androidPicker}>
-            <Picker.Item label={`Select ${label}`} value="" color="#FFFFFF" />
-            {items.map((item, index) => (
-              <Picker.Item key={index} label={item} value={item} />
-            ))}
-          </Picker>
-        </View>
-      );
-    }
+    // Use the custom dropdown for both iOS and Android
+    return (
+      <CustomDropdown
+        options={options}
+        selectedValue={value}
+        onSelect={onValueChange}
+        placeholder={`Select ${label}`}
+        disabled={!enabled}
+        primaryColor={isInward ? '#F48221' : '#4682B4'}
+      />
+    );
   };
 
   // Helper function to check if a date is within the selected financial year range
@@ -2205,447 +950,516 @@ const InwardOutwardReportScreen = () => {
     return year === startYear || (year === endYear && month <= 11);
   };
 
+  // Implement getAvailableSubcategories function
+  const getAvailableSubcategories = () => {
+    let allSubcategories: string[] = [];
+
+    // If no categories selected, return empty array
+    if (itemCategories.length === 0) {
+      return [];
+    }
+
+    // Collect subcategories from all selected categories
+    itemCategories.forEach(category => {
+      if (apiSubcategories[category]) {
+        allSubcategories = [...allSubcategories, ...apiSubcategories[category]];
+      }
+    });
+
+    // Remove duplicates
+    const uniqueSubcategories = [...new Set(allSubcategories)];
+
+    // Convert to option format
+    return uniqueSubcategories.map(subcat => ({
+      label: subcat,
+      value: subcat,
+    }));
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar
-        backgroundColor={isInward ? '#F48221' : '#4682B4'}
-        barStyle="light-content"
-      />
+    <LayoutWrapper showHeader={true} showTabBar={false} route={route}>
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar
+          backgroundColor={isInward ? '#F48221' : '#4682B4'}
+          barStyle="light-content"
+        />
 
-      {showForm ? (
-        // Form Section
-        <ScrollView style={styles.container}>
-          {/* Toggle Button */}
-          <View style={styles.toggleContainer}>
-            <Text
-              style={[
-                styles.toggleText,
-                !isInward && styles.toggleTextInactive,
-              ]}>
-              Inward
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                {backgroundColor: isInward ? '#F48221' : '#4682B4'},
-                styles.toggleButtonEnhanced,
-              ]}
-              onPress={() => setIsInward(!isInward)}>
-              <View
+        {showForm ? (
+          // Form Section
+          <ScrollView style={styles.container}>
+            {/* Toggle Button */}
+            <View style={styles.toggleContainer}>
+              <Text
                 style={[
-                  styles.toggleCircle,
-                  {
-                    left: isInward ? 4 : 36,
-                    backgroundColor: '#FFFFFF',
-                  },
+                  styles.toggleText,
+                  !isInward && styles.toggleTextInactive,
+                ]}>
+                Inward
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.toggleButton,
+                  {backgroundColor: isInward ? '#F48221' : '#4682B4'},
+                  styles.toggleButtonEnhanced,
                 ]}
-              />
-            </TouchableOpacity>
-            <Text
-              style={[
-                styles.toggleText,
-                isInward && styles.toggleTextInactive,
-              ]}>
-              Outward
-            </Text>
-          </View>
-
-          {/* Financial Year Selection - Moved outside the form container */}
-          {timePeriod !== ('Custom' as TimePeriod) && (
-            <View style={styles.financialYearContainer}>
-              <Text style={styles.label}>Financial Year :</Text>
-              <View style={styles.selectorWrapper}>
-                <TouchableOpacity
+                onPress={() => setIsInward(!isInward)}>
+                <View
                   style={[
-                    styles.financialYearSelector,
+                    styles.toggleCircle,
                     {
-                      borderColor: isInward ? '#F48221' : '#4682B4',
-                      backgroundColor: isInward ? '#FFFBF6' : '#F5F9FF',
+                      left: isInward ? 4 : 36,
+                      backgroundColor: '#FFFFFF',
                     },
                   ]}
-                  onPress={() =>
-                    setShowFinancialYearSelector(!showFinancialYearSelector)
-                  }>
-                  <Text
+                />
+              </TouchableOpacity>
+              <Text
+                style={[
+                  styles.toggleText,
+                  isInward && styles.toggleTextInactive,
+                ]}>
+                Outward
+              </Text>
+            </View>
+
+            {/* Financial Year Selection - Moved outside the form container */}
+            {timePeriod !== ('Custom' as TimePeriod) && (
+              <View style={styles.financialYearContainer}>
+                <Text style={styles.label}>Financial Year :</Text>
+                <View style={styles.selectorWrapper}>
+                  <TouchableOpacity
                     style={[
-                      styles.financialYearText,
-                      {color: isInward ? '#F48221' : '#4682B4'},
-                    ]}>
-                    {getFinancialYearDisplay(financialYear)}
-                  </Text>
-                  <MaterialIcons
-                    name={
-                      showFinancialYearSelector
-                        ? 'keyboard-arrow-up'
-                        : 'keyboard-arrow-down'
-                    }
-                    size={24}
+                      styles.financialYearSelector,
+                      {
+                        borderColor: isInward ? '#F48221' : '#4682B4',
+                        backgroundColor: isInward ? '#FFFBF6' : '#F5F9FF',
+                      },
+                    ]}
+                    onPress={() =>
+                      setShowFinancialYearSelector(!showFinancialYearSelector)
+                    }>
+                    <Text
+                      style={[
+                        styles.financialYearText,
+                        {color: isInward ? '#F48221' : '#4682B4'},
+                      ]}>
+                      {getFinancialYearDisplay(financialYear)}
+                    </Text>
+                    <MaterialIcons
+                      name={
+                        showFinancialYearSelector
+                          ? 'keyboard-arrow-up'
+                          : 'keyboard-arrow-down'
+                      }
+                      size={24}
+                      color={isInward ? '#F48221' : '#4682B4'}
+                    />
+                  </TouchableOpacity>
+
+                  {showFinancialYearSelector && (
+                    <View
+                      style={[
+                        styles.financialYearDropdown,
+                        {borderColor: isInward ? '#F48221' : '#4682B4'},
+                      ]}>
+                      {[
+                        {display: '2025-26', value: '2025'},
+                        {display: '2024-25', value: '2024'},
+                        {display: '2023-24', value: '2023'},
+                        {display: '2022-23', value: '2022'},
+                        {display: '2021-22', value: '2021'},
+                        {display: '2020-21', value: '2020'},
+                        {display: '2019-20', value: '2019'},
+                        {display: '2018-19', value: '2018'},
+                      ].map((yearOption, index) => (
+                        <TouchableOpacity
+                          key={yearOption.display}
+                          style={[
+                            styles.financialYearOption,
+                            financialYear === yearOption.value && [
+                              styles.selectedFinancialYear,
+                              {
+                                backgroundColor: isInward
+                                  ? '#FFF3E0'
+                                  : '#E6F0FA',
+                              },
+                            ],
+                            index === 0 && styles.firstYearOption,
+                            index === 7 && styles.lastYearOption,
+                          ]}
+                          onPress={() => {
+                            setFinancialYear(yearOption.value);
+                            console.log(
+                              'Financial year selected:',
+                              yearOption.display,
+                            );
+                            setShowFinancialYearSelector(false);
+
+                            // Update the calendar year
+                            const yearValue = parseInt(yearOption.value);
+
+                            // Set the current month and year based on the selected financial year
+                            setCurrentYear(yearValue);
+
+                            // Update date ranges based on the current time period without changing the period
+                            const currentPeriod = timePeriod;
+
+                            // Handle different periods without toggling back to custom
+                            if (currentPeriod === 'Weekly') {
+                              // Update week dates for the new year
+                              const weekStart = new Date(
+                                yearValue,
+                                currentMonth,
+                                1,
+                              );
+                              // Adjust to start on Sunday
+                              const dayOfWeek = weekStart.getDay();
+                              if (dayOfWeek !== 0) {
+                                weekStart.setDate(
+                                  weekStart.getDate() + (7 - dayOfWeek),
+                                );
+                              }
+
+                              const weekEnd = new Date(weekStart);
+                              weekEnd.setDate(weekStart.getDate() + 6);
+
+                              setFromDate(weekStart);
+                              setToDate(weekEnd);
+                              setSelectedWeek(null); // Reset selected week
+                            } else if (currentPeriod === 'Monthly') {
+                              // Default to current month but in the new year
+                              const startOfMonth = new Date(
+                                yearValue,
+                                currentMonth,
+                                1,
+                              );
+                              const endOfMonth = new Date(
+                                yearValue,
+                                currentMonth + 1,
+                                0,
+                              );
+
+                              setFromDate(startOfMonth);
+                              setToDate(endOfMonth);
+                              setSelectedMonth(null); // Reset selected month
+                            } else if (currentPeriod === 'Quarterly') {
+                              // Default to current quarter in new year
+                              const currentQuarter = Math.floor(
+                                new Date().getMonth() / 3,
+                              );
+                              const startOfQuarter = new Date(
+                                yearValue,
+                                currentQuarter * 3,
+                                1,
+                              );
+                              const endOfQuarter = new Date(
+                                yearValue,
+                                (currentQuarter + 1) * 3,
+                                0,
+                              );
+
+                              setFromDate(startOfQuarter);
+                              setToDate(endOfQuarter);
+                              setSelectedQuarter(null); // Reset selected quarter
+                            } else if (currentPeriod === 'Half-Yearly') {
+                              // Default to current half year in new year
+                              const currentMonth = new Date().getMonth();
+                              const isFirstHalf =
+                                currentMonth >= 0 && currentMonth < 6; // Jan-Jun is first half
+                              const startMonth = isFirstHalf ? 0 : 6; // Jan or Jul
+                              const endMonth = isFirstHalf ? 5 : 11; // Jun or Dec
+
+                              const startOfHalf = new Date(
+                                yearValue,
+                                startMonth,
+                                1,
+                              );
+                              const endOfHalf = new Date(
+                                yearValue,
+                                endMonth + 1,
+                                0,
+                              );
+
+                              setFromDate(startOfHalf);
+                              setToDate(endOfHalf);
+                              setSelectedHalf(null); // Reset selected half
+                            } else {
+                              // For Custom, update to start and end of calendar year
+                              setFromDate(new Date(yearValue, 0, 1)); // January 1st
+                              setToDate(new Date(yearValue, 11, 31)); // December 31st
+                            }
+                          }}>
+                          <Text
+                            style={[
+                              styles.financialYearOptionText,
+                              financialYear === yearOption.value && [
+                                styles.selectedFinancialYearText,
+                                {color: isInward ? '#F48221' : '#4682B4'},
+                              ],
+                            ]}>
+                            {yearOption.display}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              </View>
+            )}
+
+            <View
+              style={[
+                styles.formContainer,
+                isInward ? styles.inwardForm : styles.outwardForm,
+              ]}>
+              <Text
+                style={[
+                  styles.formTitle,
+                  {color: isInward ? '#F48221' : '#4682B4'},
+                ]}>
+                {isInward ? 'Inward Report' : 'Outward Report'}
+              </Text>
+
+              {/* Loading Indicator */}
+              {loading && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator
+                    size="large"
                     color={isInward ? '#F48221' : '#4682B4'}
                   />
-                </TouchableOpacity>
-
-                {showFinancialYearSelector && (
-                  <View
-                    style={[
-                      styles.financialYearDropdown,
-                      {borderColor: isInward ? '#F48221' : '#4682B4'},
-                    ]}>
-                    {[
-                      {display: '2025-26', value: '2025'},
-                      {display: '2024-25', value: '2024'},
-                      {display: '2023-24', value: '2023'},
-                      {display: '2022-23', value: '2022'},
-                      {display: '2021-22', value: '2021'},
-                      {display: '2020-21', value: '2020'},
-                      {display: '2019-20', value: '2019'},
-                      {display: '2018-19', value: '2018'},
-                    ].map((yearOption, index) => (
-                      <TouchableOpacity
-                        key={yearOption.display}
-                        style={[
-                          styles.financialYearOption,
-                          financialYear === yearOption.value && [
-                            styles.selectedFinancialYear,
-                            {backgroundColor: isInward ? '#FFF3E0' : '#E6F0FA'},
-                          ],
-                          index === 0 && styles.firstYearOption,
-                          index === 7 && styles.lastYearOption,
-                        ]}
-                        onPress={() => {
-                          setFinancialYear(yearOption.value);
-                          console.log(
-                            'Financial year selected:',
-                            yearOption.display,
-                          );
-                          setShowFinancialYearSelector(false);
-
-                          // Update the calendar year
-                          const yearValue = parseInt(yearOption.value);
-
-                          // Set the current month and year based on the selected financial year
-                          setCurrentYear(yearValue);
-
-                          // Update date ranges based on the current time period without changing the period
-                          const currentPeriod = timePeriod;
-
-                          // Handle different periods without toggling back to custom
-                          if (currentPeriod === 'Weekly') {
-                            // Update week dates for the new year
-                            const weekStart = new Date(
-                              yearValue,
-                              currentMonth,
-                              1,
-                            );
-                            // Adjust to start on Sunday
-                            const dayOfWeek = weekStart.getDay();
-                            if (dayOfWeek !== 0) {
-                              weekStart.setDate(
-                                weekStart.getDate() + (7 - dayOfWeek),
-                              );
-                            }
-
-                            const weekEnd = new Date(weekStart);
-                            weekEnd.setDate(weekStart.getDate() + 6);
-
-                            setFromDate(weekStart);
-                            setToDate(weekEnd);
-                            setSelectedWeek(null); // Reset selected week
-                          } else if (currentPeriod === 'Monthly') {
-                            // Default to current month but in the new year
-                            const startOfMonth = new Date(
-                              yearValue,
-                              currentMonth,
-                              1,
-                            );
-                            const endOfMonth = new Date(
-                              yearValue,
-                              currentMonth + 1,
-                              0,
-                            );
-
-                            setFromDate(startOfMonth);
-                            setToDate(endOfMonth);
-                            setSelectedMonth(null); // Reset selected month
-                          } else if (currentPeriod === 'Quarterly') {
-                            // Default to current quarter in new year
-                            const currentQuarter = Math.floor(
-                              new Date().getMonth() / 3,
-                            );
-                            const startOfQuarter = new Date(
-                              yearValue,
-                              currentQuarter * 3,
-                              1,
-                            );
-                            const endOfQuarter = new Date(
-                              yearValue,
-                              (currentQuarter + 1) * 3,
-                              0,
-                            );
-
-                            setFromDate(startOfQuarter);
-                            setToDate(endOfQuarter);
-                            setSelectedQuarter(null); // Reset selected quarter
-                          } else if (currentPeriod === 'Half-Yearly') {
-                            // Default to current half year in new year
-                            const currentMonth = new Date().getMonth();
-                            const isFirstHalf =
-                              currentMonth >= 0 && currentMonth < 6; // Jan-Jun is first half
-                            const startMonth = isFirstHalf ? 0 : 6; // Jan or Jul
-                            const endMonth = isFirstHalf ? 5 : 11; // Jun or Dec
-
-                            const startOfHalf = new Date(
-                              yearValue,
-                              startMonth,
-                              1,
-                            );
-                            const endOfHalf = new Date(
-                              yearValue,
-                              endMonth + 1,
-                              0,
-                            );
-
-                            setFromDate(startOfHalf);
-                            setToDate(endOfHalf);
-                            setSelectedHalf(null); // Reset selected half
-                          } else {
-                            // For Custom, update to start and end of calendar year
-                            setFromDate(new Date(yearValue, 0, 1)); // January 1st
-                            setToDate(new Date(yearValue, 11, 31)); // December 31st
-                          }
-                        }}>
-                        <Text
-                          style={[
-                            styles.financialYearOptionText,
-                            financialYear === yearOption.value && [
-                              styles.selectedFinancialYearText,
-                              {color: isInward ? '#F48221' : '#4682B4'},
-                            ],
-                          ]}>
-                          {yearOption.display}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-              </View>
-            </View>
-          )}
-
-          <View
-            style={[
-              styles.formContainer,
-              isInward ? styles.inwardForm : styles.outwardForm,
-            ]}>
-            <Text
-              style={[
-                styles.formTitle,
-                {color: isInward ? '#F48221' : '#4682B4'},
-              ]}>
-              {isInward ? 'Inward Report' : 'Outward Report'}
-            </Text>
-
-            {/* Loading Indicator */}
-            {loading && (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator
-                  size="large"
-                  color={isInward ? '#F48221' : '#4682B4'}
-                />
-                <Text style={styles.loadingText}>Loading categories...</Text>
-              </View>
-            )}
-
-            {/* Time Period Tabs */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.timePeriodTabsContainer}>
-              {(
-                [
-                  'Weekly',
-                  'Monthly',
-                  'Quarterly',
-                  'Half-Yearly',
-                  'Custom',
-                ] as TimePeriod[]
-              ).map(period => (
-                <TouchableOpacity
-                  key={period}
-                  style={[
-                    styles.timePeriodTab,
-                    timePeriod === period && styles.activeTimePeriodTab,
-                    timePeriod === period && {
-                      borderBottomColor: isInward ? '#F48221' : '#4682B4',
-                    },
-                  ]}
-                  onPress={() => setDatesByTimePeriod(period)}>
-                  <Text
-                    style={[
-                      styles.timePeriodTabText,
-                      timePeriod === period && styles.activeTimePeriodTabText,
-                      timePeriod === period && {
-                        color: isInward ? '#F48221' : '#4682B4',
-                      },
-                    ]}>
-                    {period}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            {/* Weekly View - shown only when Weekly is selected */}
-            {timePeriod === 'Weekly' && (
-              <View style={styles.timePeriodSelectorContainer}>
-                <View style={styles.monthNavHeader}>
-                  <TouchableOpacity
-                    style={styles.navArrowButton}
-                    onPress={() => {
-                      // Go to previous month, accounting for financial year boundary
-                      let newMonth = currentMonth - 1;
-                      let newYear = currentYear;
-
-                      if (newMonth < 0) {
-                        // Crossing calendar year boundary
-                        newMonth = 11;
-                        newYear = currentYear - 1;
-                      }
-
-                      // Check if the new date is within the financial year range
-                      const startYear = parseInt(financialYear);
-
-                      // If going to previous month would take us out of range, loop back to end of range
-                      if (newYear < startYear) {
-                        newMonth = 11; // December
-                        newYear = startYear + 1; // End year of the financial year
-                      }
-
-                      setCurrentMonth(newMonth);
-                      setCurrentYear(newYear);
-
-                      // Reset the selected week when changing month
-                      setSelectedWeek(null);
-                    }}>
-                    <MaterialIcons
-                      name="chevron-left"
-                      size={24}
-                      color="#64748B"
-                    />
-                  </TouchableOpacity>
-                  <Text style={styles.monthYearHeading}>
-                    {new Date(currentYear, currentMonth).toLocaleString(
-                      'default',
-                      {month: 'long', year: 'numeric'},
-                    )}
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.navArrowButton}
-                    onPress={() => {
-                      // Go to next month, accounting for financial year boundary
-                      let newMonth = currentMonth + 1;
-                      let newYear = currentYear;
-
-                      if (newMonth > 11) {
-                        // Crossing calendar year boundary
-                        newMonth = 0;
-                        newYear = currentYear + 1;
-                      }
-
-                      // Check if the new date is within the financial year range
-                      const startYear = parseInt(financialYear);
-                      const endYear = startYear + 1;
-
-                      // If going to next month would take us out of range, loop back to start of range
-                      if (
-                        newYear > endYear ||
-                        (newYear === endYear && newMonth > 11)
-                      ) {
-                        newMonth = 0; // January
-                        newYear = startYear; // Start year of the financial year
-                      }
-
-                      setCurrentMonth(newMonth);
-                      setCurrentYear(newYear);
-
-                      // Reset the selected week when changing month
-                      setSelectedWeek(null);
-                    }}>
-                    <MaterialIcons
-                      name="chevron-right"
-                      size={24}
-                      color="#64748B"
-                    />
-                  </TouchableOpacity>
+                  <Text style={styles.loadingText}>Loading categories...</Text>
                 </View>
+              )}
 
-                <View style={styles.weeksContainer}>
-                  <View style={styles.weeksGrid}>
-                    {generateWeekDates().map((week, index) => (
+              {/* Time Period Tabs */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.timePeriodTabsContainer}>
+                {(
+                  [
+                    'Weekly',
+                    'Monthly',
+                    'Quarterly',
+                    'Half-Yearly',
+                    'Custom',
+                  ] as TimePeriod[]
+                ).map(period => (
+                  <TouchableOpacity
+                    key={period}
+                    style={[
+                      styles.timePeriodTab,
+                      timePeriod === period && styles.activeTimePeriodTab,
+                      timePeriod === period && {
+                        borderBottomColor: isInward ? '#F48221' : '#4682B4',
+                      },
+                    ]}
+                    onPress={() => setDatesByTimePeriod(period)}>
+                    <Text
+                      style={[
+                        styles.timePeriodTabText,
+                        timePeriod === period && styles.activeTimePeriodTabText,
+                        timePeriod === period && {
+                          color: isInward ? '#F48221' : '#4682B4',
+                        },
+                      ]}>
+                      {period}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              {/* Weekly View - shown only when Weekly is selected */}
+              {timePeriod === 'Weekly' && (
+                <View style={styles.timePeriodSelectorContainer}>
+                  <View style={styles.monthNavHeader}>
+                    <TouchableOpacity
+                      style={styles.navArrowButton}
+                      onPress={() => {
+                        // Go to previous month, accounting for financial year boundary
+                        let newMonth = currentMonth - 1;
+                        let newYear = currentYear;
+
+                        if (newMonth < 0) {
+                          // Crossing calendar year boundary
+                          newMonth = 11;
+                          newYear = currentYear - 1;
+                        }
+
+                        // Check if the new date is within the financial year range
+                        const startYear = parseInt(financialYear);
+
+                        // If going to previous month would take us out of range, loop back to end of range
+                        if (newYear < startYear) {
+                          newMonth = 11; // December
+                          newYear = startYear + 1; // End year of the financial year
+                        }
+
+                        setCurrentMonth(newMonth);
+                        setCurrentYear(newYear);
+
+                        // Reset the selected week when changing month
+                        setSelectedWeek(null);
+                      }}>
+                      <MaterialIcons
+                        name="chevron-left"
+                        size={24}
+                        color="#64748B"
+                      />
+                    </TouchableOpacity>
+                    <Text style={styles.monthYearHeading}>
+                      {new Date(currentYear, currentMonth).toLocaleString(
+                        'default',
+                        {month: 'long', year: 'numeric'},
+                      )}
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.navArrowButton}
+                      onPress={() => {
+                        // Go to next month, accounting for financial year boundary
+                        let newMonth = currentMonth + 1;
+                        let newYear = currentYear;
+
+                        if (newMonth > 11) {
+                          // Crossing calendar year boundary
+                          newMonth = 0;
+                          newYear = currentYear + 1;
+                        }
+
+                        // Check if the new date is within the financial year range
+                        const startYear = parseInt(financialYear);
+                        const endYear = startYear + 1;
+
+                        // If going to next month would take us out of range, loop back to start of range
+                        if (
+                          newYear > endYear ||
+                          (newYear === endYear && newMonth > 11)
+                        ) {
+                          newMonth = 0; // January
+                          newYear = startYear; // Start year of the financial year
+                        }
+
+                        setCurrentMonth(newMonth);
+                        setCurrentYear(newYear);
+
+                        // Reset the selected week when changing month
+                        setSelectedWeek(null);
+                      }}>
+                      <MaterialIcons
+                        name="chevron-right"
+                        size={24}
+                        color="#64748B"
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.weeksContainer}>
+                    <View style={styles.weeksGrid}>
+                      {generateWeekDates().map((week, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          style={[
+                            styles.weekItem,
+                            selectedWeek === week.title && {
+                              backgroundColor: isInward ? '#F48221' : '#4682B4',
+                              borderColor: 'transparent',
+                            },
+                          ]}
+                          onPress={() =>
+                            handleWeekSelection(
+                              week.number,
+                              week.startDate,
+                              week.endDate,
+                            )
+                          }>
+                          <Text
+                            style={[
+                              styles.weekItemTitle,
+                              selectedWeek === week.title &&
+                                styles.selectedTimeItemText,
+                            ]}>
+                            {week.title}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.weekItemDates,
+                              selectedWeek === week.title &&
+                                styles.selectedTimeItemText,
+                            ]}>
+                            {new Date(currentYear, currentMonth).toLocaleString(
+                              'default',
+                              {month: 'short'},
+                            )}{' '}
+                            {week.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+              )}
+
+              {/* Monthly View - shown only when Monthly is selected */}
+              {timePeriod === 'Monthly' && (
+                <View style={styles.timePeriodSelectorContainer}>
+                  <View style={styles.monthsGrid}>
+                    {[
+                      'January',
+                      'February',
+                      'March',
+                      'April',
+                      'May',
+                      'June',
+                      'July',
+                      'August',
+                      'September',
+                      'October',
+                      'November',
+                      'December',
+                    ].map((month, index) => (
                       <TouchableOpacity
-                        key={index}
+                        key={month}
                         style={[
-                          styles.weekItem,
-                          selectedWeek === week.title && {
+                          styles.monthItem,
+                          selectedMonth === month && {
                             backgroundColor: isInward ? '#F48221' : '#4682B4',
                             borderColor: 'transparent',
+                            ...Platform.select({
+                              ios: {
+                                shadowColor: '#000',
+                                shadowOffset: {width: 0, height: 2},
+                                shadowOpacity: 0.1,
+                                shadowRadius: 3,
+                              },
+                              android: {
+                                elevation: 2,
+                              },
+                            }),
                           },
                         ]}
-                        onPress={() =>
-                          handleWeekSelection(
-                            week.number,
-                            week.startDate,
-                            week.endDate,
-                          )
-                        }>
+                        onPress={() => handleMonthSelection(index)}>
                         <Text
                           style={[
-                            styles.weekItemTitle,
-                            selectedWeek === week.title &&
+                            styles.monthItemText,
+                            selectedMonth === month &&
                               styles.selectedTimeItemText,
                           ]}>
-                          {week.title}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.weekItemDates,
-                            selectedWeek === week.title &&
-                              styles.selectedTimeItemText,
-                          ]}>
-                          {new Date(currentYear, currentMonth).toLocaleString(
-                            'default',
-                            {month: 'short'},
-                          )}{' '}
-                          {week.label}
+                          {month}
                         </Text>
                       </TouchableOpacity>
                     ))}
                   </View>
                 </View>
-              </View>
-            )}
+              )}
 
-            {/* Monthly View - shown only when Monthly is selected */}
-            {timePeriod === 'Monthly' && (
-              <View style={styles.timePeriodSelectorContainer}>
-                <View style={styles.monthsGrid}>
-                  {[
-                    'January',
-                    'February',
-                    'March',
-                    'April',
-                    'May',
-                    'June',
-                    'July',
-                    'August',
-                    'September',
-                    'October',
-                    'November',
-                    'December',
-                  ].map((month, index) => (
+              {/* Quarterly View - shown only when Quarterly is selected */}
+              {timePeriod === 'Quarterly' && (
+                <View style={styles.timePeriodSelectorContainer}>
+                  <View style={styles.quartersGrid}>
                     <TouchableOpacity
-                      key={month}
                       style={[
-                        styles.monthItem,
-                        selectedMonth === month && {
+                        styles.quarterItem,
+                        selectedQuarter === 'Q1' && {
                           backgroundColor: isInward ? '#F48221' : '#4682B4',
                           borderColor: 'transparent',
                           ...Platform.select({
@@ -2661,582 +1475,585 @@ const InwardOutwardReportScreen = () => {
                           }),
                         },
                       ]}
-                      onPress={() => handleMonthSelection(index)}>
+                      onPress={() => handleQuarterSelection(1)}>
                       <Text
                         style={[
-                          styles.monthItemText,
-                          selectedMonth === month &&
+                          styles.quarterItemTitle,
+                          selectedQuarter === 'Q1' &&
                             styles.selectedTimeItemText,
                         ]}>
-                        {month}
+                        Q1
+                      </Text>
+                      <Text
+                        style={[
+                          styles.quarterItemDates,
+                          selectedQuarter === 'Q1' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        Jan-Mar
                       </Text>
                     </TouchableOpacity>
-                  ))}
+
+                    <TouchableOpacity
+                      style={[
+                        styles.quarterItem,
+                        selectedQuarter === 'Q2' && {
+                          backgroundColor: isInward ? '#F48221' : '#4682B4',
+                          borderColor: 'transparent',
+                          ...Platform.select({
+                            ios: {
+                              shadowColor: '#000',
+                              shadowOffset: {width: 0, height: 2},
+                              shadowOpacity: 0.1,
+                              shadowRadius: 3,
+                            },
+                            android: {
+                              elevation: 2,
+                            },
+                          }),
+                        },
+                      ]}
+                      onPress={() => handleQuarterSelection(2)}>
+                      <Text
+                        style={[
+                          styles.quarterItemTitle,
+                          selectedQuarter === 'Q2' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        Q2
+                      </Text>
+                      <Text
+                        style={[
+                          styles.quarterItemDates,
+                          selectedQuarter === 'Q2' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        Apr-Jun
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.quarterItem,
+                        selectedQuarter === 'Q3' && {
+                          backgroundColor: isInward ? '#F48221' : '#4682B4',
+                          borderColor: 'transparent',
+                          ...Platform.select({
+                            ios: {
+                              shadowColor: '#000',
+                              shadowOffset: {width: 0, height: 2},
+                              shadowOpacity: 0.1,
+                              shadowRadius: 3,
+                            },
+                            android: {
+                              elevation: 2,
+                            },
+                          }),
+                        },
+                      ]}
+                      onPress={() => handleQuarterSelection(3)}>
+                      <Text
+                        style={[
+                          styles.quarterItemTitle,
+                          selectedQuarter === 'Q3' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        Q3
+                      </Text>
+                      <Text
+                        style={[
+                          styles.quarterItemDates,
+                          selectedQuarter === 'Q3' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        Jul-Sep
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.quarterItem,
+                        selectedQuarter === 'Q4' && {
+                          backgroundColor: isInward ? '#F48221' : '#4682B4',
+                          borderColor: 'transparent',
+                          ...Platform.select({
+                            ios: {
+                              shadowColor: '#000',
+                              shadowOffset: {width: 0, height: 2},
+                              shadowOpacity: 0.1,
+                              shadowRadius: 3,
+                            },
+                            android: {
+                              elevation: 2,
+                            },
+                          }),
+                        },
+                      ]}
+                      onPress={() => handleQuarterSelection(4)}>
+                      <Text
+                        style={[
+                          styles.quarterItemTitle,
+                          selectedQuarter === 'Q4' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        Q4
+                      </Text>
+                      <Text
+                        style={[
+                          styles.quarterItemDates,
+                          selectedQuarter === 'Q4' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        Oct-Dec
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
-            )}
-
-            {/* Quarterly View - shown only when Quarterly is selected */}
-            {timePeriod === 'Quarterly' && (
-              <View style={styles.timePeriodSelectorContainer}>
-                <View style={styles.quartersGrid}>
-                  <TouchableOpacity
-                    style={[
-                      styles.quarterItem,
-                      selectedQuarter === 'Q1' && {
-                        backgroundColor: isInward ? '#F48221' : '#4682B4',
-                        borderColor: 'transparent',
-                        ...Platform.select({
-                          ios: {
-                            shadowColor: '#000',
-                            shadowOffset: {width: 0, height: 2},
-                            shadowOpacity: 0.1,
-                            shadowRadius: 3,
-                          },
-                          android: {
-                            elevation: 2,
-                          },
-                        }),
-                      },
-                    ]}
-                    onPress={() => handleQuarterSelection(1)}>
-                    <Text
-                      style={[
-                        styles.quarterItemTitle,
-                        selectedQuarter === 'Q1' && styles.selectedTimeItemText,
-                      ]}>
-                      Q1
-                    </Text>
-                    <Text
-                      style={[
-                        styles.quarterItemDates,
-                        selectedQuarter === 'Q1' && styles.selectedTimeItemText,
-                      ]}>
-                      Jan-Mar
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.quarterItem,
-                      selectedQuarter === 'Q2' && {
-                        backgroundColor: isInward ? '#F48221' : '#4682B4',
-                        borderColor: 'transparent',
-                        ...Platform.select({
-                          ios: {
-                            shadowColor: '#000',
-                            shadowOffset: {width: 0, height: 2},
-                            shadowOpacity: 0.1,
-                            shadowRadius: 3,
-                          },
-                          android: {
-                            elevation: 2,
-                          },
-                        }),
-                      },
-                    ]}
-                    onPress={() => handleQuarterSelection(2)}>
-                    <Text
-                      style={[
-                        styles.quarterItemTitle,
-                        selectedQuarter === 'Q2' && styles.selectedTimeItemText,
-                      ]}>
-                      Q2
-                    </Text>
-                    <Text
-                      style={[
-                        styles.quarterItemDates,
-                        selectedQuarter === 'Q2' && styles.selectedTimeItemText,
-                      ]}>
-                      Apr-Jun
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.quarterItem,
-                      selectedQuarter === 'Q3' && {
-                        backgroundColor: isInward ? '#F48221' : '#4682B4',
-                        borderColor: 'transparent',
-                        ...Platform.select({
-                          ios: {
-                            shadowColor: '#000',
-                            shadowOffset: {width: 0, height: 2},
-                            shadowOpacity: 0.1,
-                            shadowRadius: 3,
-                          },
-                          android: {
-                            elevation: 2,
-                          },
-                        }),
-                      },
-                    ]}
-                    onPress={() => handleQuarterSelection(3)}>
-                    <Text
-                      style={[
-                        styles.quarterItemTitle,
-                        selectedQuarter === 'Q3' && styles.selectedTimeItemText,
-                      ]}>
-                      Q3
-                    </Text>
-                    <Text
-                      style={[
-                        styles.quarterItemDates,
-                        selectedQuarter === 'Q3' && styles.selectedTimeItemText,
-                      ]}>
-                      Jul-Sep
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.quarterItem,
-                      selectedQuarter === 'Q4' && {
-                        backgroundColor: isInward ? '#F48221' : '#4682B4',
-                        borderColor: 'transparent',
-                        ...Platform.select({
-                          ios: {
-                            shadowColor: '#000',
-                            shadowOffset: {width: 0, height: 2},
-                            shadowOpacity: 0.1,
-                            shadowRadius: 3,
-                          },
-                          android: {
-                            elevation: 2,
-                          },
-                        }),
-                      },
-                    ]}
-                    onPress={() => handleQuarterSelection(4)}>
-                    <Text
-                      style={[
-                        styles.quarterItemTitle,
-                        selectedQuarter === 'Q4' && styles.selectedTimeItemText,
-                      ]}>
-                      Q4
-                    </Text>
-                    <Text
-                      style={[
-                        styles.quarterItemDates,
-                        selectedQuarter === 'Q4' && styles.selectedTimeItemText,
-                      ]}>
-                      Oct-Dec
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-
-            {/* Half-Yearly View - shown only when Half-Yearly is selected */}
-            {timePeriod === 'Half-Yearly' && (
-              <View style={styles.timePeriodSelectorContainer}>
-                <View style={styles.halfsGrid}>
-                  <TouchableOpacity
-                    style={[
-                      styles.halfItem,
-                      selectedHalf === 'H1(First Half)' && {
-                        backgroundColor: isInward ? '#F48221' : '#4682B4',
-                        borderColor: 'transparent',
-                      },
-                    ]}
-                    onPress={() => handleHalfYearSelection(1)}>
-                    <Text
-                      style={[
-                        styles.halfItemTitle,
-                        selectedHalf === 'H1(First Half)' &&
-                          styles.selectedTimeItemText,
-                      ]}>
-                      H1 (First Half)
-                    </Text>
-                    <Text
-                      style={[
-                        styles.halfItemDates,
-                        selectedHalf === 'H1(First Half)' &&
-                          styles.selectedTimeItemText,
-                      ]}>
-                      Jan-Jun{' '}
-                      {getFinancialYearDisplay(financialYear).split('-')[0]}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.halfItem,
-                      selectedHalf === 'H2(Second Half)' && {
-                        backgroundColor: isInward ? '#F48221' : '#4682B4',
-                        borderColor: 'transparent',
-                      },
-                    ]}
-                    onPress={() => handleHalfYearSelection(2)}>
-                    <Text
-                      style={[
-                        styles.halfItemTitle,
-                        selectedHalf === 'H2(Second Half)' &&
-                          styles.selectedTimeItemText,
-                      ]}>
-                      H2 (Second Half)
-                    </Text>
-                    <Text
-                      style={[
-                        styles.halfItemDates,
-                        selectedHalf === 'H2(Second Half)' &&
-                          styles.selectedTimeItemText,
-                      ]}>
-                      Jul-Dec{' '}
-                      {getFinancialYearDisplay(financialYear).split('-')[0]}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-
-            {/* Date Fields (visible only in custom mode or showing the selected dates) */}
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>From Date</Text>
-              <TouchableOpacity
-                style={styles.dateInputContainer}
-                onPress={() =>
-                  timePeriod === ('Custom' as TimePeriod) &&
-                  showDatePicker('from')
-                }
-                disabled={timePeriod !== ('Custom' as TimePeriod)}>
-                <View style={styles.dateInputContent}>
-                  <MaterialIcons
-                    name="event"
-                    size={20}
-                    color="#718096"
-                    style={styles.inputIcon}
-                  />
-                  <Text
-                    style={[
-                      styles.dateText,
-                      timePeriod !== ('Custom' as TimePeriod) &&
-                        styles.disabledDateText,
-                    ]}>
-                    {formatDate(fromDate)}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-              {showFromDatePicker &&
-                Platform.OS === 'android' &&
-                timePeriod === 'Custom' && (
-                  <DateTimePicker
-                    testID="fromDatePicker"
-                    value={fromDate}
-                    mode="date"
-                    display="default"
-                    onChange={onFromDateChange}
-                  />
-                )}
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>To Date</Text>
-              <TouchableOpacity
-                style={styles.dateInputContainer}
-                onPress={() =>
-                  timePeriod === ('Custom' as TimePeriod) &&
-                  showDatePicker('to')
-                }
-                disabled={timePeriod !== ('Custom' as TimePeriod)}>
-                <View style={styles.dateInputContent}>
-                  <MaterialIcons
-                    name="event-available"
-                    size={20}
-                    color="#718096"
-                    style={styles.inputIcon}
-                  />
-                  <Text
-                    style={[
-                      styles.dateText,
-                      timePeriod !== ('Custom' as TimePeriod) &&
-                        styles.disabledDateText,
-                    ]}>
-                    {formatDate(toDate)}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-              {showToDatePicker &&
-                Platform.OS === 'android' &&
-                timePeriod === 'Custom' && (
-                  <DateTimePicker
-                    testID="toDatePicker"
-                    value={toDate}
-                    mode="date"
-                    display="default"
-                    onChange={onToDateChange}
-                  />
-                )}
-            </View>
-
-            {/* Category Picker */}
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Category</Text>
-              {renderPicker(
-                'category',
-                itemCategory,
-                'Category',
-                apiCategories,
-                value => setItemCategory(value),
               )}
-            </View>
 
-            {/* Subcategory Picker - Only enabled if category is selected */}
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Subcategory</Text>
-              {renderPicker(
-                'subcategory',
-                itemSubcategory,
-                'Subcategory',
-                itemCategory && apiSubcategories[itemCategory]
-                  ? apiSubcategories[itemCategory]
-                  : [],
-                value => setItemSubcategory(value),
-                itemCategory !== '',
+              {/* Half-Yearly View - shown only when Half-Yearly is selected */}
+              {timePeriod === 'Half-Yearly' && (
+                <View style={styles.timePeriodSelectorContainer}>
+                  <View style={styles.halfsGrid}>
+                    <TouchableOpacity
+                      style={[
+                        styles.halfItem,
+                        selectedHalf === 'H1(First Half)' && {
+                          backgroundColor: isInward ? '#F48221' : '#4682B4',
+                          borderColor: 'transparent',
+                        },
+                      ]}
+                      onPress={() => handleHalfYearSelection(1)}>
+                      <Text
+                        style={[
+                          styles.halfItemTitle,
+                          selectedHalf === 'H1(First Half)' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        H1 (First Half)
+                      </Text>
+                      <Text
+                        style={[
+                          styles.halfItemDates,
+                          selectedHalf === 'H1(First Half)' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        Jan-Jun{' '}
+                        {getFinancialYearDisplay(financialYear).split('-')[0]}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.halfItem,
+                        selectedHalf === 'H2(Second Half)' && {
+                          backgroundColor: isInward ? '#F48221' : '#4682B4',
+                          borderColor: 'transparent',
+                        },
+                      ]}
+                      onPress={() => handleHalfYearSelection(2)}>
+                      <Text
+                        style={[
+                          styles.halfItemTitle,
+                          selectedHalf === 'H2(Second Half)' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        H2 (Second Half)
+                      </Text>
+                      <Text
+                        style={[
+                          styles.halfItemDates,
+                          selectedHalf === 'H2(Second Half)' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        Jul-Dec{' '}
+                        {getFinancialYearDisplay(financialYear).split('-')[0]}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               )}
-            </View>
 
-            {/* Unit Picker */}
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Unit</Text>
-              {renderPicker('unit', unit, 'Unit', units, value =>
-                setUnit(value),
-              )}
-            </View>
-
-            {/* Buttons */}
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  {backgroundColor: '#718096'}, // Grey for clear
-                  isSearching && styles.disabledButton,
-                ]}
-                onPress={handleClear}
-                disabled={isSearching}>
-                <Text style={styles.buttonText}>Clear</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  {backgroundColor: isInward ? '#F48221' : '#4682B4'},
-                  isSearching && styles.disabledButton,
-                ]}
-                onPress={handleSearch}
-                disabled={isSearching}>
-                {isSearching ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <Text style={styles.buttonText}>Search</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </ScrollView>
-      ) : showReport ? (
-        // Report Section
-        <View style={styles.reportContainer}>
-          <ViewShot
-            ref={viewshotRef}
-            options={{
-              fileName: 'inward-outward-report',
-              format: 'jpg',
-              quality: 0.9,
-            }}
-            style={styles.reportContent}>
-            {/* Report Header */}
-            <View style={styles.reportHeader}>
-              <View style={styles.reportHeaderLeft}>
+              {/* Date Fields (visible only in custom mode or showing the selected dates) */}
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>From Date</Text>
                 <TouchableOpacity
-                  onPress={handleBackToForm}
+                  style={styles.dateInputContainer}
+                  onPress={() =>
+                    timePeriod === ('Custom' as TimePeriod) &&
+                    showDatePicker('from')
+                  }
+                  disabled={timePeriod !== ('Custom' as TimePeriod)}>
+                  <View style={styles.dateInputContent}>
+                    <MaterialIcons
+                      name="event"
+                      size={20}
+                      color="#718096"
+                      style={styles.inputIcon}
+                    />
+                    <Text
+                      style={[
+                        styles.dateText,
+                        timePeriod !== ('Custom' as TimePeriod) &&
+                          styles.disabledDateText,
+                      ]}>
+                      {formatDate(fromDate)}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                {showFromDatePicker &&
+                  Platform.OS === 'android' &&
+                  timePeriod === 'Custom' && (
+                    <DateTimePicker
+                      testID="fromDatePicker"
+                      value={fromDate}
+                      mode="date"
+                      display="default"
+                      onChange={onFromDateChange}
+                    />
+                  )}
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>To Date</Text>
+                <TouchableOpacity
+                  style={styles.dateInputContainer}
+                  onPress={() =>
+                    timePeriod === ('Custom' as TimePeriod) &&
+                    showDatePicker('to')
+                  }
+                  disabled={timePeriod !== ('Custom' as TimePeriod)}>
+                  <View style={styles.dateInputContent}>
+                    <MaterialIcons
+                      name="event-available"
+                      size={20}
+                      color="#718096"
+                      style={styles.inputIcon}
+                    />
+                    <Text
+                      style={[
+                        styles.dateText,
+                        timePeriod !== ('Custom' as TimePeriod) &&
+                          styles.disabledDateText,
+                      ]}>
+                      {formatDate(toDate)}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                {showToDatePicker &&
+                  Platform.OS === 'android' &&
+                  timePeriod === 'Custom' && (
+                    <DateTimePicker
+                      testID="toDatePicker"
+                      value={toDate}
+                      mode="date"
+                      display="default"
+                      onChange={onToDateChange}
+                    />
+                  )}
+              </View>
+
+              {/* Category Multi-Select */}
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Categories</Text>
+                <MultiSelect
+                  options={apiCategories.map(category => ({
+                    label: category,
+                    value: category,
+                  }))}
+                  selectedValues={itemCategories}
+                  onSelectChange={values => setItemCategories(values)}
+                  placeholder="Select Categories"
+                  primaryColor={isInward ? '#F48221' : '#4682B4'}
+                />
+              </View>
+
+              {/* Subcategory Multi-Select - Only enabled if at least one category is selected */}
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Subcategories</Text>
+                <MultiSelect
+                  options={getAvailableSubcategories()}
+                  selectedValues={itemSubcategories}
+                  onSelectChange={values => setItemSubcategories(values)}
+                  placeholder="Select Subcategories"
+                  disabled={itemCategories.length === 0}
+                  primaryColor={isInward ? '#F48221' : '#4682B4'}
+                />
+              </View>
+
+              {/* Unit Picker */}
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Unit</Text>
+                {renderPicker('unit', unit, 'Unit', units, value =>
+                  setUnit(value),
+                )}
+              </View>
+
+              {/* Buttons */}
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
                   style={[
-                    styles.backButton,
-                    {
-                      backgroundColor: '#FFFFFF',
-                      borderColor: isInward ? '#F48221' : '#4682B4',
-                    },
-                  ]}>
-                  <MaterialIcons
-                    name="arrow-back"
-                    size={20}
-                    color={isInward ? '#F48221' : '#4682B4'}
-                  />
+                    styles.button,
+                    {backgroundColor: '#718096'}, // Grey for clear
+                    isSearching && styles.disabledButton,
+                  ]}
+                  onPress={handleClear}
+                  disabled={isSearching}>
+                  <Text style={styles.buttonText}>Clear</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    {backgroundColor: isInward ? '#F48221' : '#4682B4'},
+                    isSearching && styles.disabledButton,
+                  ]}
+                  onPress={handleSearch}
+                  disabled={isSearching}>
+                  {isSearching ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <Text style={styles.buttonText}>Search</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        ) : showReport ? (
+          // Report Section
+          <View style={styles.reportContainer}>
+            <ViewShot
+              ref={viewshotRef}
+              options={{
+                fileName: 'inward-outward-report',
+                format: 'jpg',
+                quality: 0.9,
+              }}
+              style={styles.reportContent}>
+              {/* Report Header */}
+              <View style={styles.reportHeader}>
+                <View style={styles.reportHeaderLeft}>
+                  <TouchableOpacity
+                    onPress={handleBackToForm}
+                    style={[
+                      styles.backButton,
+                      {
+                        backgroundColor: '#FFFFFF',
+                        borderColor: isInward ? '#F48221' : '#4682B4',
+                      },
+                    ]}>
+                    <MaterialIcons
+                      name="arrow-back"
+                      size={20}
+                      color={isInward ? '#F48221' : '#4682B4'}
+                    />
+                    <Text
+                      style={[
+                        styles.backButtonText,
+                        {color: isInward ? '#F48221' : '#4682B4'},
+                      ]}>
+                      Back
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.reportHeaderCenter}>
                   <Text
                     style={[
-                      styles.backButtonText,
+                      styles.reportTitle,
                       {color: isInward ? '#F48221' : '#4682B4'},
                     ]}>
-                    Back
+                    {isInward ? 'Inward Report' : 'Outward Report'}
                   </Text>
-                </TouchableOpacity>
+                </View>
+                <View style={styles.reportHeaderRight}>
+                  <TouchableOpacity
+                    onPress={handlePdfDownload}
+                    disabled={isPdfDownloading || localReportData.length === 0}
+                    style={[
+                      styles.pdfButton,
+                      {
+                        backgroundColor:
+                          localReportData.length === 0
+                            ? '#CBD5E1'
+                            : isInward
+                            ? '#F48221'
+                            : '#4682B4',
+                      },
+                      isPdfDownloading && styles.disabledButton,
+                    ]}>
+                    <MaterialIcons name="upload" size={20} color="#FFFFFF" />
+                    <Text style={styles.pdfButtonText}>PDF</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-              <View style={styles.reportHeaderCenter}>
-                <Text
-                  style={[
-                    styles.reportTitle,
-                    {color: isInward ? '#F48221' : '#4682B4'},
-                  ]}>
-                  {isInward ? 'Inward Report' : 'Outward Report'}
-                </Text>
-              </View>
-              <View style={styles.reportHeaderRight}>
-                <TouchableOpacity
-                  onPress={handlePdfDownload}
-                  disabled={isPdfDownloading || localReportData.length === 0}
-                  style={[
-                    styles.pdfButton,
-                    {
-                      backgroundColor:
-                        localReportData.length === 0
-                          ? '#CBD5E1'
-                          : isInward
-                          ? '#F48221'
-                          : '#4682B4',
-                    },
-                    isPdfDownloading && styles.disabledButton,
-                  ]}>
-                  <MaterialIcons
-                    name="picture-as-pdf"
-                    size={20}
-                    color="#FFFFFF"
-                  />
-                  <Text style={styles.pdfButtonText}>PDF</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
 
-            {/* Report Sub Header */}
-            <View style={styles.reportSubHeader}>
-              {isPdfDownloading ? (
-                <View style={styles.loadingIndicatorContainer}>
+              {/* Report Sub Header */}
+              <View style={styles.reportSubHeader}>
+                {isPdfDownloading ? (
+                  <View style={styles.loadingIndicatorContainer}>
+                    <ActivityIndicator
+                      size="small"
+                      color={isInward ? '#F48221' : '#4682B4'}
+                    />
+                    <Text style={styles.loadingIndicatorText}>
+                      Generating PDF...
+                    </Text>
+                  </View>
+                ) : isReportLoading ? (
+                  <View style={styles.loadingIndicatorContainer}>
+                    <ActivityIndicator
+                      size="small"
+                      color={isInward ? '#F48221' : '#4682B4'}
+                    />
+                    <Text style={styles.loadingIndicatorText}>
+                      Searching for data...
+                    </Text>
+                  </View>
+                ) : localReportData.length > 0 ? (
+                  <View style={styles.resultsSummaryContainer}>
+                    <MaterialIcons name="list-alt" size={20} color="#64748B" />
+                    <Text
+                      style={[
+                        styles.reportCountText,
+                        {color: isInward ? '#F48221' : '#4682B4'},
+                      ]}>
+                      {localReportData.length} records found
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+
+              {/* Scrolling Hint - only show when data is loaded and available */}
+              {!isReportLoading && localReportData.length > 0 && (
+                <View style={styles.scrollHintContainer}>
+                  <MaterialIcons name="swipe" size={18} color="#64748B" />
+                  <Text style={styles.scrollHintText}>
+                    Scroll horizontally to view all data
+                  </Text>
+                </View>
+              )}
+
+              {/* Report Table Section - Pass the onInwardOutwardNoPress handler */}
+              {isReportLoading ? (
+                <View style={styles.loadingTableContainer}>
                   <ActivityIndicator
-                    size="small"
+                    size="large"
                     color={isInward ? '#F48221' : '#4682B4'}
                   />
-                  <Text style={styles.loadingIndicatorText}>
-                    Generating PDF...
+                  <Text style={styles.loadingTableText}>
+                    Loading report data...
                   </Text>
                 </View>
               ) : localReportData.length > 0 ? (
-                <View style={styles.resultsSummaryContainer}>
-                  <MaterialIcons name="list-alt" size={20} color="#64748B" />
-                  <Text
-                    style={[
-                      styles.reportCountText,
-                      {color: isInward ? '#F48221' : '#4682B4'},
-                    ]}>
-                    {localReportData.length} records found
+                <ReportTable
+                  reportData={localReportData}
+                  isInward={isInward}
+                  tableRef={tableRef}
+                  onInwardOutwardNoPress={handleInwardOutwardNoPress}
+                />
+              ) : (
+                <View style={styles.emptyTableContainer}>
+                  <MaterialIcons name="search-off" size={48} color="#CBD5E1" />
+                  <Text style={styles.emptyTableText}>
+                    No records found matching your filters.
                   </Text>
                 </View>
-              ) : null}
-            </View>
-
-            {/* Scrolling Hint */}
-            {localReportData.length > 0 && (
-              <View style={styles.scrollHintContainer}>
-                <MaterialIcons name="swipe" size={18} color="#64748B" />
-                <Text style={styles.scrollHintText}>
-                  Scroll horizontally to view all data
-                </Text>
-              </View>
-            )}
-
-            {/* Report Table Section */}
-            {localReportData.length > 0 ? (
-              <ReportTable
-                reportData={localReportData}
-                isInward={isInward}
-                tableRef={tableRef}
-              />
-            ) : (
-              <View style={styles.emptyTableContainer}>
-                <MaterialIcons name="search-off" size={48} color="#CBD5E1" />
-                <Text style={styles.emptyTableText}>
-                  No records found matching your filters.
-                </Text>
-              </View>
-            )}
-          </ViewShot>
-        </View>
-      ) : (
-        // Empty State
-        <View style={styles.emptyStateContainer}>
-          <MaterialIcons name="error-outline" size={64} color="#E2E8F0" />
-          <Text style={styles.emptyStateTitle}>Something went wrong</Text>
-          <Text style={styles.emptyStateText}>
-            Please go back and try again with different filters.
-          </Text>
-        </View>
-      )}
-
-      {/* iOS Picker Modal */}
-      <IOSPickerModal
-        isVisible={isPickerVisible}
-        currentPicker={currentPicker}
-        itemCategory={itemCategory}
-        itemSubcategory={itemSubcategory}
-        unit={unit}
-        apiCategories={apiCategories}
-        apiSubcategories={apiSubcategories}
-        units={units}
-        setItemCategory={setItemCategory}
-        setItemSubcategory={setItemSubcategory}
-        setUnit={setUnit}
-        onClose={() => setIsPickerVisible(false)}
-      />
-
-      {/* iOS Date Picker Modal */}
-      <IOSDatePickerModal
-        visible={showFromDatePicker && Platform.OS === 'ios'}
-        date={fromDate}
-        isInward={isInward}
-        title="Select From Date"
-        onClose={() => setShowFromDatePicker(false)}
-        onDateChange={(event: any, date?: Date) => {
-          if (date) setFromDate(date);
-        }}
-        onConfirm={() => {
-          onFromDateChange({}, fromDate);
-          setShowFromDatePicker(false);
-        }}
-      />
-
-      <IOSDatePickerModal
-        visible={showToDatePicker && Platform.OS === 'ios'}
-        date={toDate}
-        isInward={isInward}
-        title="Select To Date"
-        onClose={() => setShowToDatePicker(false)}
-        onDateChange={(event: any, date?: Date) => {
-          if (date) setToDate(date);
-        }}
-        onConfirm={() => {
-          onToDateChange({}, toDate);
-          setShowToDatePicker(false);
-        }}
-      />
-
-      {/* PDF Loading Overlay */}
-      {isPdfDownloading && (
-        <View style={styles.pdfLoadingOverlay}>
-          <View style={styles.pdfLoadingCard}>
-            <Text style={styles.pdfLoadingText}>Generating PDF</Text>
-            <View style={styles.progressBarContainer}>
-              <View
-                style={[
-                  styles.progressBar,
-                  {
-                    width: `${downloadProgress}%`,
-                    backgroundColor: isInward ? '#F48221' : '#4682B4',
-                  },
-                ]}
-              />
-            </View>
-            <Text style={styles.progressText}>{statusMessage}</Text>
+              )}
+            </ViewShot>
           </View>
-        </View>
-      )}
-    </SafeAreaView>
+        ) : (
+          // Empty State
+          <View style={styles.emptyStateContainer}>
+            <MaterialIcons name="error-outline" size={64} color="#E2E8F0" />
+            <Text style={styles.emptyStateTitle}>Something went wrong</Text>
+            <Text style={styles.emptyStateText}>
+              Please go back and try again with different filters.
+            </Text>
+          </View>
+        )}
+
+        {/* iOS Picker Modal */}
+        <IOSPickerModal
+          isVisible={isPickerVisible}
+          currentPicker={currentPicker}
+          itemCategory={itemCategories.length > 0 ? itemCategories[0] : ''}
+          itemSubcategory={
+            itemSubcategories.length > 0 ? itemSubcategories[0] : ''
+          }
+          unit={unit}
+          apiCategories={apiCategories}
+          apiSubcategories={apiSubcategories}
+          units={units}
+          setItemCategory={value => {
+            if (value) {
+              setItemCategories([value]);
+            } else {
+              setItemCategories([]);
+            }
+          }}
+          setItemSubcategory={value => {
+            if (value) {
+              setItemSubcategories([value]);
+            } else {
+              setItemSubcategories([]);
+            }
+          }}
+          setUnit={setUnit}
+          onClose={() => setIsPickerVisible(false)}
+        />
+
+        {/* iOS Date Picker Modal */}
+        <IOSDatePickerModal
+          visible={showFromDatePicker && Platform.OS === 'ios'}
+          date={fromDate}
+          isInward={isInward}
+          title="Select From Date"
+          onClose={() => setShowFromDatePicker(false)}
+          onDateChange={(event: any, date?: Date) => {
+            if (date) setFromDate(date);
+          }}
+          onConfirm={() => {
+            onFromDateChange({}, fromDate);
+            setShowFromDatePicker(false);
+          }}
+        />
+
+        <IOSDatePickerModal
+          visible={showToDatePicker && Platform.OS === 'ios'}
+          date={toDate}
+          isInward={isInward}
+          title="Select To Date"
+          onClose={() => setShowToDatePicker(false)}
+          onDateChange={(event: any, date?: Date) => {
+            if (date) setToDate(date);
+          }}
+          onConfirm={() => {
+            onToDateChange({}, toDate);
+            setShowToDatePicker(false);
+          }}
+        />
+
+        {/* PDF Loading Overlay */}
+        {isPdfDownloading && (
+          <View style={styles.pdfLoadingOverlay}>
+            <View style={styles.pdfLoadingCard}>
+              <Text style={styles.pdfLoadingText}>Generating PDF</Text>
+              <View style={styles.progressBarContainer}>
+                <View
+                  style={[
+                    styles.progressBar,
+                    {
+                      width: `${downloadProgress}%`,
+                      backgroundColor: isInward ? '#F48221' : '#4682B4',
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={styles.progressText}>{statusMessage}</Text>
+            </View>
+          </View>
+        )}
+      </SafeAreaView>
+    </LayoutWrapper>
   );
 };
 
@@ -3601,7 +2418,7 @@ const styles = StyleSheet.create({
   reportContainer: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    marginTop: -24, // Increased negative margin to further reduce space above header
+    marginTop: 10, // Increased negative margin to further reduce space above header
   },
   reportHeader: {
     padding: 0,
@@ -4143,6 +2960,82 @@ const styles = StyleSheet.create({
   // Disabled date inputs
   disabledDateText: {
     color: '#94A3B8',
+  },
+  // Add new styles for CustomDropdown
+  customDropdownContainer: {
+    position: 'relative',
+    marginBottom: 8,
+  },
+  disabledDropdown: {
+    opacity: 0.7,
+  },
+  customDropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 48,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+  },
+  customDropdownSelectedText: {
+    fontSize: 15,
+    color: '#333333',
+    fontWeight: '500',
+    flex: 1,
+  },
+  customDropdownPlaceholderText: {
+    fontSize: 14,
+    color: '#94A3B8',
+    flex: 1,
+  },
+  customModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  customModalContent: {
+    width: '80%',
+    maxHeight: '60%',
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: {width: 0, height: 2},
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
+  customOptionItem: {
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  customOptionText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  loadingTableContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 200,
+  },
+  loadingTableText: {
+    fontSize: 16,
+    color: '#64748B',
+    marginTop: 16,
+    textAlign: 'center',
   },
 });
 

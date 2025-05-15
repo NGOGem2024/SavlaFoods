@@ -16,15 +16,55 @@ import {PermissionsAndroid} from 'react-native';
 
 export const viewFileInFiles = async (filePath: string) => {
   if (Platform.OS === 'ios') {
-    // For iOS, we can use this approach to view in Files app
-    const iosFilesAppUrl = 'shareddocuments://';
-    const canOpen = await Linking.canOpenURL(iosFilesAppUrl);
+    try {
+      console.log('Attempting to open file in iOS Files app:', filePath);
 
-    if (canOpen) {
-      await Linking.openURL(iosFilesAppUrl);
-    } else {
-      // Fallback to just opening the document
-      await RNBlobUtil.ios.openDocument(filePath);
+      // Ensure the file exists
+      const exists = await RNBlobUtil.fs.exists(filePath);
+      if (!exists) {
+        console.error('File does not exist at path:', filePath);
+        Alert.alert('Error', 'Cannot find file to open');
+        return;
+      }
+
+      // Remove file:// prefix if present
+      const cleanPath = filePath.replace('file://', '');
+
+      // First try to open with UIDocumentInteractionController
+      try {
+        console.log('Trying to open with openDocument:', cleanPath);
+        await RNBlobUtil.ios.openDocument(cleanPath);
+        return;
+      } catch (error) {
+        console.log('openDocument failed, trying previewDocument...');
+      }
+
+      // If openDocument fails, try previewDocument
+      try {
+        console.log('Trying to open with previewDocument:', cleanPath);
+        await RNBlobUtil.ios.previewDocument(cleanPath);
+        return;
+      } catch (error) {
+        console.log('previewDocument failed, trying Files app...');
+      }
+
+      // As a last resort, try to open the Files app
+      const iosFilesAppUrl = 'shareddocuments://';
+      const canOpen = await Linking.canOpenURL(iosFilesAppUrl);
+
+      if (canOpen) {
+        console.log('Opening Files app directly');
+        await Linking.openURL(iosFilesAppUrl);
+      } else {
+        throw new Error('Cannot open Files app');
+      }
+    } catch (error) {
+      console.error('Error opening file in iOS:', error);
+      Alert.alert(
+        'Cannot Open File',
+        'The file was saved but cannot be opened automatically. Please open the Files app to view it.',
+        [{text: 'OK', style: 'cancel'}],
+      );
     }
   } else {
     // For Android, use the existing openPdf function
@@ -191,26 +231,75 @@ export const getUniqueFileName = async (
  */
 export const openPdf = async (filePath: string): Promise<void> => {
   try {
-    await FileViewer.open(filePath, {
+    console.log('Attempting to open PDF at path:', filePath);
+
+    // Ensure the path is properly formatted for the platform
+    let formattedPath = filePath;
+
+    // For Android, ensure it has file:// prefix
+    if (Platform.OS === 'android' && !filePath.startsWith('file://')) {
+      formattedPath = `file://${filePath}`;
+      console.log('Formatted Android path:', formattedPath);
+    }
+
+    // For iOS, remove file:// if present since FileViewer handles it
+    if (Platform.OS === 'ios' && formattedPath.startsWith('file://')) {
+      formattedPath = formattedPath.replace('file://', '');
+      console.log('Formatted iOS path:', formattedPath);
+    }
+
+    // Ensure the file exists before trying to open it
+    const exists = await RNBlobUtil.fs.exists(
+      Platform.OS === 'ios' ? formattedPath : filePath,
+    );
+
+    if (!exists) {
+      throw new Error(`File does not exist at path: ${filePath}`);
+    }
+
+    // Open the file with FileViewer
+    await FileViewer.open(formattedPath, {
       showOpenWithDialog: true,
       showAppsSuggestions: true,
+      displayName: 'PDF Report',
     });
   } catch (error) {
     console.error('Error opening PDF:', error);
+
+    // Check if the filePath is in app-specific storage or public storage
+    const isPublicStorage = !filePath.includes('Android/data');
+
     Alert.alert(
-      'Success',
-      Platform.OS === 'ios'
-        ? 'Report saved successfully! You can access it from the Files app.'
-        : isPublicStorage
-        ? 'Report downloaded as PDF successfully to Downloads folder!'
-        : 'Report saved to app storage. You can access it from within the app.',
+      'PDF View Error',
+      'Could not open the PDF file directly. The file is still saved ' +
+        (Platform.OS === 'ios'
+          ? 'and can be accessed from the Files app.'
+          : isPublicStorage
+          ? 'to your Downloads folder.'
+          : 'to app storage.'),
       [
         {
-          text: 'View PDF',
-          onPress: () =>
-            Platform.OS === 'ios'
-              ? viewFileInFiles(publicFilePath)
-              : openPdf(publicFilePath),
+          text: 'Try Again',
+          onPress: () => {
+            if (Platform.OS === 'ios') {
+              viewFileInFiles(filePath);
+            } else {
+              // For Android, try alternative opening method
+              const androidPath = filePath.startsWith('file://')
+                ? filePath
+                : `file://${filePath}`;
+
+              // Try to use Android's action view intent as fallback
+              RNBlobUtil.android
+                .actionViewIntent(
+                  androidPath.replace('file://', ''),
+                  'application/pdf',
+                )
+                .catch(err => {
+                  console.error('Error with actionViewIntent:', err);
+                });
+            }
+          },
         },
         {
           text: 'OK',
@@ -218,7 +307,6 @@ export const openPdf = async (filePath: string): Promise<void> => {
         },
       ],
     );
-    // Alert.alert('Error', 'Could not open the PDF file');
   }
 };
 
@@ -299,6 +387,12 @@ export const showDownloadNotification = (
   console.log('Showing notification for downloaded PDF:', filePath);
   console.log('Using mode for notification:', isInward ? 'INWARD' : 'OUTWARD');
 
+  // Ensure the file path is properly formatted for notification click handling
+  const formattedFilePath =
+    Platform.OS === 'android' && !filePath.startsWith('file://')
+      ? `file://${filePath}`
+      : filePath;
+
   // Configure the notification channel first (only needed for Android)
   if (Platform.OS === 'android') {
     // Create a specific channel for each type (inward/outward) to have different colors
@@ -357,7 +451,7 @@ export const showDownloadNotification = (
         visibility: 'public',
         vibrate: true,
         actions: ['View'], // Add a "View" button on the notification
-        userInfo: {filePath: filePath}, // Store the file path
+        userInfo: {filePath: formattedFilePath}, // Store the file path
         id: String(Date.now()), // Unique id
       });
       console.log('Notification sent successfully');
@@ -375,7 +469,7 @@ export const showDownloadNotification = (
       id: String(Date.now()),
       title: `${isInward ? 'Inward' : 'Outward'} Report Downloaded`,
       body: `PDF has been saved to your device`,
-      userInfo: {filePath: filePath},
+      userInfo: {filePath: formattedFilePath},
       repeats: false,
       sound: 'default',
     });

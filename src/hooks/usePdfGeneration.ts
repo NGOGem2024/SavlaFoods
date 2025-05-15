@@ -20,6 +20,12 @@ interface UsePdfGenerationProps {
   isInward: boolean;
 }
 
+interface ReportFilters {
+  unit: string;
+  itemCategories: string[];
+  itemSubcategories: string[];
+}
+
 export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
@@ -62,14 +68,12 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
     fromDate: Date,
     toDate: Date,
     customerName: string,
-    filters: any,
+    filters: ReportFilters,
   ) => {
     try {
       setPdfGenerating(true);
       setDownloadProgress(0);
-
-      // Create notification for download progress
-      updateProgressUI(20, 'Preparing your report PDF...');
+      setStatusMessage('Initializing PDF generation...');
 
       // Sanitize all reportData values to remove problematic Unicode characters
       const sanitizedReportData = reportData.map(item => {
@@ -86,19 +90,19 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
       // Also sanitize the customer name and other text inputs
       const safeCustName = sanitizeStringForPdf(customerName);
       const safeUnit = filters.unit ? sanitizeStringForPdf(filters.unit) : '';
-      const safeItemCategory = filters.itemCategory
-        ? sanitizeStringForPdf(filters.itemCategory)
-        : '';
-      const safeItemSubcategory = filters.itemSubcategory
-        ? sanitizeStringForPdf(filters.itemSubcategory)
-        : '';
+      const safeItemCategories = filters.itemCategories.map(category =>
+        sanitizeStringForPdf(category),
+      );
+      const safeItemSubcategories = filters.itemSubcategories.map(subcategory =>
+        sanitizeStringForPdf(subcategory),
+      );
 
       // Log current state to help with debugging
       console.log('===== PDF DOWNLOAD STARTED =====');
       console.log('Current mode:', isInward ? 'INWARD' : 'OUTWARD');
       console.log('Report data count:', sanitizedReportData.length);
 
-      // Format dates for filename - avoid any slashes or special characters
+      // Format dates for filename
       const formatDateForFilename = (date: Date) => {
         return `${date.getDate().toString().padStart(2, '0')}-${(
           date.getMonth() + 1
@@ -107,10 +111,35 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
           .padStart(2, '0')}-${date.getFullYear()}`;
       };
 
-      const safeFromDate = formatDateForFilename(fromDate);
-      const safeToDate = formatDateForFilename(toDate);
-      const reportTitle = isInward ? 'Inward_Report' : 'Outward_Report';
-      const fileName = `${reportTitle}_${safeFromDate}_to_${safeToDate}.pdf`;
+      const fromDateFormatted = formatDateForFilename(fromDate);
+      const toDateFormatted = formatDateForFilename(toDate);
+
+      // Format filters for filename
+      const unitText = filters.unit ? `-${filters.unit}` : '';
+      const categoryText =
+        filters.itemCategories.length > 0
+          ? `-${filters.itemCategories.join('-')}`
+          : '';
+      const subcategoryText =
+        filters.itemSubcategories.length > 0
+          ? `-${filters.itemSubcategories.join('-')}`
+          : '';
+
+      // Generate a filename with proper filter info
+      const pdfFilename = `${
+        isInward ? 'Inward' : 'Outward'
+      }_Report_${customerName.replace(
+        /\s+/g,
+        '_',
+      )}_${fromDateFormatted}_to_${toDateFormatted}${unitText}${categoryText}${subcategoryText}.pdf`.replace(
+        /[&\/\\#,+()$~%.'":*?<>{}]/g,
+        '_',
+      );
+
+      // Ensure filename ends with .pdf
+      const finalFilename = pdfFilename.endsWith('.pdf')
+        ? pdfFilename
+        : `${pdfFilename}.pdf`;
 
       // Create appropriate directory paths for different platforms
       let dirPath: string;
@@ -119,13 +148,8 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
       if (Platform.OS === 'ios') {
         // For iOS, use the Documents directory which is accessible to the user
         dirPath = RNFS.DocumentDirectoryPath; // Use RNFS instead of RNBlobUtil for consistency
-        publicFilePath = `${dirPath}/${fileName}`;
-
-        // After saving the file, we need to make it accessible
-        const success = await RNBlobUtil.ios.openDocument(publicFilePath);
-        if (!success) {
-          console.log('Could not open the document, but it was saved');
-        }
+        publicFilePath = `${dirPath}/${finalFilename}`;
+        // We'll open the document AFTER writing it, not here
       } else {
         // For Android, use the public Download directory
         // Request storage permissions if needed
@@ -135,7 +159,7 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
             'Storage permission denied, using app-specific directory as fallback',
           );
           dirPath = RNBlobUtil.fs.dirs.DownloadDir; // App-specific when permissions denied
-          publicFilePath = `${dirPath}/${fileName}`;
+          publicFilePath = `${dirPath}/${finalFilename}`;
 
           Alert.alert(
             'Limited Storage Access',
@@ -164,7 +188,7 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
             }
           }
 
-          publicFilePath = `${dirPath}/${fileName}`;
+          publicFilePath = `${dirPath}/${finalFilename}`;
         }
       }
 
@@ -299,10 +323,14 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
           // Draw filters text
           let filtersText = ` Customer: ${safeCustName}`;
           if (safeUnit) filtersText += `, Unit: ${safeUnit}`;
-          if (safeItemCategory)
-            filtersText += `, Category: ${safeItemCategory}`;
-          if (safeItemSubcategory)
-            filtersText += `, Subcategory: ${safeItemSubcategory}`;
+          if (safeItemCategories.length > 0) {
+            filtersText += `, Categories: ${safeItemCategories.join(', ')}`;
+          }
+          if (safeItemSubcategories.length > 0) {
+            filtersText += `, Subcategories: ${safeItemSubcategories.join(
+              ', ',
+            )}`;
+          }
 
           page.drawText(filtersText, {
             x: margin,
@@ -606,10 +634,22 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
         }
 
         // Get unique filename to avoid conflicts
-        publicFilePath = await getUniqueFileName(dirPath, fileName);
+        publicFilePath = await getUniqueFileName(dirPath, finalFilename);
 
         // Write the file
         await RNBlobUtil.fs.writeFile(publicFilePath, base64Pdf, 'base64');
+
+        // For iOS, try to open the document AFTER it's been written
+        if (Platform.OS === 'ios') {
+          try {
+            await RNBlobUtil.ios.openDocument(publicFilePath);
+          } catch (iosError) {
+            console.log(
+              'Could not open the document automatically, but it was saved:',
+              iosError,
+            );
+          }
+        }
 
         // Make file visible in media gallery (Android)
         if (Platform.OS === 'android') {
@@ -632,7 +672,7 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
         updateProgressUI(100, 'Download complete!');
 
         // Show notification
-        showDownloadNotification(publicFilePath, fileName, isInward);
+        showDownloadNotification(publicFilePath, finalFilename, isInward);
 
         // Show success alert
         const isPublicStorage = !publicFilePath.includes('Android/data');
@@ -644,7 +684,27 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
           [
             {
               text: 'View PDF',
-              onPress: () => openPdf(publicFilePath),
+              onPress: () => {
+                try {
+                  // Make sure the path format is correct for the platform
+                  const formattedPath =
+                    Platform.OS === 'android' &&
+                    !publicFilePath.startsWith('file://')
+                      ? `file://${publicFilePath}`
+                      : publicFilePath;
+
+                  // Open the PDF with a slight delay to ensure it's fully written
+                  setTimeout(() => {
+                    openPdf(formattedPath);
+                  }, 300);
+                } catch (viewError) {
+                  console.error('Error opening PDF:', viewError);
+                  Alert.alert(
+                    'Error',
+                    'Could not open the PDF file. The file was saved successfully, but there was an error opening it.',
+                  );
+                }
+              },
             },
             {
               text: 'OK',

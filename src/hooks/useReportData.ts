@@ -32,8 +32,8 @@ interface SubcategoriesMap {
 export interface ReportFilters {
   fromDate: Date;
   toDate: Date;
-  itemCategory: string;
-  itemSubcategory: string;
+  itemCategories: string[];
+  itemSubcategories: string[];
   unit: string;
 }
 
@@ -253,17 +253,19 @@ export const useReportData = ({isInward}: UseReportDataProps) => {
       setIsReportLoading(true);
       setIsSearching(true);
 
-      // Build request data with optional fields as null when not selected
+      // Build request data with arrays for categories and subcategories
       const requestData = {
         fromDate: formatDateForApi(filters.fromDate),
         toDate: formatDateForApi(filters.toDate),
         customerName: customerName, // Use customer name from state
-        itemCategoryName: filters.itemCategory
-          ? filters.itemCategory.trim()
-          : null,
-        itemSubCategoryName: filters.itemSubcategory
-          ? filters.itemSubcategory.trim()
-          : null,
+        itemCategoryName:
+          filters.itemCategories.length > 0
+            ? filters.itemCategories.map(cat => cat.trim())
+            : null,
+        itemSubCategoryName:
+          filters.itemSubcategories.length > 0
+            ? filters.itemSubcategories.map(subcat => subcat.trim())
+            : null,
         unitName: filters.unit ? filters.unit.trim() : null,
       };
 
@@ -307,12 +309,16 @@ export const useReportData = ({isInward}: UseReportDataProps) => {
           const unitMatch =
             requestData.unitName === null ||
             item.UNIT_NAME === requestData.unitName;
+
+          // Check if item's category is in the selected categories array
           const categoryMatch =
             requestData.itemCategoryName === null ||
-            item.ITEM_CATEG_NAME === requestData.itemCategoryName;
+            requestData.itemCategoryName.includes(item.ITEM_CATEG_NAME);
+
+          // Check if item's subcategory is in the selected subcategories array
           const subcategoryMatch =
             requestData.itemSubCategoryName === null ||
-            item.SUB_CATEGORY_NAME === requestData.itemSubCategoryName;
+            requestData.itemSubCategoryName.includes(item.SUB_CATEGORY_NAME);
 
           return (
             customerMatch && unitMatch && categoryMatch && subcategoryMatch

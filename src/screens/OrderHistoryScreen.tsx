@@ -18,6 +18,7 @@ import {API_ENDPOINTS} from '../config/api.config';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useCustomer} from '../contexts/DisplayNameContext';
 import {MainStackParamList} from '../../src/type/type';
+import {LayoutWrapper} from '../components/AppLayout';
 
 interface OrderHistory {
   cancelledRemark: React.JSX.Element;
@@ -29,12 +30,14 @@ interface OrderHistory {
   status: string;
   transporterName: string;
   remarks: string;
+  cancelRemark: string;
   createdOn: string;
   customerName: string;
   customerMobile: number;
   customerEmail: string | null;
   totalItems: number;
   totalQuantity: number;
+  itemCount?: number;
   items: Array<{
     detailId: number;
     itemId: number;
@@ -176,13 +179,14 @@ const OrderHistoryScreen = () => {
         status: params.status || 'NEW',
         transporterName: params.transporterName || '',
         remarks: params.remarks || '',
+        cancelRemark: params.cancelRemark || '',
         createdOn: params.createdOn || '',
-        CancelledRemarks: params.CancelledRemarks || '',
         customerName: params.customerName || '',
         customerMobile: params.customerMobile || 0,
         customerEmail: params.customerEmail || null,
         totalItems: params.items?.length || 0,
-
+        itemCount: params.itemCount || params.items?.length || 0,
+        cancelledRemark: params.CancelledRemarks || null,
         totalQuantity:
           params.items?.reduce(
             (sum: any, item: {requestedQty: any}) =>
@@ -458,7 +462,9 @@ const OrderHistoryScreen = () => {
               color="#0284C7"
               style={styles.itemsIcon}
             />
-            <Text style={styles.itemsListTitle}>Items ({item.totalItems})</Text>
+            <Text style={styles.itemsListTitle}>
+              Items ({item.itemCount || item.totalItems || item.items.length})
+            </Text>
           </View>
           {item.items &&
             item.items.map((orderItem, index) => (
@@ -509,7 +515,7 @@ const OrderHistoryScreen = () => {
                   </View>
                 )}
 
-                {orderItem.vakalNo && (
+                {orderItem.vakalNo ? (
                   <View style={styles.vakalNoContainer}>
                     <MaterialIcons
                       name="receipt-long"
@@ -519,6 +525,17 @@ const OrderHistoryScreen = () => {
                     />
                     <Text style={styles.vakalNoLabel}>Vakal No:</Text>
                     <Text style={styles.vakalNoValue}>{orderItem.vakalNo}</Text>
+                  </View>
+                ) : (
+                  <View style={styles.vakalNoContainer}>
+                    <MaterialIcons
+                      name="receipt-long"
+                      size={16}
+                      color="#4B5563"
+                      style={styles.vakalNoIcon}
+                    />
+                    <Text style={styles.vakalNoLabel}>Vakal No:</Text>
+                    <Text style={styles.vakalNoValue}>Not Available</Text>
                   </View>
                 )}
               </View>
@@ -581,7 +598,7 @@ const OrderHistoryScreen = () => {
             </View>
           )}
 
-          {item.remarks && (
+          {item.cancelRemark && (
             <View style={styles.remarksContainer}>
               <View style={styles.remarksHeader}>
                 <MaterialIcons
@@ -590,9 +607,9 @@ const OrderHistoryScreen = () => {
                   color="#4B5563"
                   style={styles.remarksIcon}
                 />
-                <Text style={styles.remarksTitle}>Remarks </Text>
+                <Text style={styles.remarksTitle}>Cancellation Remarks </Text>
               </View>
-              <Text style={styles.remarksValue}>{item.remarks}</Text>
+              <Text style={styles.remarksValue}>{item.cancelRemark}</Text>
             </View>
           )}
 
@@ -668,57 +685,59 @@ const OrderHistoryScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f3f4f6" />
+    <LayoutWrapper showHeader={true} showTabBar={false} route={route}>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#f3f4f6" />
 
-      {renderStatusFilter()}
+        {renderStatusFilter()}
 
-      {error && orders.length === 0 ? (
-        <View style={styles.centered}>
-          <MaterialIcons name="error-outline" size={64} color="#ef4444" />
-          <Text style={styles.errorTitle}>Server Error</Text>
-          <Text style={styles.errorText}>{error}</Text>
-          <Text style={styles.errorInfo}>
-            The server encountered an issue processing your request. This might
-            be temporary.
-          </Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => fetchOrderHistory(1, true)}>
-            <Text style={styles.retryButtonText}>Try Again</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <FlatList
-          data={orders}
-          keyExtractor={item => `order-history-${item.orderId}`}
-          renderItem={renderOrderCard}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              enabled={!hasSpecificOrder} // Disable pull-to-refresh for specific order
-            />
-          }
-          onEndReached={loadMoreOrders}
-          onEndReachedThreshold={0.3}
-          ListFooterComponent={renderFooter}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <MaterialIcons name="history" size={64} color="#d1d5db" />
-              <Text style={styles.emptyText}>No order history found</Text>
-              {/* {selectedStatus && (
+        {error && orders.length === 0 ? (
+          <View style={styles.centered}>
+            <MaterialIcons name="error-outline" size={64} color="#ef4444" />
+            <Text style={styles.errorTitle}>Server Error</Text>
+            <Text style={styles.errorText}>{error}</Text>
+            <Text style={styles.errorInfo}>
+              The server encountered an issue processing your request. This
+              might be temporary.
+            </Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={() => fetchOrderHistory(1, true)}>
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <FlatList
+            data={orders}
+            keyExtractor={item => `order-history-${item.orderId}`}
+            renderItem={renderOrderCard}
+            contentContainerStyle={styles.list}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                enabled={!hasSpecificOrder} // Disable pull-to-refresh for specific order
+              />
+            }
+            onEndReached={loadMoreOrders}
+            onEndReachedThreshold={0.3}
+            ListFooterComponent={renderFooter}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <MaterialIcons name="history" size={64} color="#d1d5db" />
+                <Text style={styles.emptyText}>No order history found</Text>
+                {/* {selectedStatus && (
                 <Text style={styles.filterInfoText}>
                   Filter: {selectedStatus}
                 </Text>
               )} */}
-            </View>
-          }
-        />
-      )}
-    </SafeAreaView>
+              </View>
+            }
+          />
+        )}
+      </SafeAreaView>
+    </LayoutWrapper>
   );
 };
 
@@ -1004,7 +1023,7 @@ const styles = StyleSheet.create({
     paddingLeft: 22,
   },
   vakalNoValue: {
-    fontSize: 1,
+    fontSize: 14,
     color: '#111827',
     fontWeight: '500',
   },

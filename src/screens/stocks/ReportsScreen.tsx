@@ -10,10 +10,8 @@ import {
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {LayoutWrapper} from '../../components/AppLayout';
-import {ParamListBase} from '@react-navigation/native';
 
 const ReportsScreen = ({navigation}: {navigation: any}) => {
-  // const navigation = useNavigation();
   const route = useRoute();
 
   const reportItems = [
@@ -35,12 +33,17 @@ const ReportsScreen = ({navigation}: {navigation: any}) => {
       screen: 'LotReport',
       description: 'View details of product lots information',
     },
-
     {
       title: 'Summary',
       icon: 'summarize',
       screen: 'ReportSummary',
       description: 'View summary reports and analytics',
+    },
+    {
+      title: 'Zero Stock',
+      icon: 'remove-circle-outline', // Direct numeric zero symbol
+      screen: 'ZeroStockReportScreen',
+      description: 'Items with zero available quantity in inventory',
     },
   ];
 
@@ -51,7 +54,6 @@ const ReportsScreen = ({navigation}: {navigation: any}) => {
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Reports</Text>
           </View>
-
           <View style={styles.menuContainer}>
             {reportItems.map((item, index) => (
               <TouchableOpacity
