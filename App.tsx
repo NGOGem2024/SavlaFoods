@@ -17,7 +17,6 @@ import ItemDetailScreen from './src/screens/ItemDetailScreen';
 import ItemDetailsExpanded from './src/screens/ItemDetailsExpanded';
 import LotReportScreen from './src/screens/LotReportScreen';
 import QuantitySelectorModal from './src/components/QuantitySelectorModal';
-import GrnDetailsScreen from './src/screens/GrnDetailsScreen';
 
 // Contexts
 import {DisplayNameProvider} from './src/contexts/DisplayNameContext';
@@ -39,6 +38,8 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import OrderDetailsScreen from './src/screens/OrderDetailsScreen';
 import PendingOrdersScreen from './src/screens/PendingOrdersScreen';
 import EditOrderScreen from './src/components/EditOrderScreen.tsx';
+import GrnDetailsScreen from './src/screens/GRNDetailsScreen.tsx';
+import ZeroStockReportScreen from './src/screens/stocks/ZeroStockReportScreen.tsx';
 
 const RootStack = createStackNavigator<RootStackParamList>();
 const MainStack = createStackNavigator<MainStackParamList>();
@@ -77,6 +78,18 @@ const MainStackNavigator: React.FC = () => {
         />
 
         <MainStack.Screen
+          name="GrnDetailsScreen"
+          component={GrnDetailsScreen}
+          options={{headerShown: false}}
+        />
+
+        <MainStack.Screen
+          name="ZeroStockReportScreen"
+          component={ZeroStockReportScreen}
+          options={{headerShown: false}}
+        />
+
+        <MainStack.Screen
           name="SubCategory"
           component={SubCategory}
           options={{headerShown: false}}
@@ -110,10 +123,15 @@ const MainStackNavigator: React.FC = () => {
           component={LotReportScreen}
           options={{title: 'Lot Report'}}
         />
+        {/* <MainStack.Screen
+          name="ReportSummaryScreen"
+          component={ReportSummaryScreen}
+          options={{title: 'Lot Report'}}
+        /> */}
         <MainStack.Screen
           name="PendingOrdersScreen"
           component={PendingOrdersScreen}
-          options={{title: 'Pending Orders'}}
+          options={{headerShown: false}}
         />
 
         <MainStack.Screen
@@ -126,11 +144,6 @@ const MainStackNavigator: React.FC = () => {
           name="OrderHistoryScreen"
           component={OrderHistoryScreen}
           options={{headerShown: false}}
-        />
-        <MainStack.Screen
-          name="GrnDetailsScreen"
-          component={GrnDetailsScreen}
-          options={{title: 'GRN Details'}}
         />
         <RootStack.Screen
           name="HomeScreen"
@@ -173,7 +186,7 @@ function App(): JSX.Element {
                       <RootStack.Screen
                         name="OtpVerificationScreen"
                         component={OtpVerificationScreen}
-                        options={{headerShown: false}}
+                        options={{headerShown: false, gestureEnabled: false}}
                       />
                       <RootStack.Screen
                         name="Main"

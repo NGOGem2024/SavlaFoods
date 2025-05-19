@@ -1160,6 +1160,8 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 import {format} from 'date-fns';
 import {API_ENDPOINTS, getAuthHeaders} from '../../config/api.config';
+import {useRoute} from '@react-navigation/core';
+import {LayoutWrapper} from '../../components/AppLayout';
 
 // Define types for API responses
 interface SummaryData {
@@ -1214,6 +1216,7 @@ interface ApiResponse {
 }
 
 const ReportSummaryScreen: React.FC = () => {
+  const route = useRoute();
   // State with proper types
   const [fromDate, setFromDate] = useState<Date>(() => {
     const today = new Date();
@@ -1846,225 +1849,227 @@ const ReportSummaryScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Date Range Selector */}
-      <View style={styles.dateContainer}>
-        <View style={styles.dateField}>
-          <Text style={styles.dateLabel}>From:</Text>
-          <TouchableOpacity
-            style={styles.datePicker}
-            onPress={() => {
-              setTempFromDate(fromDate);
-              setShowFromDatePicker(true);
-            }}>
-            <Text style={styles.dateText}>{formatDisplayDate(fromDate)}</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.dateField}>
-          <Text style={styles.dateLabel}>To:</Text>
-          <TouchableOpacity
-            style={styles.datePicker}
-            onPress={() => {
-              setTempToDate(toDate);
-              setShowToDatePicker(true);
-            }}>
-            <Text style={styles.dateText}>{formatDisplayDate(toDate)}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Apply button for date range */}
-      <TouchableOpacity style={styles.applyButton} onPress={handleApplyDates}>
-        <Text style={styles.applyButtonText}> Apply Date Range</Text>
-      </TouchableOpacity>
-
-      {/* Replace the individual radio buttons with this container */}
-      <View style={styles.radioContainer}>
-        <TouchableOpacity
-          style={[
-            styles.radioButton,
-            reportType === 'all' && styles.radioSelected,
-          ]}
-          onPress={() => handleReportTypeChange('all')}>
-          <View
-            style={[
-              styles.radioCircle,
-              reportType === 'all' && {borderColor: '#F48221'},
-            ]}>
-            {reportType === 'all' && <View style={styles.radioFill} />}
+    <LayoutWrapper showHeader={true} showTabBar={false} route={route}>
+      <View style={styles.container}>
+        {/* Date Range Selector */}
+        <View style={styles.dateContainer}>
+          <View style={styles.dateField}>
+            <Text style={styles.dateLabel}>From:</Text>
+            <TouchableOpacity
+              style={styles.datePicker}
+              onPress={() => {
+                setTempFromDate(fromDate);
+                setShowFromDatePicker(true);
+              }}>
+              <Text style={styles.dateText}>{formatDisplayDate(fromDate)}</Text>
+            </TouchableOpacity>
           </View>
-          <Text
-            style={[
-              styles.radioLabel,
-              reportType === 'all' && styles.radioSelectedLabel,
-            ]}>
-            All
-          </Text>
+
+          <View style={styles.dateField}>
+            <Text style={styles.dateLabel}>To:</Text>
+            <TouchableOpacity
+              style={styles.datePicker}
+              onPress={() => {
+                setTempToDate(toDate);
+                setShowToDatePicker(true);
+              }}>
+              <Text style={styles.dateText}>{formatDisplayDate(toDate)}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Apply button for date range */}
+        <TouchableOpacity style={styles.applyButton} onPress={handleApplyDates}>
+          <Text style={styles.applyButtonText}> Apply Date Range</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[
-            styles.radioButton,
-            reportType === 'itemwise' && styles.radioSelected,
-          ]}
-          onPress={() => handleReportTypeChange('itemwise')}>
-          <View
-            style={[
-              styles.radioCircle,
-              reportType === 'itemwise' && {borderColor: '#F48221'},
-            ]}>
-            {reportType === 'itemwise' && <View style={styles.radioFill} />}
-          </View>
-          <Text
-            style={[
-              styles.radioLabel,
-              reportType === 'itemwise' && styles.radioSelectedLabel,
-            ]}>
-            Item-wise
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Loading Indicator */}
-      {loading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#F48221" />
-          <Text style={styles.loadingText}>Loading report data...</Text>
-        </View>
-      )}
-
-      {/* Error Message */}
-      {error && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
+        {/* Replace the individual radio buttons with this container */}
+        <View style={styles.radioContainer}>
           <TouchableOpacity
-            style={styles.retryButton}
-            onPress={handleApplyDates}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+            style={[
+              styles.radioButton,
+              reportType === 'all' && styles.radioSelected,
+            ]}
+            onPress={() => handleReportTypeChange('all')}>
+            <View
+              style={[
+                styles.radioCircle,
+                reportType === 'all' && {borderColor: '#F48221'},
+              ]}>
+              {reportType === 'all' && <View style={styles.radioFill} />}
+            </View>
+            <Text
+              style={[
+                styles.radioLabel,
+                reportType === 'all' && styles.radioSelectedLabel,
+              ]}>
+              All
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.radioButton,
+              reportType === 'itemwise' && styles.radioSelected,
+            ]}
+            onPress={() => handleReportTypeChange('itemwise')}>
+            <View
+              style={[
+                styles.radioCircle,
+                reportType === 'itemwise' && {borderColor: '#F48221'},
+              ]}>
+              {reportType === 'itemwise' && <View style={styles.radioFill} />}
+            </View>
+            <Text
+              style={[
+                styles.radioLabel,
+                reportType === 'itemwise' && styles.radioSelectedLabel,
+              ]}>
+              Item-wise
+            </Text>
           </TouchableOpacity>
         </View>
-      )}
 
-      {/* Report Content */}
-      {!loading && !error && (
-        <ScrollView style={styles.scrollContainer}>
-          {reportType === 'all' ? renderSummaryData() : renderItemWiseData()}
-        </ScrollView>
-      )}
+        {/* Loading Indicator */}
+        {loading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#F48221" />
+            <Text style={styles.loadingText}>Loading report data...</Text>
+          </View>
+        )}
 
-      {/* Date Picker Modals */}
-      {Platform.OS === 'ios' ? (
-        // iOS date picker modal
-        <>
-          {showFromDatePicker && (
-            <Modal
-              transparent={true}
-              animationType="fade"
-              visible={showFromDatePicker}>
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Select From Date</Text>
+        {/* Error Message */}
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={handleApplyDates}>
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
-                  <DateTimePicker
-                    value={tempFromDate}
-                    mode="date"
-                    display="spinner"
-                    onChange={onFromDateChange}
-                    textColor="#000000"
-                    style={styles.iosDatePicker}
-                    minimumDate={new Date(2020, 0, 1)}
-                    maximumDate={new Date()}
-                  />
+        {/* Report Content */}
+        {!loading && !error && (
+          <ScrollView style={styles.scrollContainer}>
+            {reportType === 'all' ? renderSummaryData() : renderItemWiseData()}
+          </ScrollView>
+        )}
 
-                  <View style={styles.modalButtons}>
-                    <TouchableOpacity
-                      style={styles.cancelButton}
-                      onPress={() => setShowFromDatePicker(false)}>
-                      <Text style={styles.buttonText}>Cancel</Text>
-                    </TouchableOpacity>
+        {/* Date Picker Modals */}
+        {Platform.OS === 'ios' ? (
+          // iOS date picker modal
+          <>
+            {showFromDatePicker && (
+              <Modal
+                transparent={true}
+                animationType="fade"
+                visible={showFromDatePicker}>
+                <View style={styles.modalOverlay}>
+                  <View style={styles.modalContent}>
+                    <Text style={styles.modalTitle}>Select From Date</Text>
 
-                    <TouchableOpacity
-                      style={styles.confirmButton}
-                      onPress={confirmFromDate}>
-                      <Text style={styles.buttonText}>Confirm</Text>
-                    </TouchableOpacity>
+                    <DateTimePicker
+                      value={tempFromDate}
+                      mode="date"
+                      display="spinner"
+                      onChange={onFromDateChange}
+                      textColor="#000000"
+                      style={styles.iosDatePicker}
+                      minimumDate={new Date(2020, 0, 1)}
+                      maximumDate={new Date()}
+                    />
+
+                    <View style={styles.modalButtons}>
+                      <TouchableOpacity
+                        style={styles.cancelButton}
+                        onPress={() => setShowFromDatePicker(false)}>
+                        <Text style={styles.buttonText}>Cancel</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.confirmButton}
+                        onPress={confirmFromDate}>
+                        <Text style={styles.buttonText}>Confirm</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
-              </View>
-            </Modal>
-          )}
+              </Modal>
+            )}
 
-          {showToDatePicker && (
-            <Modal
-              transparent={true}
-              animationType="fade"
-              visible={showToDatePicker}>
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Select To Date</Text>
+            {showToDatePicker && (
+              <Modal
+                transparent={true}
+                animationType="fade"
+                visible={showToDatePicker}>
+                <View style={styles.modalOverlay}>
+                  <View style={styles.modalContent}>
+                    <Text style={styles.modalTitle}>Select To Date</Text>
 
-                  <DateTimePicker
-                    value={tempToDate}
-                    mode="date"
-                    display="spinner"
-                    onChange={onToDateChange}
-                    style={styles.iosDatePicker}
-                    minimumDate={new Date(2020, 0, 1)}
-                    maximumDate={new Date()}
-                    // Add these props for iOS
-                    textColor="#000000"
-                    accentColor="#F48221" // Your app's orange accent color
-                  />
-                  <View style={styles.modalButtons}>
-                    <TouchableOpacity
-                      style={styles.cancelButton}
-                      onPress={() => setShowToDatePicker(false)}>
-                      <Text style={styles.buttonText}>Cancel</Text>
-                    </TouchableOpacity>
+                    <DateTimePicker
+                      value={tempToDate}
+                      mode="date"
+                      display="spinner"
+                      onChange={onToDateChange}
+                      style={styles.iosDatePicker}
+                      minimumDate={new Date(2020, 0, 1)}
+                      maximumDate={new Date()}
+                      // Add these props for iOS
+                      textColor="#000000"
+                      accentColor="#F48221" // Your app's orange accent color
+                    />
+                    <View style={styles.modalButtons}>
+                      <TouchableOpacity
+                        style={styles.cancelButton}
+                        onPress={() => setShowToDatePicker(false)}>
+                        <Text style={styles.buttonText}>Cancel</Text>
+                      </TouchableOpacity>
 
-                    <TouchableOpacity
-                      style={styles.confirmButton}
-                      onPress={confirmToDate}>
-                      <Text style={styles.buttonText}>Confirm</Text>
-                    </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.confirmButton}
+                        onPress={confirmToDate}>
+                        <Text style={styles.buttonText}>Confirm</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
-              </View>
-            </Modal>
-          )}
-        </>
-      ) : (
-        // Android date picker
-        <>
-          {showFromDatePicker && (
-            <DateTimePicker
-              value={tempFromDate}
-              mode="date"
-              is24Hour={true}
-              display="default"
-              onChange={onFromDateChange}
-              minimumDate={new Date(2020, 0, 1)}
-              maximumDate={new Date()}
-            />
-          )}
+              </Modal>
+            )}
+          </>
+        ) : (
+          // Android date picker
+          <>
+            {showFromDatePicker && (
+              <DateTimePicker
+                value={tempFromDate}
+                mode="date"
+                is24Hour={true}
+                display="default"
+                onChange={onFromDateChange}
+                minimumDate={new Date(2020, 0, 1)}
+                maximumDate={new Date()}
+              />
+            )}
 
-          {showToDatePicker && (
-            <DateTimePicker
-              value={tempToDate} // Changed from tempFromDate to tempToDate
-              mode="date"
-              display="spinner"
-              onChange={onToDateChange} // Changed from onFromDateChange to onToDateChange
-              style={styles.iosDatePicker}
-              minimumDate={new Date(2020, 0, 1)}
-              maximumDate={new Date()}
-              textColor="#000000"
-              accentColor="#F48221"
-            />
-          )}
-        </>
-      )}
-    </View>
+            {showToDatePicker && (
+              <DateTimePicker
+                value={tempToDate} // Changed from tempFromDate to tempToDate
+                mode="date"
+                display="spinner"
+                onChange={onToDateChange} // Changed from onFromDateChange to onToDateChange
+                style={styles.iosDatePicker}
+                minimumDate={new Date(2020, 0, 1)}
+                maximumDate={new Date()}
+                textColor="#000000"
+                accentColor="#F48221"
+              />
+            )}
+          </>
+        )}
+      </View>
+    </LayoutWrapper>
   );
 };
 

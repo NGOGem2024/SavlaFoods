@@ -258,12 +258,14 @@ export const useReportData = ({isInward}: UseReportDataProps) => {
         fromDate: formatDateForApi(filters.fromDate),
         toDate: formatDateForApi(filters.toDate),
         customerName: customerName, // Use customer name from state
-        itemCategoryName: filters.itemCategories.length > 0 
-          ? filters.itemCategories.map(cat => cat.trim()) 
-          : null,
-        itemSubCategoryName: filters.itemSubcategories.length > 0
-          ? filters.itemSubcategories.map(subcat => subcat.trim())
-          : null,
+        itemCategoryName:
+          filters.itemCategories.length > 0
+            ? filters.itemCategories.map(cat => cat.trim())
+            : null,
+        itemSubCategoryName:
+          filters.itemSubcategories.length > 0
+            ? filters.itemSubcategories.map(subcat => subcat.trim())
+            : null,
         unitName: filters.unit ? filters.unit.trim() : null,
       };
 
@@ -307,12 +309,12 @@ export const useReportData = ({isInward}: UseReportDataProps) => {
           const unitMatch =
             requestData.unitName === null ||
             item.UNIT_NAME === requestData.unitName;
-            
+
           // Check if item's category is in the selected categories array
           const categoryMatch =
             requestData.itemCategoryName === null ||
             requestData.itemCategoryName.includes(item.ITEM_CATEG_NAME);
-            
+
           // Check if item's subcategory is in the selected subcategories array
           const subcategoryMatch =
             requestData.itemSubCategoryName === null ||

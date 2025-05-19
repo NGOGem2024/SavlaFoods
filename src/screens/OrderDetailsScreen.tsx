@@ -23,6 +23,7 @@ import {
   NavigationProp,
   CommonActions,
 } from '@react-navigation/native';
+import {LayoutWrapper} from '../components/AppLayout';
 
 interface OrderItem {
   detailId?: number;
@@ -235,7 +236,7 @@ const OrderDetailsScreen = ({
         cancelRemark: cancelRemark,
         cancelledBy: 'MOBILE_USER',
       });
-      
+
       const response = await axios.post(
         API_ENDPOINTS.GET_CANCEL_ORDER,
         {
@@ -263,7 +264,7 @@ const OrderDetailsScreen = ({
       }
     } catch (error: any) {
       console.error('Error cancelling order:', error);
-      
+
       // Log detailed error information
       if (axios.isAxiosError(error)) {
         console.log('Axios error details:', {
@@ -271,7 +272,7 @@ const OrderDetailsScreen = ({
           statusText: error.response?.statusText,
           data: error.response?.data,
           message: error.message,
-          code: error.code
+          code: error.code,
         });
       }
 
@@ -315,301 +316,313 @@ const OrderDetailsScreen = ({
   }, [route.params?.timestamp]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={backHandler}>
-          <MaterialIcons name="arrow-back" size={24} color="#0284C7" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Order Details</Text>
-        {order.status === 'NEW' && orderItems.length > 0 && (
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => {
-              navigation.navigate('EditOrderScreen', {order: order});
-            }}>
-            <MaterialIcons name="edit" size={24} color="#0284c7" />
-          </TouchableOpacity>
-        )}
-      </View>
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.purpleHeaderCard}>
-          <View style={styles.purpleHeader}>
-            <View style={styles.headerContent}>
-              <MaterialIcons name="shopping-bag" size={24} color="#ffffff" />
-              <Text style={styles.purpleHeaderText}>
-                Order #{order.orderNo}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.whiteCardContent}>
-            <View style={styles.infoRow}>
-              <View style={styles.infoItem}>
-                <View style={styles.infoIcon}>
-                  <MaterialIcons name="event" size={16} color="#0284C7" />
-                </View>
-                <View>
-                  <Text style={styles.infoLabelNew}>Order Date</Text>
-                  <Text style={styles.infoValueNew}>
-                    {formatDate(
-                      new Date(
-                        new Date(order.orderDate).setDate(
-                          new Date(order.orderDate).getDate(),
-                        ),
-                      )
-                        .toISOString()
-                        .split('T')[0],
-                    )}
-                  </Text>
-                </View>
+    <LayoutWrapper showHeader={true} showTabBar={true} route={route}>
+      <SafeAreaView style={styles.container}>
+        <ScrollView style={styles.scrollView}>
+          <View style={styles.purpleHeaderCard}>
+            <View style={styles.purpleHeader}>
+              <View style={styles.headerContent}>
+                <MaterialIcons name="shopping-bag" size={24} color="#ffffff" />
+                <Text style={styles.purpleHeaderText}>
+                  Order #{order.orderNo}
+                </Text>
               </View>
-
-              <View style={styles.infoItem}>
-                <View style={styles.infoIcon}>
-                  <MaterialIcons
-                    name="local-shipping"
-                    size={16}
-                    color="#0284C7"
-                  />
-                </View>
-                <View>
-                  <Text style={styles.infoLabelNew}>Delivery Date</Text>
-                  <Text style={styles.infoValueNew}>
-                    {formatDate(order.deliveryDate)}
-                  </Text>
-                </View>
-              </View>
+              {order.status === 'NEW' && orderItems.length > 0 && (
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => {
+                    navigation.navigate('EditOrderScreen', {order: order});
+                  }}>
+                  <MaterialIcons name="edit" size={24} color="white" />
+                </TouchableOpacity>
+              )}
             </View>
 
-            <View style={styles.dividerHorizontal} />
-
-            <View style={styles.infoRow}>
-              <View style={styles.infoItem}>
-                <View style={styles.infoIcon}>
-                  <MaterialIcons
-                    name="directions-bus"
-                    size={16}
-                    color="#0284C7"
-                  />
+            <View style={styles.whiteCardContent}>
+              <View style={styles.infoRow}>
+                <View style={styles.infoItem}>
+                  <View style={styles.infoIcon}>
+                    <MaterialIcons name="event" size={16} color="#0284C7" />
+                  </View>
+                  <View>
+                    <Text style={styles.infoLabelNew}>Order Date</Text>
+                    <Text style={styles.infoValueNew}>
+                      {formatDate(
+                        new Date(
+                          new Date(order.orderDate).setDate(
+                            new Date(order.orderDate).getDate(),
+                          ),
+                        )
+                          .toISOString()
+                          .split('T')[0],
+                      )}
+                    </Text>
+                  </View>
                 </View>
-                <View style={{flex: 1}}>
-                  <Text style={styles.infoLabelNew}>Transporter</Text>
-                  <Text
-                    style={[styles.infoValueNew, styles.transporterText]}
-                    numberOfLines={3}>
-                    {order.transporterName || 'Qqq'}
-                  </Text>
-                </View>
-              </View>
-            </View>
 
-            <View style={styles.dividerHorizontal} />
-
-            <View style={styles.infoRow}>
-              <View style={styles.infoItem}>
-                <View style={styles.infoIcon}>
-                  <MaterialIcons name="location-on" size={16} color="#0284C7" />
-                </View>
-                <View>
-                  <Text style={styles.infoLabelNew}>Delivery Location</Text>
-                  <View style={styles.locationBox}>
-                    <Text style={styles.locationText}>
-                      {order.deliveryAddress || 'N/A'}
+                <View style={styles.infoItem}>
+                  <View style={styles.infoIcon}>
+                    <MaterialIcons
+                      name="local-shipping"
+                      size={16}
+                      color="#0284C7"
+                    />
+                  </View>
+                  <View>
+                    <Text style={styles.infoLabelNew}>Delivery Date</Text>
+                    <Text style={styles.infoValueNew}>
+                      {formatDate(order.deliveryDate)}
                     </Text>
                   </View>
                 </View>
               </View>
-            </View>
 
-            <View style={styles.dividerHorizontal} />
+              <View style={styles.dividerHorizontal} />
 
-            <View style={styles.infoRow}>
-              <View style={styles.infoItem}>
-                <View style={styles.infoIcon}>
-                  <MaterialIcons name="comment" size={16} color="#0284C7" />
-                </View>
-                <View>
-                  <Text style={styles.infoLabelNew}>Remarks</Text>
-                  <View style={styles.locationBox}>
-                    <Text style={styles.locationText}>
-                      {order.remarks || 'N/A'}
+              <View style={styles.infoRow}>
+                <View style={styles.infoItem}>
+                  <View style={styles.infoIcon}>
+                    <MaterialIcons
+                      name="directions-bus"
+                      size={16}
+                      color="#0284C7"
+                    />
+                  </View>
+                  <View style={{flex: 1}}>
+                    <Text style={styles.infoLabelNew}>Transporter Name</Text>
+                    <Text
+                      style={[styles.infoValueNew, styles.transporterText]}
+                      numberOfLines={3}>
+                      {order.transporterName || 'Qqq'}
                     </Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.dividerHorizontal} />
+
+              <View style={styles.infoRow}>
+                <View style={styles.infoItem}>
+                  <View style={styles.infoIcon}>
+                    <MaterialIcons
+                      name="location-on"
+                      size={16}
+                      color="#0284C7"
+                    />
+                  </View>
+                  <View>
+                    <Text style={styles.infoLabelNew}>Delivery Location</Text>
+                    <View style={styles.locationBox}>
+                      <Text style={styles.locationText}>
+                        {order.deliveryAddress || 'N/A'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.dividerHorizontal} />
+
+              <View style={styles.infoRow}>
+                <View style={styles.infoItem}>
+                  <View style={styles.infoIcon}>
+                    <MaterialIcons name="comment" size={16} color="#0284C7" />
+                  </View>
+                  <View>
+                    <Text style={styles.infoLabelNew}>Remarks</Text>
+                    <View style={styles.locationBox}>
+                      <Text style={styles.locationText}>
+                        {order.remarks || 'N/A'}
+                      </Text>
+                    </View>
                   </View>
                 </View>
               </View>
             </View>
           </View>
-        </View>
 
-        {orderItems && orderItems.length > 0 ? (
-          orderItems.map((item: OrderItem, index: number) => (
-            <View
-              key={`item-${item.detailId || index}`}
-              style={styles.itemCard}>
-              <View style={styles.itemHeader}>
-                <View style={styles.itemNameContainer}>
-                  <MaterialIcons name="inventory" size={18} color="#0369a1" />
-                  <Text style={styles.itemName}>{item.itemName}</Text>
+          {orderItems && orderItems.length > 0 ? (
+            orderItems.map((item: OrderItem, index: number) => (
+              <View
+                key={`item-${item.detailId || index}`}
+                style={styles.itemCard}>
+                <View style={styles.itemHeader}>
+                  <View style={styles.itemNameContainer}>
+                    <MaterialIcons name="inventory" size={18} color="#0369a1" />
+                    <Text style={styles.itemName}>{item.itemName}</Text>
+                  </View>
                 </View>
-              </View>
-              <View style={styles.lotNoContainer}>
-                <MaterialIcons name="label" size={16} color="#f97316" />
-                <Text style={styles.lotNo}>Lot No: {item.lotNo || 'N/A'}</Text>
-              </View>
-              <View style={styles.itemDetailsGrid}>
+                <View style={styles.lotNoContainer}>
+                  <MaterialIcons name="label" size={16} color="#f97316" />
+                  <Text style={styles.lotNo}>
+                    Lot No: {item.lotNo || 'N/A'}
+                  </Text>
+                </View>
+                <View style={styles.itemDetailsGrid}>
+                  <View style={styles.itemDetail}>
+                    <MaterialIcons name="bookmark" size={14} color="#6B7280" />
+                    <Text style={styles.detailLabel}>Item Marks:</Text>
+                    <Text style={styles.detailValue}>
+                      {item.itemMarks || 'N/A'}
+                    </Text>
+                  </View>
+                </View>
                 <View style={styles.itemDetail}>
-                  <MaterialIcons name="bookmark" size={14} color="#6B7280" />
-                  <Text style={styles.detailLabel}>Item Marks:</Text>
+                  <MaterialIcons name="description" size={14} color="#6B7280" />
+                  <Text style={styles.detailLabel}>Vakal No:</Text>
                   <Text style={styles.detailValue}>
-                    {item.itemMarks || 'N/A'}
+                    {item.vakalNo || 'N/A'}
                   </Text>
                 </View>
+
+                <View style={styles.quantityContainerNew}>
+                  <View style={styles.quantityBox}>
+                    <Text style={styles.quantityLabelNew}>Available</Text>
+                    <Text style={styles.quantityValueNew}>
+                      {item.availableQty}
+                    </Text>
+                  </View>
+                  <View style={styles.quantityDividerNew} />
+                  <View style={styles.quantityBox}>
+                    <Text style={styles.quantityLabelNew}>Net Qty</Text>
+                    <Text
+                      style={[
+                        styles.quantityValueNew,
+                        item.availableQty - item.requestedQty < 0 &&
+                          styles.negativeQuantity,
+                        item.availableQty - item.requestedQty > 0 &&
+                          styles.positiveQuantity,
+                      ]}>
+                      {item.availableQty - item.requestedQty}
+                    </Text>
+                  </View>
+                  <View style={styles.quantityDividerNew} />
+                  <View style={styles.quantityBox}>
+                    <Text style={styles.quantityLabelNew}>Ordered</Text>
+                    <Text style={styles.quantityValueNew}>
+                      {item.requestedQty}
+                    </Text>
+                  </View>
+                </View>
               </View>
-              <View style={styles.itemDetail}>
-                <MaterialIcons name="description" size={14} color="#6B7280" />
-                <Text style={styles.detailLabel}>Vakal No:</Text>
-                <Text style={styles.detailValue}>{item.vakalNo || 'N/A'}</Text>
+            ))
+          ) : (
+            <View style={styles.noItemsContainer}>
+              <MaterialIcons name="info" size={48} color="#9ca3af" />
+              <Text style={styles.noItemsText}>
+                All order items have been cancelled
+              </Text>
+              <TouchableOpacity
+                style={styles.backToOrdersButton}
+                onPress={() => navigation.goBack()}>
+                <MaterialIcons name="arrow-back" size={16} color="#fff" />
+                <Text style={styles.backToOrdersText}>Back to Orders</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </ScrollView>
+
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <MaterialIcons name="error-outline" size={28} color="#ef4444" />
+                <Text style={styles.modalTitle}>Cancel Order</Text>
               </View>
 
-              <View style={styles.quantityContainerNew}>
-                <View style={styles.quantityBox}>
-                  <Text style={styles.quantityLabelNew}>Available</Text>
-                  <Text style={styles.quantityValueNew}>
-                    {item.availableQty}
+              <View style={styles.modalBody}>
+                <Text style={styles.modalMessage}>
+                  Are you sure you want to cancel this order?
+                </Text>
+
+                <View style={styles.compactOrderContainer}>
+                  <MaterialIcons
+                    name="shopping-bag"
+                    size={16}
+                    color="#0284C7"
+                  />
+                  <Text style={styles.compactOrderText}>
+                    Order No: #{order.orderNo}
                   </Text>
                 </View>
-                <View style={styles.quantityDividerNew} />
-                <View style={styles.quantityBox}>
-                  <Text style={styles.quantityLabelNew}>Net Qty</Text>
-                  <Text
-                    style={[
-                      styles.quantityValueNew,
-                      item.availableQty - item.requestedQty < 0 &&
-                        styles.negativeQuantity,
-                      item.availableQty - item.requestedQty > 0 &&
-                        styles.positiveQuantity,
-                    ]}>
-                    {item.availableQty - item.requestedQty}
+
+                <View style={styles.cancelRemarkContainer}>
+                  <Text style={styles.cancelRemarkLabel}>
+                    Cancellation Remarks:
                   </Text>
-                </View>
-                <View style={styles.quantityDividerNew} />
-                <View style={styles.quantityBox}>
-                  <Text style={styles.quantityLabelNew}>Ordered</Text>
-                  <Text style={styles.quantityValueNew}>
-                    {item.requestedQty}
-                  </Text>
+                  <TextInput
+                    style={styles.cancelRemarkInput}
+                    value={cancelRemark}
+                    onChangeText={setCancelRemark}
+                    placeholder="Enter reason for cancellation"
+                    placeholderTextColor="#9ca3af"
+                    multiline={true}
+                    numberOfLines={2}
+                  />
                 </View>
               </View>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.modalCancelButton}
+                  onPress={() => setModalVisible(false)}>
+                  <Text style={styles.modalCancelText}>Keep Order</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.modalConfirmButton}
+                  onPress={handleCancelOrder}
+                  disabled={isLoading}>
+                  <MaterialIcons name="delete" size={16} color="#fff" />
+                  <Text style={styles.modalConfirmText}>
+                    {isLoading ? 'Cancelling...' : 'Confirm Cancel'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          ))
-        ) : (
-          <View style={styles.noItemsContainer}>
-            <MaterialIcons name="info" size={48} color="#9ca3af" />
-            <Text style={styles.noItemsText}>
-              All order items have been cancelled
-            </Text>
+          </View>
+        </Modal>
+
+        {/* Custom Toast Notification */}
+        {toastVisible && (
+          <Animated.View
+            style={[
+              styles.toast,
+              {
+                opacity: toastOpacity,
+                transform: [{translateX: toastOffset}],
+              },
+              toastType === 'error' ? styles.errorToast : styles.successToast,
+            ]}>
+            <View style={styles.toastContent}>
+              <MaterialIcons
+                name={toastType === 'success' ? 'check-circle' : 'error'}
+                size={24}
+                color={toastType === 'success' ? '#22c55e' : '#ef4444'}
+              />
+              <Text style={styles.toastMessage}>{toastMessage}</Text>
+            </View>
+          </Animated.View>
+        )}
+        {orderItems.length > 0 && (
+          <View style={styles.bottomButtonContainer}>
             <TouchableOpacity
-              style={styles.backToOrdersButton}
-              onPress={() => navigation.goBack()}>
-              <MaterialIcons name="arrow-back" size={16} color="#fff" />
-              <Text style={styles.backToOrdersText}>Back to Orders</Text>
+              style={styles.fullCancelButton}
+              onPress={() => showCancelConfirmation(order)}
+              disabled={isLoading}>
+              <MaterialIcons name="cancel" size={20} color="#fff" />
+              <Text style={styles.fullCancelButtonText}>
+                {isLoading ? 'Processing...' : 'Cancel Order'}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
-      </ScrollView>
-
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <MaterialIcons name="error-outline" size={28} color="#ef4444" />
-              <Text style={styles.modalTitle}>Cancel Order</Text>
-            </View>
-
-            <View style={styles.modalBody}>
-              <Text style={styles.modalMessage}>
-                Are you sure you want to cancel this order?
-              </Text>
-
-              <View style={styles.compactOrderContainer}>
-                <MaterialIcons name="shopping-bag" size={16} color="#0284C7" />
-                <Text style={styles.compactOrderText}>Order No: #{order.orderNo}</Text>
-              </View>
-
-              <View style={styles.cancelRemarkContainer}>
-                <Text style={styles.cancelRemarkLabel}>Cancellation Remarks:</Text>
-                <TextInput
-                  style={styles.cancelRemarkInput}
-                  value={cancelRemark}
-                  onChangeText={setCancelRemark}
-                  placeholder="Enter reason for cancellation"
-                  placeholderTextColor="#9ca3af"
-                  multiline={true}
-                  numberOfLines={2}
-                />
-              </View>
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.modalCancelButton}
-                onPress={() => setModalVisible(false)}>
-                <Text style={styles.modalCancelText}>Keep Order</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.modalConfirmButton}
-                onPress={handleCancelOrder}
-                disabled={isLoading}>
-                <MaterialIcons name="delete" size={16} color="#fff" />
-                <Text style={styles.modalConfirmText}>
-                  {isLoading ? 'Cancelling...' : 'Confirm Cancel'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-      
-      {/* Custom Toast Notification */}
-      {toastVisible && (
-        <Animated.View
-          style={[
-            styles.toast,
-            {
-              opacity: toastOpacity,
-              transform: [{translateX: toastOffset}],
-            },
-            toastType === 'error' ? styles.errorToast : styles.successToast,
-          ]}>
-          <View style={styles.toastContent}>
-            <MaterialIcons
-              name={toastType === 'success' ? 'check-circle' : 'error'}
-              size={24}
-              color={toastType === 'success' ? '#22c55e' : '#ef4444'}
-            />
-            <Text style={styles.toastMessage}>{toastMessage}</Text>
-          </View>
-        </Animated.View>
-      )}
-      {orderItems.length > 0 && (
-        <View style={styles.bottomButtonContainer}>
-          <TouchableOpacity
-            style={styles.fullCancelButton}
-            onPress={() => showCancelConfirmation(order)}
-            disabled={isLoading}>
-            <MaterialIcons name="cancel" size={20} color="#fff" />
-            <Text style={styles.fullCancelButtonText}>
-              {isLoading ? 'Processing...' : 'Cancel Order'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </SafeAreaView>
+      </SafeAreaView>
+    </LayoutWrapper>
   );
 };
 
@@ -848,6 +861,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    marginEnd: 160,
   },
   negativeQuantity: {
     color: '#dc2626',

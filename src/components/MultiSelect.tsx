@@ -39,7 +39,9 @@ const MultiSelect = ({
   const getDisplayText = () => {
     if (selectedValues.length === 0) return placeholder;
     if (selectedValues.length === 1) {
-      return options.find(option => option.value === selectedValues[0])?.label || '';
+      return (
+        options.find(option => option.value === selectedValues[0])?.label || ''
+      );
     }
     return `${selectedValues.length} items selected`;
   };
@@ -61,7 +63,9 @@ const MultiSelect = ({
         disabled={disabled}>
         <Text
           style={[
-            selectedValues.length > 0 ? styles.selectedText : styles.placeholderText,
+            selectedValues.length > 0
+              ? styles.selectedText
+              : styles.placeholderText,
             {color: selectedValues.length > 0 ? '#333333' : '#94A3B8'},
           ]}
           numberOfLines={1}
@@ -81,22 +85,32 @@ const MultiSelect = ({
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Items</Text>
               <TouchableOpacity onPress={() => setIsVisible(false)}>
-                <Text style={[styles.doneButton, {color: primaryColor}]}>Done</Text>
+                <Text style={[styles.doneButton, {color: primaryColor}]}>
+                  Done
+                </Text>
               </TouchableOpacity>
             </View>
 
             <FlatList
               data={options}
-              keyExtractor={(item) => item.value}
+              keyExtractor={item => item.value}
               renderItem={({item}) => (
                 <TouchableOpacity
                   style={styles.optionItem}
                   onPress={() => toggleItem(item.value)}>
                   <Text style={styles.optionText}>{item.label}</Text>
                   <MaterialIcons
-                    name={selectedValues.includes(item.value) ? 'check-box' : 'check-box-outline-blank'}
+                    name={
+                      selectedValues.includes(item.value)
+                        ? 'check-box'
+                        : 'check-box-outline-blank'
+                    }
                     size={24}
-                    color={selectedValues.includes(item.value) ? primaryColor : '#CBD5E0'}
+                    color={
+                      selectedValues.includes(item.value)
+                        ? primaryColor
+                        : '#CBD5E0'
+                    }
                   />
                 </TouchableOpacity>
               )}
@@ -194,4 +208,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MultiSelect; 
+export default MultiSelect;

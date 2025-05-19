@@ -392,7 +392,8 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
 
     // Enhanced validation checks
     let hasError = false;
-    let errorMessage = 'Please fix the following issues:';
+    let errorMessage =
+      'Please complete the following fields before proceeding:';
 
     if (!transporterDetails.name.trim()) {
       errorMessage += '\nTransporter Name is required';
@@ -905,7 +906,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
                     });
 
                     // If there's just one order, navigate directly to it
-                    if (successData.ordersByUnit.length > 1) {
+                    if (successData.ordersByUnit.length >= 1) {
                       const order = successData.ordersByUnit[0];
                       setTimeout(() => {
                         return navigation.navigate('PendingOrdersScreen', {
@@ -917,7 +918,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
                           orderDate: orderDetails.orderDate,
                           items: order.processedItems,
                           customerID: customerID,
-                          // unitName: order.processedItems[0].UNIT_NAME,
+                          unitId: unitId,
                         });
                       }, 100);
                     }
@@ -954,7 +955,9 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
                 colors={['#F8FAFC', '#EDF2F7']}
                 style={styles.validationModalHeader}>
                 <MaterialIcons name="info-outline" size={30} color="#dc3545" />
-                <Text style={styles.validationHeaderText}>Please Review</Text>
+                <Text style={styles.validationHeaderText}>
+                  Missing Required Information
+                </Text>
               </LinearGradient>
 
               <View style={styles.validationBodyContainer}>
@@ -2014,14 +2017,7 @@ const styles = StyleSheet.create({
     color: '#2D3748',
     marginLeft: 8,
   },
-  // Add these to your existing styles object
-  // successHeader: {
-  //   alignItems: 'center',
-  //   justifyContent: 'center',
-  //   paddingVertical: 16,
-  //   marginBottom: 10,
-  //   width: '100%',
-  // },
+
   ordersContainer: {
     width: '100%',
     paddingHorizontal: 16,
@@ -2032,12 +2028,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
     borderRadius: 8,
     marginBottom: 10,
-    padding: 10,
+    padding: 12,
+    paddingHorizontal: 16,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 1,
+    width: '100%',
   },
   compactOrderDetails: {
     flexDirection: 'row',
@@ -2048,20 +2046,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#0284c7',
-    flex: 1,
+    flex: 0.8,
+    minWidth: 90,
   },
   unitText: {
     fontSize: 14,
     color: '#4A5568',
     flex: 1,
     textAlign: 'center',
-    marginLeft: 15,
+    marginHorizontal: 4,
+    minWidth: 70,
   },
   itemCountText: {
     fontSize: 14,
     color: '#718096',
-    flex: 1,
+    flex: 0.8,
     textAlign: 'right',
+    minWidth: 60,
   },
 });
 

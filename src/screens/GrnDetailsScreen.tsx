@@ -1,8 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Dimensions,
+  ActivityIndicator,
+} from 'react-native';
 import axios from 'axios';
-import { API_ENDPOINTS } from '../config/api.config';
-import { RouteProp } from '@react-navigation/native';
+import {API_ENDPOINTS} from '../config/api.config';
+import {RouteProp} from '@react-navigation/native';
+import {LayoutWrapper} from '../components/AppLayout';
 
 // Define types for the API response
 interface GrnHeaderDetails {
@@ -38,16 +46,19 @@ interface RouteParams {
   item?: any;
 }
 
-type GrnDetailsScreenRouteProp = RouteProp<{ GrnDetailsScreen: RouteParams }, 'GrnDetailsScreen'>;
+type GrnDetailsScreenRouteProp = RouteProp<
+  {GrnDetailsScreen: RouteParams},
+  'GrnDetailsScreen'
+>;
 
 interface GrnDetailsProps {
   route: GrnDetailsScreenRouteProp;
 }
 
-const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({ route }) => {
+const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({route}) => {
   // Extract parameters from route
-  const { grnNo, customerId } = route.params || {};
-  
+  const {grnNo, customerId} = route.params || {};
+
   // State for API data
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +69,7 @@ const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({ route }) => {
     GATEPASS_NO: '',
     ADDRESS: '',
     VEHICLE_NO: '',
-    BILL_MAKING: ''
+    BILL_MAKING: '',
   });
   const [grnDetails, setGrnDetails] = useState<GrnItemDetails[]>([]);
 
@@ -68,36 +79,40 @@ const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({ route }) => {
       try {
         setIsLoading(true);
         setError(null);
-        
+
         // Log the parameters for debugging
-        console.log(`Fetching GRN details for GRN No: ${grnNo}, CustomerID: ${customerId}`);
-        
+        console.log(
+          `Fetching GRN details for GRN No: ${grnNo}, CustomerID: ${customerId}`,
+        );
+
         // Construct the API URL with the grnNo path parameter and customerId query parameter
         const url = `${API_ENDPOINTS.GET_GRN_DETAILS}/${grnNo}?customerId=${customerId}`;
         console.log('API URL:', url);
-        
+
         const response = await axios.get(url);
-        
+
         // Log the response for debugging
         console.log('API Response:', JSON.stringify(response.data, null, 2));
-        
+
         if (response.data) {
           // Set header details
-          setHeaderDetails(response.data.header || {
-            CUSTOMER_NAME: '',
-            PRE_GRN_NO: '',
-            GRN_DATE: '',
-            GATEPASS_NO: '',
-            ADDRESS: '',
-            VEHICLE_NO: '',
-            BILL_MAKING: ''
-          });
-          
+          setHeaderDetails(
+            response.data.header || {
+              CUSTOMER_NAME: '',
+              PRE_GRN_NO: '',
+              GRN_DATE: '',
+              GATEPASS_NO: '',
+              ADDRESS: '',
+              VEHICLE_NO: '',
+              BILL_MAKING: '',
+            },
+          );
+
           // Filter out the total row to display separately
           const details = response.data.details || [];
           if (details.length > 0) {
             const lastRow = details[details.length - 1];
-            
+
             // Check if the last row is a total row (has only quantity fields)
             if (!lastRow.LOT_NO && lastRow.QUANTITY !== undefined) {
               setGrnDetails(details.slice(0, -1) as GrnItemDetails[]); // Set all rows except the last one
@@ -128,19 +143,19 @@ const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({ route }) => {
     let totalReceivedQty = 0;
     let totalDeletedQty = 0;
     let totalBalancedQty = 0;
-    
+
     grnDetails.forEach(item => {
       totalQuantity += Number(item.QUANTITY || 0);
       totalReceivedQty += Number(item.RECEIVED_QTY || 0);
       totalDeletedQty += Number(item.DELETED_QTY || 0);
       totalBalancedQty += Number(item.BALANCE_QTY || 0);
     });
-    
+
     return {
       totalQuantity,
       totalReceivedQty,
       totalDeletedQty,
-      totalBalancedQty
+      totalBalancedQty,
     };
   };
 
@@ -166,104 +181,209 @@ const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({ route }) => {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <LayoutWrapper showHeader={true} showTabBar={true} route={route}>
+      <ScrollView style={styles.container}>
+        {/* Header Details Section */}
+        <View style={styles.detailsContainer}>
+          <Text style={styles.sectionTitle}>GRN HEADER DETAILS</Text>
 
+          <View style={styles.rowContainer}>
+            <View style={styles.leftColumn}>
+              <Text style={[styles.labelText]}>DATE</Text>
+              <Text style={styles.valueText}>{headerDetails.GRN_DATE}</Text>
 
-      {/* Header Details Section */}
-      <View style={styles.detailsContainer}>
-        <Text style={styles.sectionTitle}>GRN HEADER DETAILS</Text>
-        
-        <View style={styles.rowContainer}>
-          <View style={styles.leftColumn}>
-            <Text style={[styles.labelText]}>DATE</Text>
-            <Text style={styles.valueText}>{headerDetails.GRN_DATE}</Text>
-            
-            <Text style={[styles.labelText, styles.spacer]}>ADDRESS</Text>
-            <Text style={styles.valueText}>{headerDetails.ADDRESS}</Text>
-            
-            <Text style={[styles.labelText, styles.spacer]}>BILL MAKING</Text>
-            <Text style={styles.valueText}>{headerDetails.BILL_MAKING}</Text>
-          </View>
-          
-          <View style={styles.rightColumn}>
-            <Text style={styles.labelText}>PRE GRN NO.</Text>
-            <Text style={styles.valueText}>{headerDetails.PRE_GRN_NO}</Text>
-            
-            <Text style={[styles.labelText, styles.spacer]}>GATE PASS NO.</Text>
-            <Text style={styles.valueText}>{headerDetails.GATEPASS_NO}</Text>
-            
-            <Text style={[styles.labelText, styles.spacer]}>VEHICLE NO.</Text>
-            <Text style={styles.valueText}>{headerDetails.VEHICLE_NO}</Text>
+              <Text style={[styles.labelText, styles.spacer]}>ADDRESS</Text>
+              <Text style={styles.valueText}>{headerDetails.ADDRESS}</Text>
+
+              <Text style={[styles.labelText, styles.spacer]}>BILL MAKING</Text>
+              <Text style={styles.valueText}>{headerDetails.BILL_MAKING}</Text>
+            </View>
+
+            <View style={styles.rightColumn}>
+              <Text style={styles.labelText}>PRE GRN NO.</Text>
+              <Text style={styles.valueText}>{headerDetails.PRE_GRN_NO}</Text>
+
+              <Text style={[styles.labelText, styles.spacer]}>
+                GATE PASS NO.
+              </Text>
+              <Text style={styles.valueText}>{headerDetails.GATEPASS_NO}</Text>
+
+              <Text style={[styles.labelText, styles.spacer]}>VEHICLE NO.</Text>
+              <Text style={styles.valueText}>{headerDetails.VEHICLE_NO}</Text>
+            </View>
           </View>
         </View>
-      </View>
-      
-      {/* GRN Details Section */}
-      <View style={styles.detailsTableContainer}>
-        <Text style={styles.sectionTitle}>GRN DETAILS</Text>
-        
-        {/* Custom Table Implementation */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-          <View style={styles.tableContainer}>
-            {/* Table Header */}
-            <View style={styles.tableHeaderRow}>
-              <View style={styles.tableHeaderCell60}><Text style={styles.tableHeaderText}>#</Text></View>
-              <View style={styles.tableHeaderCell100}><Text style={styles.tableHeaderText}>Lot No</Text></View>
-              <View style={styles.tableHeaderCell180}><Text style={styles.tableHeaderText}>Item</Text></View>
-              <View style={styles.tableHeaderCell110}><Text style={styles.tableHeaderText}>Item Marks</Text></View>
-              <View style={styles.tableHeaderCell100}><Text style={styles.tableHeaderText}>Vakal No</Text></View>
-              <View style={styles.tableHeaderCell100}><Text style={styles.tableHeaderText}>Batch No</Text></View>
-              <View style={styles.tableHeaderCell100}><Text style={styles.tableHeaderText}>Expiry Date</Text></View>
-              <View style={styles.tableHeaderCell100}><Text style={styles.tableHeaderText}>Location</Text></View>
-              <View style={styles.tableHeaderCell180}><Text style={styles.tableHeaderText}>Scheme</Text></View>
-              <View style={styles.tableHeaderCell80}><Text style={styles.tableHeaderText}>Quantity</Text></View>
-              <View style={styles.tableHeaderCell100}><Text style={styles.tableHeaderText}>Received Qty</Text></View>
-              <View style={styles.tableHeaderCell100}><Text style={styles.tableHeaderText}>Deleted Qty</Text></View>
-              <View style={styles.tableHeaderCell100}><Text style={styles.tableHeaderText}>Balanced Qty</Text></View>
-              <View style={styles.tableHeaderCell120}><Text style={styles.tableHeaderText}>Transhipment</Text></View>
-            </View>
-            
-            {/* Table Body */}
-            {grnDetails.map((item, index) => (
-              <View key={index} style={[styles.tableRow, index % 2 === 0 ? styles.tableRowEven : styles.tableRowOdd]}>
-                <View style={styles.tableHeaderCell60}><Text style={styles.tableRowText}>{index + 1}</Text></View>
-                <View style={styles.tableHeaderCell100}><Text style={styles.tableRowText}>{item.LOT_NO}</Text></View>
-                <View style={styles.tableHeaderCell180}><Text style={styles.tableRowText}>{item.ITEM_NAME}</Text></View>
-                <View style={styles.tableHeaderCell120}><Text style={styles.tableRowText}>{item.ITEM_MARKS}</Text></View>
-                <View style={styles.tableHeaderCell110}><Text style={styles.tableRowText}>{item.VAKAL_NO || '-'}</Text></View>
-                <View style={styles.tableHeaderCell80}><Text style={styles.tableRowText}>{item.BATCH_NO || '-'}</Text></View>
-                <View style={styles.tableHeaderCell110}><Text style={styles.tableRowText}>{item.EXPIRY_DATE || '-'}</Text></View>
-                <View style={styles.tableHeaderCell80}><Text style={styles.tableRowText}>{item.LOCATION || '-'}</Text></View>
-                <View style={styles.tableHeaderCell200}><Text style={styles.tableRowText}>{item.SCHEME}</Text></View>
-                <View style={styles.tableHeaderCell100}><Text style={styles.tableRowText}>{item.QUANTITY}</Text></View>
-                <View style={styles.tableHeaderCell100}><Text style={styles.tableRowText}>{item.RECEIVED_QTY}</Text></View>
-                <View style={styles.tableHeaderCell100}><Text style={styles.tableRowText}>{item.DELETED_QTY}</Text></View>
-                <View style={styles.tableHeaderCell100}><Text style={styles.tableRowText}>{item.BALANCE_QTY}</Text></View>
-                <View style={styles.tableHeaderCell120}><Text style={styles.tableRowText}>{item.IS_TRANSSHIPMENT}</Text></View>
+
+        {/* GRN Details Section */}
+        <View style={styles.detailsTableContainer}>
+          <Text style={styles.sectionTitle}>GRN DETAILS</Text>
+
+          {/* Custom Table Implementation */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={true}>
+            <View style={styles.tableContainer}>
+              {/* Table Header */}
+              <View style={styles.tableHeaderRow}>
+                <View style={styles.tableHeaderCell60}>
+                  <Text style={styles.tableHeaderText}>#</Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.tableHeaderText}>Lot No</Text>
+                </View>
+                <View style={styles.tableHeaderCell180}>
+                  <Text style={styles.tableHeaderText}>Item</Text>
+                </View>
+                <View style={styles.tableHeaderCell110}>
+                  <Text style={styles.tableHeaderText}>Item Marks</Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.tableHeaderText}>Vakal No</Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.tableHeaderText}>Batch No</Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.tableHeaderText}>Expiry Date</Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.tableHeaderText}>Location</Text>
+                </View>
+                <View style={styles.tableHeaderCell180}>
+                  <Text style={styles.tableHeaderText}>Scheme</Text>
+                </View>
+                <View style={styles.tableHeaderCell80}>
+                  <Text style={styles.tableHeaderText}>Quantity</Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.tableHeaderText}>Received Qty</Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.tableHeaderText}>Deleted Qty</Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.tableHeaderText}>Balanced Qty</Text>
+                </View>
+                <View style={styles.tableHeaderCell120}>
+                  <Text style={styles.tableHeaderText}>Transhipment</Text>
+                </View>
               </View>
-            ))}
-            
-            {/* Total Row */}
-            <View style={[styles.tableRow, styles.totalRow]}>
-              <View style={styles.tableHeaderCell60}><Text style={styles.tableRowText}></Text></View>
-              <View style={styles.tableHeaderCell100}><Text style={styles.tableRowText}></Text></View>
-              <View style={styles.tableHeaderCell180}><Text style={styles.totalText}>Total</Text></View>
-              <View style={styles.tableHeaderCell120}><Text style={styles.tableRowText}></Text></View>
-              <View style={styles.tableHeaderCell100}><Text style={styles.tableRowText}></Text></View>
-              <View style={styles.tableHeaderCell100}><Text style={styles.tableRowText}></Text></View>
-              <View style={styles.tableHeaderCell100}><Text style={styles.tableRowText}></Text></View>
-              <View style={styles.tableHeaderCell100}><Text style={styles.tableRowText}></Text></View>
-              <View style={styles.tableHeaderCell180}><Text style={styles.tableRowText}></Text></View>
-              <View style={styles.tableHeaderCell100}><Text style={styles.totalText}>{totals.totalQuantity}</Text></View>
-              <View style={styles.tableHeaderCell100}><Text style={styles.totalText}>{totals.totalReceivedQty}</Text></View>
-              <View style={styles.tableHeaderCell100}><Text style={styles.totalText}>{totals.totalDeletedQty}</Text></View>
-              <View style={styles.tableHeaderCell100}><Text style={styles.totalText}>{totals.totalBalancedQty}</Text></View>
-              <View style={styles.tableHeaderCell120}><Text style={styles.tableRowText}></Text></View>
+
+              {/* Table Body */}
+              {grnDetails.map((item, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.tableRow,
+                    index % 2 === 0 ? styles.tableRowEven : styles.tableRowOdd,
+                  ]}>
+                  <View style={styles.tableHeaderCell60}>
+                    <Text style={styles.tableRowText}>{index + 1}</Text>
+                  </View>
+                  <View style={styles.tableHeaderCell100}>
+                    <Text style={styles.tableRowText}>{item.LOT_NO}</Text>
+                  </View>
+                  <View style={styles.tableHeaderCell180}>
+                    <Text style={styles.tableRowText}>{item.ITEM_NAME}</Text>
+                  </View>
+                  <View style={styles.tableHeaderCell120}>
+                    <Text style={styles.tableRowText}>{item.ITEM_MARKS}</Text>
+                  </View>
+                  <View style={styles.tableHeaderCell110}>
+                    <Text style={styles.tableRowText}>
+                      {item.VAKAL_NO || '-'}
+                    </Text>
+                  </View>
+                  <View style={styles.tableHeaderCell80}>
+                    <Text style={styles.tableRowText}>
+                      {item.BATCH_NO || '-'}
+                    </Text>
+                  </View>
+                  <View style={styles.tableHeaderCell110}>
+                    <Text style={styles.tableRowText}>
+                      {item.EXPIRY_DATE || '-'}
+                    </Text>
+                  </View>
+                  <View style={styles.tableHeaderCell80}>
+                    <Text style={styles.tableRowText}>
+                      {item.LOCATION || '-'}
+                    </Text>
+                  </View>
+                  <View style={styles.tableHeaderCell200}>
+                    <Text style={styles.tableRowText}>{item.SCHEME}</Text>
+                  </View>
+                  <View style={styles.tableHeaderCell100}>
+                    <Text style={styles.tableRowText}>{item.QUANTITY}</Text>
+                  </View>
+                  <View style={styles.tableHeaderCell100}>
+                    <Text style={styles.tableRowText}>{item.RECEIVED_QTY}</Text>
+                  </View>
+                  <View style={styles.tableHeaderCell100}>
+                    <Text style={styles.tableRowText}>{item.DELETED_QTY}</Text>
+                  </View>
+                  <View style={styles.tableHeaderCell100}>
+                    <Text style={styles.tableRowText}>{item.BALANCE_QTY}</Text>
+                  </View>
+                  <View style={styles.tableHeaderCell120}>
+                    <Text style={styles.tableRowText}>
+                      {item.IS_TRANSSHIPMENT}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+
+              {/* Total Row */}
+              <View style={[styles.tableRow, styles.totalRow]}>
+                <View style={styles.tableHeaderCell60}>
+                  <Text style={styles.tableRowText}></Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.tableRowText}></Text>
+                </View>
+                <View style={styles.tableHeaderCell180}>
+                  <Text style={styles.totalText}>Total</Text>
+                </View>
+                <View style={styles.tableHeaderCell120}>
+                  <Text style={styles.tableRowText}></Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.tableRowText}></Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.tableRowText}></Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.tableRowText}></Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.tableRowText}></Text>
+                </View>
+                <View style={styles.tableHeaderCell180}>
+                  <Text style={styles.tableRowText}></Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.totalText}>{totals.totalQuantity}</Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.totalText}>
+                    {totals.totalReceivedQty}
+                  </Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.totalText}>{totals.totalDeletedQty}</Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.totalText}>
+                    {totals.totalBalancedQty}
+                  </Text>
+                </View>
+                <View style={styles.tableHeaderCell120}>
+                  <Text style={styles.tableRowText}></Text>
+                </View>
+              </View>
             </View>
-          </View>
-        </ScrollView>
-      </View>
-    </ScrollView>
+          </ScrollView>
+        </View>
+      </ScrollView>
+    </LayoutWrapper>
   );
 };
 
@@ -292,13 +412,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     borderRadius: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
   sectionTitle: {
-    color: '#d35400',
+    color: '#F48221',
     fontWeight: 'bold',
     marginBottom: 15,
     fontSize: 16,
@@ -337,7 +457,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
@@ -441,7 +561,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#e74c3c',
     textAlign: 'center',
-  }
+  },
 });
 
 export default GrnDetailsScreen;

@@ -1,5 +1,11 @@
 import React from 'react';
-import {View, Text, ScrollView, StyleSheet, TouchableOpacity} from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
 
 interface ReportTableProps {
   reportData: any[];
@@ -8,7 +14,12 @@ interface ReportTableProps {
   onInwardOutwardNoPress?: (item: any) => void;
 }
 
-const ReportTable = ({reportData, isInward, tableRef, onInwardOutwardNoPress}: ReportTableProps) => {
+const ReportTable = ({
+  reportData,
+  isInward,
+  tableRef,
+  onInwardOutwardNoPress,
+}: ReportTableProps) => {
   return (
     <View style={styles.tableContainer}>
       <ScrollView
@@ -179,26 +190,33 @@ const ReportTable = ({reportData, isInward, tableRef, onInwardOutwardNoPress}: R
                     ? new Date(item.OUTWARD_DATE).toLocaleDateString()
                     : '-'}
                 </Text>
-                <TouchableOpacity 
-                  style={[styles.tableCellContainer, {width: 100}]}
-                  onPress={() => onInwardOutwardNoPress && onInwardOutwardNoPress(item)}
-                  disabled={!(onInwardOutwardNoPress && (isInward ? item.GRN_NO : item.OUTWARD_NO))}
-                >
-                  <Text 
-                    style={[
-                      styles.tableCell, 
-                      styles.clickableCell,
-                      {
-                        color: onInwardOutwardNoPress && (isInward ? item.GRN_NO : item.OUTWARD_NO) 
-                          ? isInward ? '#F48221' : '#4682B4' 
-                          : '#334155',
-                        width: '100%',
-                      }
-                    ]}
-                  >
-                    {isInward ? item.GRN_NO || '-' : item.OUTWARD_NO || '-'}
+                {isInward ? (
+                  <TouchableOpacity
+                    style={[styles.tableCellContainer, {width: 100}]}
+                    onPress={() =>
+                      onInwardOutwardNoPress && onInwardOutwardNoPress(item)
+                    }
+                    disabled={!(onInwardOutwardNoPress && item.GRN_NO)}>
+                    <Text
+                      style={[
+                        styles.tableCell,
+                        styles.clickableCell,
+                        {
+                          color:
+                            onInwardOutwardNoPress && item.GRN_NO
+                              ? '#F48221'
+                              : '#334155',
+                          width: '100%',
+                        },
+                      ]}>
+                      {item.GRN_NO || '-'}
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <Text style={[styles.tableCell, {width: 100}]}>
+                    {item.OUTWARD_NO || '-'}
                   </Text>
-                </TouchableOpacity>
+                )}
                 <Text style={[styles.tableCell, {width: 150}]}>
                   {item.CUSTOMER_NAME || '-'}
                 </Text>

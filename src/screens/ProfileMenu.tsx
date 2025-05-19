@@ -830,7 +830,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   logoutConfirmButton: {
-    backgroundColor: '#dc3545',
+    backgroundColor: 'red',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -846,6 +846,3 @@ const styles = StyleSheet.create({
 });
 
 export default ProfileMenu;
-
-
-

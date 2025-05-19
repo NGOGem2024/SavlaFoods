@@ -1,6 +1,6 @@
 // components/LayoutWrapper.tsx
 import React from 'react';
-import {View, StyleSheet, SafeAreaView} from 'react-native';
+import {View, StyleSheet, SafeAreaView, Platform} from 'react-native';
 import Header from './Header';
 import {useDisplayName} from '../contexts/DisplayNameContext';
 import {useCartNavigation} from '../hooks/useCartNavigation';
@@ -33,10 +33,8 @@ export const LayoutWrapper: React.FC<LayoutWrapperProps> = ({
           onAccountSwitch={handleAccountSwitch}
         />
       )}
-      <View style={styles.content}>
-        {children}
-        {showTabBar && <TabBar route={route} />}
-      </View>
+      <View style={styles.content}>{children}</View>
+      {showTabBar && <TabBar route={route} />}
     </SafeAreaView>
   );
 };
@@ -45,6 +43,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    // Ensure consistent padding across platforms
+    paddingTop: 0,
   },
   content: {
     flex: 1,

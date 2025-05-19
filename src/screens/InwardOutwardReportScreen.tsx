@@ -24,7 +24,7 @@ import {useNavigation} from '@react-navigation/native';
 import ReportTable from '../components/ReportTable';
 import IOSPickerModal from '../components/IOSPickerModal';
 import IOSDatePickerModal from '../components/IOSDatePickerModal';
-import MultiSelect from '../components/MultiSelect';
+import MultiSelect from '../components/Multiselect';
 // Custom hooks
 import {useReportData, ReportFilters} from '../hooks/useReportData';
 import {usePdfGeneration} from '../hooks/usePdfGeneration';
@@ -35,6 +35,7 @@ import PushNotificationIOS from '@react-native-community/push-notification-ios';
 import {openPdf} from '../utils/ReportPdfUtils';
 // API constants
 import {API_ENDPOINTS, DEFAULT_HEADERS} from '../config/api.config';
+import {LayoutWrapper} from '../components/AppLayout';
 
 // Time period types for the report
 type TimePeriod = 'Weekly' | 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Custom';
@@ -58,7 +59,7 @@ interface CustomDropdownProps {
 const InwardOutwardReportScreen = () => {
   // Get navigation
   const navigation = useNavigation<any>();
-  
+  const route = useState();
   // Mode state
   const [isInward, setIsInward] = useState(true);
 
@@ -108,10 +109,10 @@ const InwardOutwardReportScreen = () => {
       // For inward items, navigate to GrnDetailsScreen with the GRN_NO
       console.log('Navigating to GrnDetailsScreen with GRN_NO:', item.GRN_NO);
       // Pass all the item data to the detail screen
-      navigation.navigate('GrnDetailsScreen', { 
+      navigation.navigate('GrnDetailsScreen', {
         grnNo: item.GRN_NO,
         item: item,
-        customerId: item.CUSTOMER_ID 
+        customerId: item.CUSTOMER_ID,
       });
     }
     // Future implementation for outward items can be added here
@@ -128,15 +129,21 @@ const InwardOutwardReportScreen = () => {
     primaryColor,
   }: CustomDropdownProps) => {
     const [isVisible, setIsVisible] = useState(false);
-    
+
     // Use the isInward state if primaryColor is not provided
     const color = primaryColor || (isInward ? '#F48221' : '#4682B4');
 
-    const selectedOption = options.find(option => option.value === selectedValue);
+    const selectedOption = options.find(
+      option => option.value === selectedValue,
+    );
     const displayText = selectedOption ? selectedOption.label : placeholder;
 
     return (
-      <View style={[styles.customDropdownContainer, disabled && styles.disabledDropdown]}>
+      <View
+        style={[
+          styles.customDropdownContainer,
+          disabled && styles.disabledDropdown,
+        ]}>
         <TouchableOpacity
           style={styles.customDropdownButton}
           onPress={() => !disabled && setIsVisible(true)}
@@ -623,7 +630,8 @@ const InwardOutwardReportScreen = () => {
         toDate: formatDateForApi(toDate),
         customerName: customerName, // Use customer name from state
         itemCategoryName: itemCategories.length > 0 ? itemCategories : null,
-        itemSubCategoryName: itemSubcategories.length > 0 ? itemSubcategories : null,
+        itemSubCategoryName:
+          itemSubcategories.length > 0 ? itemSubcategories : null,
         unitName: unit ? unit.trim() : null,
       };
 
@@ -635,11 +643,15 @@ const InwardOutwardReportScreen = () => {
       console.log('customerName exact value:', requestData.customerName);
       console.log(
         'itemCategoryName exact value:',
-        requestData.itemCategoryName ? JSON.stringify(requestData.itemCategoryName) : null,
+        requestData.itemCategoryName
+          ? JSON.stringify(requestData.itemCategoryName)
+          : null,
       );
       console.log(
         'itemSubCategoryName exact value:',
-        requestData.itemSubCategoryName ? JSON.stringify(requestData.itemSubCategoryName) : null,
+        requestData.itemSubCategoryName
+          ? JSON.stringify(requestData.itemSubCategoryName)
+          : null,
       );
       console.log('unitName exact value:', requestData.unitName);
 
@@ -705,14 +717,18 @@ const InwardOutwardReportScreen = () => {
         if (itemCategories.length > 0)
           console.log(
             '- Category match:',
-            requestData.itemCategoryName && 
-            requestData.itemCategoryName.includes(sampleRecord.ITEM_CATEG_NAME),
+            requestData.itemCategoryName &&
+              requestData.itemCategoryName.includes(
+                sampleRecord.ITEM_CATEG_NAME,
+              ),
           );
         if (itemSubcategories.length > 0)
           console.log(
             '- Subcategory match:',
-            requestData.itemSubCategoryName && 
-            requestData.itemSubCategoryName.includes(sampleRecord.SUB_CATEGORY_NAME),
+            requestData.itemSubCategoryName &&
+              requestData.itemSubCategoryName.includes(
+                sampleRecord.SUB_CATEGORY_NAME,
+              ),
           );
         console.log(
           '- Customer match:',
@@ -733,17 +749,17 @@ const InwardOutwardReportScreen = () => {
           const unitMatch =
             requestData.unitName === null ||
             item.UNIT_NAME === requestData.unitName;
-            
+
           // Safe filtering for category and subcategory arrays
           const categoryMatch =
-            !requestData.itemCategoryName || 
-            (requestData.itemCategoryName && 
-             requestData.itemCategoryName.includes(item.ITEM_CATEG_NAME));
-            
+            !requestData.itemCategoryName ||
+            (requestData.itemCategoryName &&
+              requestData.itemCategoryName.includes(item.ITEM_CATEG_NAME));
+
           const subcategoryMatch =
-            !requestData.itemSubCategoryName || 
-            (requestData.itemSubCategoryName && 
-             requestData.itemSubCategoryName.includes(item.SUB_CATEGORY_NAME));
+            !requestData.itemSubCategoryName ||
+            (requestData.itemSubCategoryName &&
+              requestData.itemSubCategoryName.includes(item.SUB_CATEGORY_NAME));
 
           return (
             customerMatch && unitMatch && categoryMatch && subcategoryMatch
@@ -937,22 +953,22 @@ const InwardOutwardReportScreen = () => {
   // Implement getAvailableSubcategories function
   const getAvailableSubcategories = () => {
     let allSubcategories: string[] = [];
-    
+
     // If no categories selected, return empty array
     if (itemCategories.length === 0) {
       return [];
     }
-    
+
     // Collect subcategories from all selected categories
     itemCategories.forEach(category => {
       if (apiSubcategories[category]) {
         allSubcategories = [...allSubcategories, ...apiSubcategories[category]];
       }
     });
-    
+
     // Remove duplicates
     const uniqueSubcategories = [...new Set(allSubcategories)];
-    
+
     // Convert to option format
     return uniqueSubcategories.map(subcat => ({
       label: subcat,
@@ -961,446 +977,489 @@ const InwardOutwardReportScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar
-        backgroundColor={isInward ? '#F48221' : '#4682B4'}
-        barStyle="light-content"
-      />
+    <LayoutWrapper showHeader={true} showTabBar={false} route={route}>
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar
+          backgroundColor={isInward ? '#F48221' : '#4682B4'}
+          barStyle="light-content"
+        />
 
-      {showForm ? (
-        // Form Section
-        <ScrollView style={styles.container}>
-          {/* Toggle Button */}
-          <View style={styles.toggleContainer}>
-            <Text
-              style={[
-                styles.toggleText,
-                !isInward && styles.toggleTextInactive,
-              ]}>
-              Inward
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                {backgroundColor: isInward ? '#F48221' : '#4682B4'},
-                styles.toggleButtonEnhanced,
-              ]}
-              onPress={() => setIsInward(!isInward)}>
-              <View
+        {showForm ? (
+          // Form Section
+          <ScrollView style={styles.container}>
+            {/* Toggle Button */}
+            <View style={styles.toggleContainer}>
+              <Text
                 style={[
-                  styles.toggleCircle,
-                  {
-                    left: isInward ? 4 : 36,
-                    backgroundColor: '#FFFFFF',
-                  },
+                  styles.toggleText,
+                  !isInward && styles.toggleTextInactive,
+                ]}>
+                Inward
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.toggleButton,
+                  {backgroundColor: isInward ? '#F48221' : '#4682B4'},
+                  styles.toggleButtonEnhanced,
                 ]}
-              />
-            </TouchableOpacity>
-            <Text
-              style={[
-                styles.toggleText,
-                isInward && styles.toggleTextInactive,
-              ]}>
-              Outward
-            </Text>
-          </View>
-
-          {/* Financial Year Selection - Moved outside the form container */}
-          {timePeriod !== ('Custom' as TimePeriod) && (
-            <View style={styles.financialYearContainer}>
-              <Text style={styles.label}>Financial Year :</Text>
-              <View style={styles.selectorWrapper}>
-                <TouchableOpacity
+                onPress={() => setIsInward(!isInward)}>
+                <View
                   style={[
-                    styles.financialYearSelector,
+                    styles.toggleCircle,
                     {
-                      borderColor: isInward ? '#F48221' : '#4682B4',
-                      backgroundColor: isInward ? '#FFFBF6' : '#F5F9FF',
+                      left: isInward ? 4 : 36,
+                      backgroundColor: '#FFFFFF',
                     },
                   ]}
-                  onPress={() =>
-                    setShowFinancialYearSelector(!showFinancialYearSelector)
-                  }>
-                  <Text
+                />
+              </TouchableOpacity>
+              <Text
+                style={[
+                  styles.toggleText,
+                  isInward && styles.toggleTextInactive,
+                ]}>
+                Outward
+              </Text>
+            </View>
+
+            {/* Financial Year Selection - Moved outside the form container */}
+            {timePeriod !== ('Custom' as TimePeriod) && (
+              <View style={styles.financialYearContainer}>
+                <Text style={styles.label}>Financial Year :</Text>
+                <View style={styles.selectorWrapper}>
+                  <TouchableOpacity
                     style={[
-                      styles.financialYearText,
-                      {color: isInward ? '#F48221' : '#4682B4'},
-                    ]}>
-                    {getFinancialYearDisplay(financialYear)}
-                  </Text>
-                  <MaterialIcons
-                    name={
-                      showFinancialYearSelector
-                        ? 'keyboard-arrow-up'
-                        : 'keyboard-arrow-down'
-                    }
-                    size={24}
+                      styles.financialYearSelector,
+                      {
+                        borderColor: isInward ? '#F48221' : '#4682B4',
+                        backgroundColor: isInward ? '#FFFBF6' : '#F5F9FF',
+                      },
+                    ]}
+                    onPress={() =>
+                      setShowFinancialYearSelector(!showFinancialYearSelector)
+                    }>
+                    <Text
+                      style={[
+                        styles.financialYearText,
+                        {color: isInward ? '#F48221' : '#4682B4'},
+                      ]}>
+                      {getFinancialYearDisplay(financialYear)}
+                    </Text>
+                    <MaterialIcons
+                      name={
+                        showFinancialYearSelector
+                          ? 'keyboard-arrow-up'
+                          : 'keyboard-arrow-down'
+                      }
+                      size={24}
+                      color={isInward ? '#F48221' : '#4682B4'}
+                    />
+                  </TouchableOpacity>
+
+                  {showFinancialYearSelector && (
+                    <View
+                      style={[
+                        styles.financialYearDropdown,
+                        {borderColor: isInward ? '#F48221' : '#4682B4'},
+                      ]}>
+                      {[
+                        {display: '2025-26', value: '2025'},
+                        {display: '2024-25', value: '2024'},
+                        {display: '2023-24', value: '2023'},
+                        {display: '2022-23', value: '2022'},
+                        {display: '2021-22', value: '2021'},
+                        {display: '2020-21', value: '2020'},
+                        {display: '2019-20', value: '2019'},
+                        {display: '2018-19', value: '2018'},
+                      ].map((yearOption, index) => (
+                        <TouchableOpacity
+                          key={yearOption.display}
+                          style={[
+                            styles.financialYearOption,
+                            financialYear === yearOption.value && [
+                              styles.selectedFinancialYear,
+                              {
+                                backgroundColor: isInward
+                                  ? '#FFF3E0'
+                                  : '#E6F0FA',
+                              },
+                            ],
+                            index === 0 && styles.firstYearOption,
+                            index === 7 && styles.lastYearOption,
+                          ]}
+                          onPress={() => {
+                            setFinancialYear(yearOption.value);
+                            console.log(
+                              'Financial year selected:',
+                              yearOption.display,
+                            );
+                            setShowFinancialYearSelector(false);
+
+                            // Update the calendar year
+                            const yearValue = parseInt(yearOption.value);
+
+                            // Set the current month and year based on the selected financial year
+                            setCurrentYear(yearValue);
+
+                            // Update date ranges based on the current time period without changing the period
+                            const currentPeriod = timePeriod;
+
+                            // Handle different periods without toggling back to custom
+                            if (currentPeriod === 'Weekly') {
+                              // Update week dates for the new year
+                              const weekStart = new Date(
+                                yearValue,
+                                currentMonth,
+                                1,
+                              );
+                              // Adjust to start on Sunday
+                              const dayOfWeek = weekStart.getDay();
+                              if (dayOfWeek !== 0) {
+                                weekStart.setDate(
+                                  weekStart.getDate() + (7 - dayOfWeek),
+                                );
+                              }
+
+                              const weekEnd = new Date(weekStart);
+                              weekEnd.setDate(weekStart.getDate() + 6);
+
+                              setFromDate(weekStart);
+                              setToDate(weekEnd);
+                              setSelectedWeek(null); // Reset selected week
+                            } else if (currentPeriod === 'Monthly') {
+                              // Default to current month but in the new year
+                              const startOfMonth = new Date(
+                                yearValue,
+                                currentMonth,
+                                1,
+                              );
+                              const endOfMonth = new Date(
+                                yearValue,
+                                currentMonth + 1,
+                                0,
+                              );
+
+                              setFromDate(startOfMonth);
+                              setToDate(endOfMonth);
+                              setSelectedMonth(null); // Reset selected month
+                            } else if (currentPeriod === 'Quarterly') {
+                              // Default to current quarter in new year
+                              const currentQuarter = Math.floor(
+                                new Date().getMonth() / 3,
+                              );
+                              const startOfQuarter = new Date(
+                                yearValue,
+                                currentQuarter * 3,
+                                1,
+                              );
+                              const endOfQuarter = new Date(
+                                yearValue,
+                                (currentQuarter + 1) * 3,
+                                0,
+                              );
+
+                              setFromDate(startOfQuarter);
+                              setToDate(endOfQuarter);
+                              setSelectedQuarter(null); // Reset selected quarter
+                            } else if (currentPeriod === 'Half-Yearly') {
+                              // Default to current half year in new year
+                              const currentMonth = new Date().getMonth();
+                              const isFirstHalf =
+                                currentMonth >= 0 && currentMonth < 6; // Jan-Jun is first half
+                              const startMonth = isFirstHalf ? 0 : 6; // Jan or Jul
+                              const endMonth = isFirstHalf ? 5 : 11; // Jun or Dec
+
+                              const startOfHalf = new Date(
+                                yearValue,
+                                startMonth,
+                                1,
+                              );
+                              const endOfHalf = new Date(
+                                yearValue,
+                                endMonth + 1,
+                                0,
+                              );
+
+                              setFromDate(startOfHalf);
+                              setToDate(endOfHalf);
+                              setSelectedHalf(null); // Reset selected half
+                            } else {
+                              // For Custom, update to start and end of calendar year
+                              setFromDate(new Date(yearValue, 0, 1)); // January 1st
+                              setToDate(new Date(yearValue, 11, 31)); // December 31st
+                            }
+                          }}>
+                          <Text
+                            style={[
+                              styles.financialYearOptionText,
+                              financialYear === yearOption.value && [
+                                styles.selectedFinancialYearText,
+                                {color: isInward ? '#F48221' : '#4682B4'},
+                              ],
+                            ]}>
+                            {yearOption.display}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              </View>
+            )}
+
+            <View
+              style={[
+                styles.formContainer,
+                isInward ? styles.inwardForm : styles.outwardForm,
+              ]}>
+              <Text
+                style={[
+                  styles.formTitle,
+                  {color: isInward ? '#F48221' : '#4682B4'},
+                ]}>
+                {isInward ? 'Inward Report' : 'Outward Report'}
+              </Text>
+
+              {/* Loading Indicator */}
+              {loading && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator
+                    size="large"
                     color={isInward ? '#F48221' : '#4682B4'}
                   />
-                </TouchableOpacity>
-
-                {showFinancialYearSelector && (
-                  <View
-                    style={[
-                      styles.financialYearDropdown,
-                      {borderColor: isInward ? '#F48221' : '#4682B4'},
-                    ]}>
-                    {[
-                      {display: '2025-26', value: '2025'},
-                      {display: '2024-25', value: '2024'},
-                      {display: '2023-24', value: '2023'},
-                      {display: '2022-23', value: '2022'},
-                      {display: '2021-22', value: '2021'},
-                      {display: '2020-21', value: '2020'},
-                      {display: '2019-20', value: '2019'},
-                      {display: '2018-19', value: '2018'},
-                    ].map((yearOption, index) => (
-                      <TouchableOpacity
-                        key={yearOption.display}
-                        style={[
-                          styles.financialYearOption,
-                          financialYear === yearOption.value && [
-                            styles.selectedFinancialYear,
-                            {backgroundColor: isInward ? '#FFF3E0' : '#E6F0FA'},
-                          ],
-                          index === 0 && styles.firstYearOption,
-                          index === 7 && styles.lastYearOption,
-                        ]}
-                        onPress={() => {
-                          setFinancialYear(yearOption.value);
-                          console.log(
-                            'Financial year selected:',
-                            yearOption.display,
-                          );
-                          setShowFinancialYearSelector(false);
-
-                          // Update the calendar year
-                          const yearValue = parseInt(yearOption.value);
-
-                          // Set the current month and year based on the selected financial year
-                          setCurrentYear(yearValue);
-
-                          // Update date ranges based on the current time period without changing the period
-                          const currentPeriod = timePeriod;
-
-                          // Handle different periods without toggling back to custom
-                          if (currentPeriod === 'Weekly') {
-                            // Update week dates for the new year
-                            const weekStart = new Date(
-                              yearValue,
-                              currentMonth,
-                              1,
-                            );
-                            // Adjust to start on Sunday
-                            const dayOfWeek = weekStart.getDay();
-                            if (dayOfWeek !== 0) {
-                              weekStart.setDate(
-                                weekStart.getDate() + (7 - dayOfWeek),
-                              );
-                            }
-
-                            const weekEnd = new Date(weekStart);
-                            weekEnd.setDate(weekStart.getDate() + 6);
-
-                            setFromDate(weekStart);
-                            setToDate(weekEnd);
-                            setSelectedWeek(null); // Reset selected week
-                          } else if (currentPeriod === 'Monthly') {
-                            // Default to current month but in the new year
-                            const startOfMonth = new Date(
-                              yearValue,
-                              currentMonth,
-                              1,
-                            );
-                            const endOfMonth = new Date(
-                              yearValue,
-                              currentMonth + 1,
-                              0,
-                            );
-
-                            setFromDate(startOfMonth);
-                            setToDate(endOfMonth);
-                            setSelectedMonth(null); // Reset selected month
-                          } else if (currentPeriod === 'Quarterly') {
-                            // Default to current quarter in new year
-                            const currentQuarter = Math.floor(
-                              new Date().getMonth() / 3,
-                            );
-                            const startOfQuarter = new Date(
-                              yearValue,
-                              currentQuarter * 3,
-                              1,
-                            );
-                            const endOfQuarter = new Date(
-                              yearValue,
-                              (currentQuarter + 1) * 3,
-                              0,
-                            );
-
-                            setFromDate(startOfQuarter);
-                            setToDate(endOfQuarter);
-                            setSelectedQuarter(null); // Reset selected quarter
-                          } else if (currentPeriod === 'Half-Yearly') {
-                            // Default to current half year in new year
-                            const currentMonth = new Date().getMonth();
-                            const isFirstHalf =
-                              currentMonth >= 0 && currentMonth < 6; // Jan-Jun is first half
-                            const startMonth = isFirstHalf ? 0 : 6; // Jan or Jul
-                            const endMonth = isFirstHalf ? 5 : 11; // Jun or Dec
-
-                            const startOfHalf = new Date(
-                              yearValue,
-                              startMonth,
-                              1,
-                            );
-                            const endOfHalf = new Date(
-                              yearValue,
-                              endMonth + 1,
-                              0,
-                            );
-
-                            setFromDate(startOfHalf);
-                            setToDate(endOfHalf);
-                            setSelectedHalf(null); // Reset selected half
-                          } else {
-                            // For Custom, update to start and end of calendar year
-                            setFromDate(new Date(yearValue, 0, 1)); // January 1st
-                            setToDate(new Date(yearValue, 11, 31)); // December 31st
-                          }
-                        }}>
-                        <Text
-                          style={[
-                            styles.financialYearOptionText,
-                            financialYear === yearOption.value && [
-                              styles.selectedFinancialYearText,
-                              {color: isInward ? '#F48221' : '#4682B4'},
-                            ],
-                          ]}>
-                          {yearOption.display}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-              </View>
-            </View>
-          )}
-
-          <View
-            style={[
-              styles.formContainer,
-              isInward ? styles.inwardForm : styles.outwardForm,
-            ]}>
-            <Text
-              style={[
-                styles.formTitle,
-                {color: isInward ? '#F48221' : '#4682B4'},
-              ]}>
-              {isInward ? 'Inward Report' : 'Outward Report'}
-            </Text>
-
-            {/* Loading Indicator */}
-            {loading && (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator
-                  size="large"
-                  color={isInward ? '#F48221' : '#4682B4'}
-                />
-                <Text style={styles.loadingText}>Loading categories...</Text>
-              </View>
-            )}
-
-            {/* Time Period Tabs */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.timePeriodTabsContainer}>
-              {(
-                [
-                  'Weekly',
-                  'Monthly',
-                  'Quarterly',
-                  'Half-Yearly',
-                  'Custom',
-                ] as TimePeriod[]
-              ).map(period => (
-                <TouchableOpacity
-                  key={period}
-                  style={[
-                    styles.timePeriodTab,
-                    timePeriod === period && styles.activeTimePeriodTab,
-                    timePeriod === period && {
-                      borderBottomColor: isInward ? '#F48221' : '#4682B4',
-                    },
-                  ]}
-                  onPress={() => setDatesByTimePeriod(period)}>
-                  <Text
-                    style={[
-                      styles.timePeriodTabText,
-                      timePeriod === period && styles.activeTimePeriodTabText,
-                      timePeriod === period && {
-                        color: isInward ? '#F48221' : '#4682B4',
-                      },
-                    ]}>
-                    {period}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            {/* Weekly View - shown only when Weekly is selected */}
-            {timePeriod === 'Weekly' && (
-              <View style={styles.timePeriodSelectorContainer}>
-                <View style={styles.monthNavHeader}>
-                  <TouchableOpacity
-                    style={styles.navArrowButton}
-                    onPress={() => {
-                      // Go to previous month, accounting for financial year boundary
-                      let newMonth = currentMonth - 1;
-                      let newYear = currentYear;
-
-                      if (newMonth < 0) {
-                        // Crossing calendar year boundary
-                        newMonth = 11;
-                        newYear = currentYear - 1;
-                      }
-
-                      // Check if the new date is within the financial year range
-                      const startYear = parseInt(financialYear);
-
-                      // If going to previous month would take us out of range, loop back to end of range
-                      if (newYear < startYear) {
-                        newMonth = 11; // December
-                        newYear = startYear + 1; // End year of the financial year
-                      }
-
-                      setCurrentMonth(newMonth);
-                      setCurrentYear(newYear);
-
-                      // Reset the selected week when changing month
-                      setSelectedWeek(null);
-                    }}>
-                    <MaterialIcons
-                      name="chevron-left"
-                      size={24}
-                      color="#64748B"
-                    />
-                  </TouchableOpacity>
-                  <Text style={styles.monthYearHeading}>
-                    {new Date(currentYear, currentMonth).toLocaleString(
-                      'default',
-                      {month: 'long', year: 'numeric'},
-                    )}
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.navArrowButton}
-                    onPress={() => {
-                      // Go to next month, accounting for financial year boundary
-                      let newMonth = currentMonth + 1;
-                      let newYear = currentYear;
-
-                      if (newMonth > 11) {
-                        // Crossing calendar year boundary
-                        newMonth = 0;
-                        newYear = currentYear + 1;
-                      }
-
-                      // Check if the new date is within the financial year range
-                      const startYear = parseInt(financialYear);
-                      const endYear = startYear + 1;
-
-                      // If going to next month would take us out of range, loop back to start of range
-                      if (
-                        newYear > endYear ||
-                        (newYear === endYear && newMonth > 11)
-                      ) {
-                        newMonth = 0; // January
-                        newYear = startYear; // Start year of the financial year
-                      }
-
-                      setCurrentMonth(newMonth);
-                      setCurrentYear(newYear);
-
-                      // Reset the selected week when changing month
-                      setSelectedWeek(null);
-                    }}>
-                    <MaterialIcons
-                      name="chevron-right"
-                      size={24}
-                      color="#64748B"
-                    />
-                  </TouchableOpacity>
+                  <Text style={styles.loadingText}>Loading categories...</Text>
                 </View>
+              )}
 
-                <View style={styles.weeksContainer}>
-                  <View style={styles.weeksGrid}>
-                    {generateWeekDates().map((week, index) => (
+              {/* Time Period Tabs */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.timePeriodTabsContainer}>
+                {(
+                  [
+                    'Weekly',
+                    'Monthly',
+                    'Quarterly',
+                    'Half-Yearly',
+                    'Custom',
+                  ] as TimePeriod[]
+                ).map(period => (
+                  <TouchableOpacity
+                    key={period}
+                    style={[
+                      styles.timePeriodTab,
+                      timePeriod === period && styles.activeTimePeriodTab,
+                      timePeriod === period && {
+                        borderBottomColor: isInward ? '#F48221' : '#4682B4',
+                      },
+                    ]}
+                    onPress={() => setDatesByTimePeriod(period)}>
+                    <Text
+                      style={[
+                        styles.timePeriodTabText,
+                        timePeriod === period && styles.activeTimePeriodTabText,
+                        timePeriod === period && {
+                          color: isInward ? '#F48221' : '#4682B4',
+                        },
+                      ]}>
+                      {period}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              {/* Weekly View - shown only when Weekly is selected */}
+              {timePeriod === 'Weekly' && (
+                <View style={styles.timePeriodSelectorContainer}>
+                  <View style={styles.monthNavHeader}>
+                    <TouchableOpacity
+                      style={styles.navArrowButton}
+                      onPress={() => {
+                        // Go to previous month, accounting for financial year boundary
+                        let newMonth = currentMonth - 1;
+                        let newYear = currentYear;
+
+                        if (newMonth < 0) {
+                          // Crossing calendar year boundary
+                          newMonth = 11;
+                          newYear = currentYear - 1;
+                        }
+
+                        // Check if the new date is within the financial year range
+                        const startYear = parseInt(financialYear);
+
+                        // If going to previous month would take us out of range, loop back to end of range
+                        if (newYear < startYear) {
+                          newMonth = 11; // December
+                          newYear = startYear + 1; // End year of the financial year
+                        }
+
+                        setCurrentMonth(newMonth);
+                        setCurrentYear(newYear);
+
+                        // Reset the selected week when changing month
+                        setSelectedWeek(null);
+                      }}>
+                      <MaterialIcons
+                        name="chevron-left"
+                        size={24}
+                        color="#64748B"
+                      />
+                    </TouchableOpacity>
+                    <Text style={styles.monthYearHeading}>
+                      {new Date(currentYear, currentMonth).toLocaleString(
+                        'default',
+                        {month: 'long', year: 'numeric'},
+                      )}
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.navArrowButton}
+                      onPress={() => {
+                        // Go to next month, accounting for financial year boundary
+                        let newMonth = currentMonth + 1;
+                        let newYear = currentYear;
+
+                        if (newMonth > 11) {
+                          // Crossing calendar year boundary
+                          newMonth = 0;
+                          newYear = currentYear + 1;
+                        }
+
+                        // Check if the new date is within the financial year range
+                        const startYear = parseInt(financialYear);
+                        const endYear = startYear + 1;
+
+                        // If going to next month would take us out of range, loop back to start of range
+                        if (
+                          newYear > endYear ||
+                          (newYear === endYear && newMonth > 11)
+                        ) {
+                          newMonth = 0; // January
+                          newYear = startYear; // Start year of the financial year
+                        }
+
+                        setCurrentMonth(newMonth);
+                        setCurrentYear(newYear);
+
+                        // Reset the selected week when changing month
+                        setSelectedWeek(null);
+                      }}>
+                      <MaterialIcons
+                        name="chevron-right"
+                        size={24}
+                        color="#64748B"
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.weeksContainer}>
+                    <View style={styles.weeksGrid}>
+                      {generateWeekDates().map((week, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          style={[
+                            styles.weekItem,
+                            selectedWeek === week.title && {
+                              backgroundColor: isInward ? '#F48221' : '#4682B4',
+                              borderColor: 'transparent',
+                            },
+                          ]}
+                          onPress={() =>
+                            handleWeekSelection(
+                              week.number,
+                              week.startDate,
+                              week.endDate,
+                            )
+                          }>
+                          <Text
+                            style={[
+                              styles.weekItemTitle,
+                              selectedWeek === week.title &&
+                                styles.selectedTimeItemText,
+                            ]}>
+                            {week.title}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.weekItemDates,
+                              selectedWeek === week.title &&
+                                styles.selectedTimeItemText,
+                            ]}>
+                            {new Date(currentYear, currentMonth).toLocaleString(
+                              'default',
+                              {month: 'short'},
+                            )}{' '}
+                            {week.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+              )}
+
+              {/* Monthly View - shown only when Monthly is selected */}
+              {timePeriod === 'Monthly' && (
+                <View style={styles.timePeriodSelectorContainer}>
+                  <View style={styles.monthsGrid}>
+                    {[
+                      'January',
+                      'February',
+                      'March',
+                      'April',
+                      'May',
+                      'June',
+                      'July',
+                      'August',
+                      'September',
+                      'October',
+                      'November',
+                      'December',
+                    ].map((month, index) => (
                       <TouchableOpacity
-                        key={index}
+                        key={month}
                         style={[
-                          styles.weekItem,
-                          selectedWeek === week.title && {
+                          styles.monthItem,
+                          selectedMonth === month && {
                             backgroundColor: isInward ? '#F48221' : '#4682B4',
                             borderColor: 'transparent',
+                            ...Platform.select({
+                              ios: {
+                                shadowColor: '#000',
+                                shadowOffset: {width: 0, height: 2},
+                                shadowOpacity: 0.1,
+                                shadowRadius: 3,
+                              },
+                              android: {
+                                elevation: 2,
+                              },
+                            }),
                           },
                         ]}
-                        onPress={() =>
-                          handleWeekSelection(
-                            week.number,
-                            week.startDate,
-                            week.endDate,
-                          )
-                        }>
+                        onPress={() => handleMonthSelection(index)}>
                         <Text
                           style={[
-                            styles.weekItemTitle,
-                            selectedWeek === week.title &&
+                            styles.monthItemText,
+                            selectedMonth === month &&
                               styles.selectedTimeItemText,
                           ]}>
-                          {week.title}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.weekItemDates,
-                            selectedWeek === week.title &&
-                              styles.selectedTimeItemText,
-                          ]}>
-                          {new Date(currentYear, currentMonth).toLocaleString(
-                            'default',
-                            {month: 'short'},
-                          )}{' '}
-                          {week.label}
+                          {month}
                         </Text>
                       </TouchableOpacity>
                     ))}
                   </View>
                 </View>
-              </View>
-            )}
+              )}
 
-            {/* Monthly View - shown only when Monthly is selected */}
-            {timePeriod === 'Monthly' && (
-              <View style={styles.timePeriodSelectorContainer}>
-                <View style={styles.monthsGrid}>
-                  {[
-                    'January',
-                    'February',
-                    'March',
-                    'April',
-                    'May',
-                    'June',
-                    'July',
-                    'August',
-                    'September',
-                    'October',
-                    'November',
-                    'December',
-                  ].map((month, index) => (
+              {/* Quarterly View - shown only when Quarterly is selected */}
+              {timePeriod === 'Quarterly' && (
+                <View style={styles.timePeriodSelectorContainer}>
+                  <View style={styles.quartersGrid}>
                     <TouchableOpacity
-                      key={month}
                       style={[
-                        styles.monthItem,
-                        selectedMonth === month && {
+                        styles.quarterItem,
+                        selectedQuarter === 'Q1' && {
                           backgroundColor: isInward ? '#F48221' : '#4682B4',
                           borderColor: 'transparent',
                           ...Platform.select({
@@ -1416,613 +1475,585 @@ const InwardOutwardReportScreen = () => {
                           }),
                         },
                       ]}
-                      onPress={() => handleMonthSelection(index)}>
+                      onPress={() => handleQuarterSelection(1)}>
                       <Text
                         style={[
-                          styles.monthItemText,
-                          selectedMonth === month &&
+                          styles.quarterItemTitle,
+                          selectedQuarter === 'Q1' &&
                             styles.selectedTimeItemText,
                         ]}>
-                        {month}
+                        Q1
+                      </Text>
+                      <Text
+                        style={[
+                          styles.quarterItemDates,
+                          selectedQuarter === 'Q1' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        Jan-Mar
                       </Text>
                     </TouchableOpacity>
-                  ))}
+
+                    <TouchableOpacity
+                      style={[
+                        styles.quarterItem,
+                        selectedQuarter === 'Q2' && {
+                          backgroundColor: isInward ? '#F48221' : '#4682B4',
+                          borderColor: 'transparent',
+                          ...Platform.select({
+                            ios: {
+                              shadowColor: '#000',
+                              shadowOffset: {width: 0, height: 2},
+                              shadowOpacity: 0.1,
+                              shadowRadius: 3,
+                            },
+                            android: {
+                              elevation: 2,
+                            },
+                          }),
+                        },
+                      ]}
+                      onPress={() => handleQuarterSelection(2)}>
+                      <Text
+                        style={[
+                          styles.quarterItemTitle,
+                          selectedQuarter === 'Q2' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        Q2
+                      </Text>
+                      <Text
+                        style={[
+                          styles.quarterItemDates,
+                          selectedQuarter === 'Q2' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        Apr-Jun
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.quarterItem,
+                        selectedQuarter === 'Q3' && {
+                          backgroundColor: isInward ? '#F48221' : '#4682B4',
+                          borderColor: 'transparent',
+                          ...Platform.select({
+                            ios: {
+                              shadowColor: '#000',
+                              shadowOffset: {width: 0, height: 2},
+                              shadowOpacity: 0.1,
+                              shadowRadius: 3,
+                            },
+                            android: {
+                              elevation: 2,
+                            },
+                          }),
+                        },
+                      ]}
+                      onPress={() => handleQuarterSelection(3)}>
+                      <Text
+                        style={[
+                          styles.quarterItemTitle,
+                          selectedQuarter === 'Q3' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        Q3
+                      </Text>
+                      <Text
+                        style={[
+                          styles.quarterItemDates,
+                          selectedQuarter === 'Q3' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        Jul-Sep
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.quarterItem,
+                        selectedQuarter === 'Q4' && {
+                          backgroundColor: isInward ? '#F48221' : '#4682B4',
+                          borderColor: 'transparent',
+                          ...Platform.select({
+                            ios: {
+                              shadowColor: '#000',
+                              shadowOffset: {width: 0, height: 2},
+                              shadowOpacity: 0.1,
+                              shadowRadius: 3,
+                            },
+                            android: {
+                              elevation: 2,
+                            },
+                          }),
+                        },
+                      ]}
+                      onPress={() => handleQuarterSelection(4)}>
+                      <Text
+                        style={[
+                          styles.quarterItemTitle,
+                          selectedQuarter === 'Q4' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        Q4
+                      </Text>
+                      <Text
+                        style={[
+                          styles.quarterItemDates,
+                          selectedQuarter === 'Q4' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        Oct-Dec
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
-            )}
-
-            {/* Quarterly View - shown only when Quarterly is selected */}
-            {timePeriod === 'Quarterly' && (
-              <View style={styles.timePeriodSelectorContainer}>
-                <View style={styles.quartersGrid}>
-                  <TouchableOpacity
-                    style={[
-                      styles.quarterItem,
-                      selectedQuarter === 'Q1' && {
-                        backgroundColor: isInward ? '#F48221' : '#4682B4',
-                        borderColor: 'transparent',
-                        ...Platform.select({
-                          ios: {
-                            shadowColor: '#000',
-                            shadowOffset: {width: 0, height: 2},
-                            shadowOpacity: 0.1,
-                            shadowRadius: 3,
-                          },
-                          android: {
-                            elevation: 2,
-                          },
-                        }),
-                      },
-                    ]}
-                    onPress={() => handleQuarterSelection(1)}>
-                    <Text
-                      style={[
-                        styles.quarterItemTitle,
-                        selectedQuarter === 'Q1' && styles.selectedTimeItemText,
-                      ]}>
-                      Q1
-                    </Text>
-                    <Text
-                      style={[
-                        styles.quarterItemDates,
-                        selectedQuarter === 'Q1' && styles.selectedTimeItemText,
-                      ]}>
-                      Jan-Mar
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.quarterItem,
-                      selectedQuarter === 'Q2' && {
-                        backgroundColor: isInward ? '#F48221' : '#4682B4',
-                        borderColor: 'transparent',
-                        ...Platform.select({
-                          ios: {
-                            shadowColor: '#000',
-                            shadowOffset: {width: 0, height: 2},
-                            shadowOpacity: 0.1,
-                            shadowRadius: 3,
-                          },
-                          android: {
-                            elevation: 2,
-                          },
-                        }),
-                      },
-                    ]}
-                    onPress={() => handleQuarterSelection(2)}>
-                    <Text
-                      style={[
-                        styles.quarterItemTitle,
-                        selectedQuarter === 'Q2' && styles.selectedTimeItemText,
-                      ]}>
-                      Q2
-                    </Text>
-                    <Text
-                      style={[
-                        styles.quarterItemDates,
-                        selectedQuarter === 'Q2' && styles.selectedTimeItemText,
-                      ]}>
-                      Apr-Jun
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.quarterItem,
-                      selectedQuarter === 'Q3' && {
-                        backgroundColor: isInward ? '#F48221' : '#4682B4',
-                        borderColor: 'transparent',
-                        ...Platform.select({
-                          ios: {
-                            shadowColor: '#000',
-                            shadowOffset: {width: 0, height: 2},
-                            shadowOpacity: 0.1,
-                            shadowRadius: 3,
-                          },
-                          android: {
-                            elevation: 2,
-                          },
-                        }),
-                      },
-                    ]}
-                    onPress={() => handleQuarterSelection(3)}>
-                    <Text
-                      style={[
-                        styles.quarterItemTitle,
-                        selectedQuarter === 'Q3' && styles.selectedTimeItemText,
-                      ]}>
-                      Q3
-                    </Text>
-                    <Text
-                      style={[
-                        styles.quarterItemDates,
-                        selectedQuarter === 'Q3' && styles.selectedTimeItemText,
-                      ]}>
-                      Jul-Sep
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.quarterItem,
-                      selectedQuarter === 'Q4' && {
-                        backgroundColor: isInward ? '#F48221' : '#4682B4',
-                        borderColor: 'transparent',
-                        ...Platform.select({
-                          ios: {
-                            shadowColor: '#000',
-                            shadowOffset: {width: 0, height: 2},
-                            shadowOpacity: 0.1,
-                            shadowRadius: 3,
-                          },
-                          android: {
-                            elevation: 2,
-                          },
-                        }),
-                      },
-                    ]}
-                    onPress={() => handleQuarterSelection(4)}>
-                    <Text
-                      style={[
-                        styles.quarterItemTitle,
-                        selectedQuarter === 'Q4' && styles.selectedTimeItemText,
-                      ]}>
-                      Q4
-                    </Text>
-                    <Text
-                      style={[
-                        styles.quarterItemDates,
-                        selectedQuarter === 'Q4' && styles.selectedTimeItemText,
-                      ]}>
-                      Oct-Dec
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-
-            {/* Half-Yearly View - shown only when Half-Yearly is selected */}
-            {timePeriod === 'Half-Yearly' && (
-              <View style={styles.timePeriodSelectorContainer}>
-                <View style={styles.halfsGrid}>
-                  <TouchableOpacity
-                    style={[
-                      styles.halfItem,
-                      selectedHalf === 'H1(First Half)' && {
-                        backgroundColor: isInward ? '#F48221' : '#4682B4',
-                        borderColor: 'transparent',
-                      },
-                    ]}
-                    onPress={() => handleHalfYearSelection(1)}>
-                    <Text
-                      style={[
-                        styles.halfItemTitle,
-                        selectedHalf === 'H1(First Half)' &&
-                          styles.selectedTimeItemText,
-                      ]}>
-                      H1 (First Half)
-                    </Text>
-                    <Text
-                      style={[
-                        styles.halfItemDates,
-                        selectedHalf === 'H1(First Half)' &&
-                          styles.selectedTimeItemText,
-                      ]}>
-                      Jan-Jun{' '}
-                      {getFinancialYearDisplay(financialYear).split('-')[0]}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.halfItem,
-                      selectedHalf === 'H2(Second Half)' && {
-                        backgroundColor: isInward ? '#F48221' : '#4682B4',
-                        borderColor: 'transparent',
-                      },
-                    ]}
-                    onPress={() => handleHalfYearSelection(2)}>
-                    <Text
-                      style={[
-                        styles.halfItemTitle,
-                        selectedHalf === 'H2(Second Half)' &&
-                          styles.selectedTimeItemText,
-                      ]}>
-                      H2 (Second Half)
-                    </Text>
-                    <Text
-                      style={[
-                        styles.halfItemDates,
-                        selectedHalf === 'H2(Second Half)' &&
-                          styles.selectedTimeItemText,
-                      ]}>
-                      Jul-Dec{' '}
-                      {getFinancialYearDisplay(financialYear).split('-')[0]}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-
-            {/* Date Fields (visible only in custom mode or showing the selected dates) */}
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>From Date</Text>
-              <TouchableOpacity
-                style={styles.dateInputContainer}
-                onPress={() =>
-                  timePeriod === ('Custom' as TimePeriod) &&
-                  showDatePicker('from')
-                }
-                disabled={timePeriod !== ('Custom' as TimePeriod)}>
-                <View style={styles.dateInputContent}>
-                  <MaterialIcons
-                    name="event"
-                    size={20}
-                    color="#718096"
-                    style={styles.inputIcon}
-                  />
-                  <Text
-                    style={[
-                      styles.dateText,
-                      timePeriod !== ('Custom' as TimePeriod) &&
-                        styles.disabledDateText,
-                    ]}>
-                    {formatDate(fromDate)}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-              {showFromDatePicker &&
-                Platform.OS === 'android' &&
-                timePeriod === 'Custom' && (
-                  <DateTimePicker
-                    testID="fromDatePicker"
-                    value={fromDate}
-                    mode="date"
-                    display="default"
-                    onChange={onFromDateChange}
-                  />
-                )}
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>To Date</Text>
-              <TouchableOpacity
-                style={styles.dateInputContainer}
-                onPress={() =>
-                  timePeriod === ('Custom' as TimePeriod) &&
-                  showDatePicker('to')
-                }
-                disabled={timePeriod !== ('Custom' as TimePeriod)}>
-                <View style={styles.dateInputContent}>
-                  <MaterialIcons
-                    name="event-available"
-                    size={20}
-                    color="#718096"
-                    style={styles.inputIcon}
-                  />
-                  <Text
-                    style={[
-                      styles.dateText,
-                      timePeriod !== ('Custom' as TimePeriod) &&
-                        styles.disabledDateText,
-                    ]}>
-                    {formatDate(toDate)}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-              {showToDatePicker &&
-                Platform.OS === 'android' &&
-                timePeriod === 'Custom' && (
-                  <DateTimePicker
-                    testID="toDatePicker"
-                    value={toDate}
-                    mode="date"
-                    display="default"
-                    onChange={onToDateChange}
-                  />
-                )}
-            </View>
-
-            {/* Category Multi-Select */}
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Categories</Text>
-              <MultiSelect
-                options={apiCategories.map(category => ({
-                  label: category,
-                  value: category,
-                }))}
-                selectedValues={itemCategories}
-                onSelectChange={values => setItemCategories(values)}
-                placeholder="Select Categories"
-                primaryColor={isInward ? '#F48221' : '#4682B4'}
-              />
-            </View>
-
-            {/* Subcategory Multi-Select - Only enabled if at least one category is selected */}
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Subcategories</Text>
-              <MultiSelect
-                options={getAvailableSubcategories()}
-                selectedValues={itemSubcategories}
-                onSelectChange={values => setItemSubcategories(values)}
-                placeholder="Select Subcategories"
-                disabled={itemCategories.length === 0}
-                primaryColor={isInward ? '#F48221' : '#4682B4'}
-              />
-            </View>
-
-            {/* Unit Picker */}
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Unit</Text>
-              {renderPicker('unit', unit, 'Unit', units, value =>
-                setUnit(value),
               )}
-            </View>
 
-            {/* Buttons */}
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  {backgroundColor: '#718096'}, // Grey for clear
-                  isSearching && styles.disabledButton,
-                ]}
-                onPress={handleClear}
-                disabled={isSearching}>
-                <Text style={styles.buttonText}>Clear</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  {backgroundColor: isInward ? '#F48221' : '#4682B4'},
-                  isSearching && styles.disabledButton,
-                ]}
-                onPress={handleSearch}
-                disabled={isSearching}>
-                {isSearching ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <Text style={styles.buttonText}>Search</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </ScrollView>
-      ) : showReport ? (
-        // Report Section
-        <View style={styles.reportContainer}>
-          <ViewShot
-            ref={viewshotRef}
-            options={{
-              fileName: 'inward-outward-report',
-              format: 'jpg',
-              quality: 0.9,
-            }}
-            style={styles.reportContent}>
-            {/* Report Header */}
-            <View style={styles.reportHeader}>
-              <View style={styles.reportHeaderLeft}>
+              {/* Half-Yearly View - shown only when Half-Yearly is selected */}
+              {timePeriod === 'Half-Yearly' && (
+                <View style={styles.timePeriodSelectorContainer}>
+                  <View style={styles.halfsGrid}>
+                    <TouchableOpacity
+                      style={[
+                        styles.halfItem,
+                        selectedHalf === 'H1(First Half)' && {
+                          backgroundColor: isInward ? '#F48221' : '#4682B4',
+                          borderColor: 'transparent',
+                        },
+                      ]}
+                      onPress={() => handleHalfYearSelection(1)}>
+                      <Text
+                        style={[
+                          styles.halfItemTitle,
+                          selectedHalf === 'H1(First Half)' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        H1 (First Half)
+                      </Text>
+                      <Text
+                        style={[
+                          styles.halfItemDates,
+                          selectedHalf === 'H1(First Half)' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        Jan-Jun{' '}
+                        {getFinancialYearDisplay(financialYear).split('-')[0]}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.halfItem,
+                        selectedHalf === 'H2(Second Half)' && {
+                          backgroundColor: isInward ? '#F48221' : '#4682B4',
+                          borderColor: 'transparent',
+                        },
+                      ]}
+                      onPress={() => handleHalfYearSelection(2)}>
+                      <Text
+                        style={[
+                          styles.halfItemTitle,
+                          selectedHalf === 'H2(Second Half)' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        H2 (Second Half)
+                      </Text>
+                      <Text
+                        style={[
+                          styles.halfItemDates,
+                          selectedHalf === 'H2(Second Half)' &&
+                            styles.selectedTimeItemText,
+                        ]}>
+                        Jul-Dec{' '}
+                        {getFinancialYearDisplay(financialYear).split('-')[0]}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              {/* Date Fields (visible only in custom mode or showing the selected dates) */}
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>From Date</Text>
                 <TouchableOpacity
-                  onPress={handleBackToForm}
+                  style={styles.dateInputContainer}
+                  onPress={() =>
+                    timePeriod === ('Custom' as TimePeriod) &&
+                    showDatePicker('from')
+                  }
+                  disabled={timePeriod !== ('Custom' as TimePeriod)}>
+                  <View style={styles.dateInputContent}>
+                    <MaterialIcons
+                      name="event"
+                      size={20}
+                      color="#718096"
+                      style={styles.inputIcon}
+                    />
+                    <Text
+                      style={[
+                        styles.dateText,
+                        timePeriod !== ('Custom' as TimePeriod) &&
+                          styles.disabledDateText,
+                      ]}>
+                      {formatDate(fromDate)}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                {showFromDatePicker &&
+                  Platform.OS === 'android' &&
+                  timePeriod === 'Custom' && (
+                    <DateTimePicker
+                      testID="fromDatePicker"
+                      value={fromDate}
+                      mode="date"
+                      display="default"
+                      onChange={onFromDateChange}
+                    />
+                  )}
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>To Date</Text>
+                <TouchableOpacity
+                  style={styles.dateInputContainer}
+                  onPress={() =>
+                    timePeriod === ('Custom' as TimePeriod) &&
+                    showDatePicker('to')
+                  }
+                  disabled={timePeriod !== ('Custom' as TimePeriod)}>
+                  <View style={styles.dateInputContent}>
+                    <MaterialIcons
+                      name="event-available"
+                      size={20}
+                      color="#718096"
+                      style={styles.inputIcon}
+                    />
+                    <Text
+                      style={[
+                        styles.dateText,
+                        timePeriod !== ('Custom' as TimePeriod) &&
+                          styles.disabledDateText,
+                      ]}>
+                      {formatDate(toDate)}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                {showToDatePicker &&
+                  Platform.OS === 'android' &&
+                  timePeriod === 'Custom' && (
+                    <DateTimePicker
+                      testID="toDatePicker"
+                      value={toDate}
+                      mode="date"
+                      display="default"
+                      onChange={onToDateChange}
+                    />
+                  )}
+              </View>
+
+              {/* Category Multi-Select */}
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Categories</Text>
+                <MultiSelect
+                  options={apiCategories.map(category => ({
+                    label: category,
+                    value: category,
+                  }))}
+                  selectedValues={itemCategories}
+                  onSelectChange={values => setItemCategories(values)}
+                  placeholder="Select items"
+                  primaryColor={isInward ? '#F48221' : '#4682B4'}
+                />
+              </View>
+
+              {/* Subcategory Multi-Select - Only enabled if at least one category is selected */}
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Subcategories</Text>
+                <MultiSelect
+                  options={getAvailableSubcategories()}
+                  selectedValues={itemSubcategories}
+                  onSelectChange={values => setItemSubcategories(values)}
+                  placeholder="Select items"
+                  disabled={itemCategories.length === 0}
+                  primaryColor={isInward ? '#F48221' : '#4682B4'}
+                />
+              </View>
+
+              {/* Unit Picker */}
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Unit</Text>
+                {renderPicker('unit', unit, 'Unit', units, value =>
+                  setUnit(value),
+                )}
+              </View>
+
+              {/* Buttons */}
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
                   style={[
-                    styles.backButton,
-                    {
-                      backgroundColor: '#FFFFFF',
-                      borderColor: isInward ? '#F48221' : '#4682B4',
-                    },
-                  ]}>
-                  <MaterialIcons
-                    name="arrow-back"
-                    size={20}
-                    color={isInward ? '#F48221' : '#4682B4'}
-                  />
+                    styles.button,
+                    {backgroundColor: '#718096'}, // Grey for clear
+                    isSearching && styles.disabledButton,
+                  ]}
+                  onPress={handleClear}
+                  disabled={isSearching}>
+                  <Text style={styles.buttonText}>Clear</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    {backgroundColor: isInward ? '#F48221' : '#4682B4'},
+                    isSearching && styles.disabledButton,
+                  ]}
+                  onPress={handleSearch}
+                  disabled={isSearching}>
+                  {isSearching ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <Text style={styles.buttonText}>Search</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        ) : showReport ? (
+          // Report Section
+          <View style={styles.reportContainer}>
+            <ViewShot
+              ref={viewshotRef}
+              options={{
+                fileName: 'inward-outward-report',
+                format: 'jpg',
+                quality: 0.9,
+              }}
+              style={styles.reportContent}>
+              {/* Report Header */}
+              <View style={styles.reportHeader}>
+                <View style={styles.reportHeaderLeft}>
+                  <TouchableOpacity
+                    onPress={handleBackToForm}
+                    style={[
+                      styles.backButton,
+                      {
+                        backgroundColor: '#FFFFFF',
+                        borderColor: isInward ? '#F48221' : '#4682B4',
+                      },
+                    ]}>
+                    <MaterialIcons
+                      name="arrow-back"
+                      size={20}
+                      color={isInward ? '#F48221' : '#4682B4'}
+                    />
+                    <Text
+                      style={[
+                        styles.backButtonText,
+                        {color: isInward ? '#F48221' : '#4682B4'},
+                      ]}>
+                      Back
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.reportHeaderCenter}>
                   <Text
                     style={[
-                      styles.backButtonText,
+                      styles.reportTitle,
                       {color: isInward ? '#F48221' : '#4682B4'},
                     ]}>
-                    Back
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.reportHeaderCenter}>
-                <Text
-                  style={[
-                    styles.reportTitle,
-                    {color: isInward ? '#F48221' : '#4682B4'},
-                  ]}>
-                  {isInward ? 'Inward Report' : 'Outward Report'}
-                </Text>
-              </View>
-              <View style={styles.reportHeaderRight}>
-                <TouchableOpacity
-                  onPress={handlePdfDownload}
-                  disabled={isPdfDownloading || localReportData.length === 0}
-                  style={[
-                    styles.pdfButton,
-                    {
-                      backgroundColor:
-                        localReportData.length === 0
-                          ? '#CBD5E1'
-                          : isInward
-                          ? '#F48221'
-                          : '#4682B4',
-                    },
-                    isPdfDownloading && styles.disabledButton,
-                  ]}>
-                  <MaterialIcons
-                    name="upload"
-                    size={20}
-                    color="#FFFFFF"
-                  />
-                  <Text style={styles.pdfButtonText}>PDF</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Report Sub Header */}
-            <View style={styles.reportSubHeader}>
-              {isPdfDownloading ? (
-                <View style={styles.loadingIndicatorContainer}>
-                  <ActivityIndicator
-                    size="small"
-                    color={isInward ? '#F48221' : '#4682B4'}
-                  />
-                  <Text style={styles.loadingIndicatorText}>
-                    Generating PDF...
+                    {isInward ? 'Inward Report' : 'Outward Report'}
                   </Text>
                 </View>
-              ) : isReportLoading ? (
-                <View style={styles.loadingIndicatorContainer}>
+                <View style={styles.reportHeaderRight}>
+                  <TouchableOpacity
+                    onPress={handlePdfDownload}
+                    disabled={isPdfDownloading || localReportData.length === 0}
+                    style={[
+                      styles.pdfButton,
+                      {
+                        backgroundColor:
+                          localReportData.length === 0
+                            ? '#CBD5E1'
+                            : isInward
+                            ? '#F48221'
+                            : '#4682B4',
+                      },
+                      isPdfDownloading && styles.disabledButton,
+                    ]}>
+                    <MaterialIcons name="file-download" size={20} color="#FFFFFF" />
+                    <Text style={styles.pdfButtonText}>PDF</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Report Sub Header */}
+              <View style={styles.reportSubHeader}>
+                {isPdfDownloading ? (
+                  <View style={styles.loadingIndicatorContainer}>
+                    <ActivityIndicator
+                      size="small"
+                      color={isInward ? '#F48221' : '#4682B4'}
+                    />
+                    <Text style={styles.loadingIndicatorText}>
+                      Generating PDF...
+                    </Text>
+                  </View>
+                ) : isReportLoading ? (
+                  <View style={styles.loadingIndicatorContainer}>
+                    <ActivityIndicator
+                      size="small"
+                      color={isInward ? '#F48221' : '#4682B4'}
+                    />
+                    <Text style={styles.loadingIndicatorText}>
+                      Searching for data...
+                    </Text>
+                  </View>
+                ) : localReportData.length > 0 ? (
+                  <View style={styles.resultsSummaryContainer}>
+                    <MaterialIcons name="list-alt" size={20} color="#64748B" />
+                    <Text
+                      style={[
+                        styles.reportCountText,
+                        {color: isInward ? '#F48221' : '#4682B4'},
+                      ]}>
+                      {localReportData.length} records found
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+
+              {/* Scrolling Hint - only show when data is loaded and available */}
+              {!isReportLoading && localReportData.length > 0 && (
+                <View style={styles.scrollHintContainer}>
+                  <MaterialIcons name="swipe" size={18} color="#64748B" />
+                  <Text style={styles.scrollHintText}>
+                    Scroll horizontally to view all data
+                  </Text>
+                </View>
+              )}
+
+              {/* Report Table Section - Pass the onInwardOutwardNoPress handler */}
+              {isReportLoading ? (
+                <View style={styles.loadingTableContainer}>
                   <ActivityIndicator
-                    size="small"
+                    size="large"
                     color={isInward ? '#F48221' : '#4682B4'}
                   />
-                  <Text style={styles.loadingIndicatorText}>
-                    Searching for data...
+                  <Text style={styles.loadingTableText}>
+                    Loading report data...
                   </Text>
                 </View>
               ) : localReportData.length > 0 ? (
-                <View style={styles.resultsSummaryContainer}>
-                  <MaterialIcons name="list-alt" size={20} color="#64748B" />
-                  <Text
-                    style={[
-                      styles.reportCountText,
-                      {color: isInward ? '#F48221' : '#4682B4'},
-                    ]}>
-                    {localReportData.length} records found
+                <ReportTable
+                  reportData={localReportData}
+                  isInward={isInward}
+                  tableRef={tableRef}
+                  onInwardOutwardNoPress={handleInwardOutwardNoPress}
+                />
+              ) : (
+                <View style={styles.emptyTableContainer}>
+                  <MaterialIcons name="search-off" size={48} color="#CBD5E1" />
+                  <Text style={styles.emptyTableText}>
+                    No records found matching your filters.
                   </Text>
                 </View>
-              ) : null}
-            </View>
-
-            {/* Scrolling Hint - only show when data is loaded and available */}
-            {!isReportLoading && localReportData.length > 0 && (
-              <View style={styles.scrollHintContainer}>
-                <MaterialIcons name="swipe" size={18} color="#64748B" />
-                <Text style={styles.scrollHintText}>
-                  Scroll horizontally to view all data
-                </Text>
-              </View>
-            )}
-
-            {/* Report Table Section - Pass the onInwardOutwardNoPress handler */}
-            {isReportLoading ? (
-              <View style={styles.loadingTableContainer}>
-                <ActivityIndicator size="large" color={isInward ? '#F48221' : '#4682B4'} />
-                <Text style={styles.loadingTableText}>
-                  Loading report data...
-                </Text>
-              </View>
-            ) : localReportData.length > 0 ? (
-              <ReportTable
-                reportData={localReportData}
-                isInward={isInward}
-                tableRef={tableRef}
-                onInwardOutwardNoPress={handleInwardOutwardNoPress}
-              />
-            ) : (
-              <View style={styles.emptyTableContainer}>
-                <MaterialIcons name="search-off" size={48} color="#CBD5E1" />
-                <Text style={styles.emptyTableText}>
-                  No records found matching your filters.
-                </Text>
-              </View>
-            )}
-          </ViewShot>
-        </View>
-      ) : (
-        // Empty State
-        <View style={styles.emptyStateContainer}>
-          <MaterialIcons name="error-outline" size={64} color="#E2E8F0" />
-          <Text style={styles.emptyStateTitle}>Something went wrong</Text>
-          <Text style={styles.emptyStateText}>
-            Please go back and try again with different filters.
-          </Text>
-        </View>
-      )}
-
-      {/* iOS Picker Modal */}
-      <IOSPickerModal
-        isVisible={isPickerVisible}
-        currentPicker={currentPicker}
-        itemCategory={itemCategories.length > 0 ? itemCategories[0] : ""}
-        itemSubcategory={itemSubcategories.length > 0 ? itemSubcategories[0] : ""}
-        unit={unit}
-        apiCategories={apiCategories}
-        apiSubcategories={apiSubcategories}
-        units={units}
-        setItemCategory={(value) => {
-          if (value) {
-            setItemCategories([value]);
-          } else {
-            setItemCategories([]);
-          }
-        }}
-        setItemSubcategory={(value) => {
-          if (value) {
-            setItemSubcategories([value]);
-          } else {
-            setItemSubcategories([]);
-          }
-        }}
-        setUnit={setUnit}
-        onClose={() => setIsPickerVisible(false)}
-      />
-
-      {/* iOS Date Picker Modal */}
-      <IOSDatePickerModal
-        visible={showFromDatePicker && Platform.OS === 'ios'}
-        date={fromDate}
-        isInward={isInward}
-        title="Select From Date"
-        onClose={() => setShowFromDatePicker(false)}
-        onDateChange={(event: any, date?: Date) => {
-          if (date) setFromDate(date);
-        }}
-        onConfirm={() => {
-          onFromDateChange({}, fromDate);
-          setShowFromDatePicker(false);
-        }}
-      />
-
-      <IOSDatePickerModal
-        visible={showToDatePicker && Platform.OS === 'ios'}
-        date={toDate}
-        isInward={isInward}
-        title="Select To Date"
-        onClose={() => setShowToDatePicker(false)}
-        onDateChange={(event: any, date?: Date) => {
-          if (date) setToDate(date);
-        }}
-        onConfirm={() => {
-          onToDateChange({}, toDate);
-          setShowToDatePicker(false);
-        }}
-      />
-
-      {/* PDF Loading Overlay */}
-      {isPdfDownloading && (
-        <View style={styles.pdfLoadingOverlay}>
-          <View style={styles.pdfLoadingCard}>
-            <Text style={styles.pdfLoadingText}>Generating PDF</Text>
-            <View style={styles.progressBarContainer}>
-              <View
-                style={[
-                  styles.progressBar,
-                  {
-                    width: `${downloadProgress}%`,
-                    backgroundColor: isInward ? '#F48221' : '#4682B4',
-                  },
-                ]}
-              />
-            </View>
-            <Text style={styles.progressText}>{statusMessage}</Text>
+              )}
+            </ViewShot>
           </View>
-        </View>
-      )}
-    </SafeAreaView>
+        ) : (
+          // Empty State
+          <View style={styles.emptyStateContainer}>
+            <MaterialIcons name="error-outline" size={64} color="#E2E8F0" />
+            <Text style={styles.emptyStateTitle}>Something went wrong</Text>
+            <Text style={styles.emptyStateText}>
+              Please go back and try again with different filters.
+            </Text>
+          </View>
+        )}
+
+        {/* iOS Picker Modal */}
+        <IOSPickerModal
+          isVisible={isPickerVisible}
+          currentPicker={currentPicker}
+          itemCategory={itemCategories.length > 0 ? itemCategories[0] : ''}
+          itemSubcategory={
+            itemSubcategories.length > 0 ? itemSubcategories[0] : ''
+          }
+          unit={unit}
+          apiCategories={apiCategories}
+          apiSubcategories={apiSubcategories}
+          units={units}
+          setItemCategory={value => {
+            if (value) {
+              setItemCategories([value]);
+            } else {
+              setItemCategories([]);
+            }
+          }}
+          setItemSubcategory={value => {
+            if (value) {
+              setItemSubcategories([value]);
+            } else {
+              setItemSubcategories([]);
+            }
+          }}
+          setUnit={setUnit}
+          onClose={() => setIsPickerVisible(false)}
+        />
+
+        {/* iOS Date Picker Modal */}
+        <IOSDatePickerModal
+          visible={showFromDatePicker && Platform.OS === 'ios'}
+          date={fromDate}
+          isInward={isInward}
+          title="Select From Date"
+          onClose={() => setShowFromDatePicker(false)}
+          onDateChange={(event: any, date?: Date) => {
+            if (date) setFromDate(date);
+          }}
+          onConfirm={() => {
+            onFromDateChange({}, fromDate);
+            setShowFromDatePicker(false);
+          }}
+        />
+
+        <IOSDatePickerModal
+          visible={showToDatePicker && Platform.OS === 'ios'}
+          date={toDate}
+          isInward={isInward}
+          title="Select To Date"
+          onClose={() => setShowToDatePicker(false)}
+          onDateChange={(event: any, date?: Date) => {
+            if (date) setToDate(date);
+          }}
+          onConfirm={() => {
+            onToDateChange({}, toDate);
+            setShowToDatePicker(false);
+          }}
+        />
+
+        {/* PDF Loading Overlay */}
+        {isPdfDownloading && (
+          <View style={styles.pdfLoadingOverlay}>
+            <View style={styles.pdfLoadingCard}>
+              <Text style={styles.pdfLoadingText}>Generating PDF</Text>
+              <View style={styles.progressBarContainer}>
+                <View
+                  style={[
+                    styles.progressBar,
+                    {
+                      width: `${downloadProgress}%`,
+                      backgroundColor: isInward ? '#F48221' : '#4682B4',
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={styles.progressText}>{statusMessage}</Text>
+            </View>
+          </View>
+        )}
+      </SafeAreaView>
+    </LayoutWrapper>
   );
 };
 
@@ -2030,7 +2061,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#f8f8f8',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    // Remove Android-specific padding that's causing the gap
   },
   container: {
     flex: 1,
@@ -2387,7 +2418,7 @@ const styles = StyleSheet.create({
   reportContainer: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    marginTop: -24, // Increased negative margin to further reduce space above header
+    marginTop: 10, // Increased negative margin to further reduce space above header
   },
   reportHeader: {
     padding: 0,

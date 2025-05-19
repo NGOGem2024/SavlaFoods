@@ -420,7 +420,7 @@ const HomeScreen: React.FC = () => {
           ]}>
           <View style={styles.stockHeader}>
             <View style={styles.lotNoContainer}>
-              <Text style={styles.lotNoLabel}>LOT NO : </Text>
+              <Text style={styles.lotNoLabel}>LOT NO:</Text>
 
               <TouchableOpacity
                 style={styles.lotNoValueContainer}
@@ -639,7 +639,7 @@ const HomeScreen: React.FC = () => {
           onPress={handleSearchSubmit}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search lot nos, item marks, vakal no.."
+            placeholder="Search lot no, item marks, vakal no.."
             placeholderTextColor={'#999'}
             value={searchQuery}
             onChangeText={handleSearch}
@@ -939,7 +939,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   cartIconWrapper: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    // backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 20,
   },
   cartIcon: {
