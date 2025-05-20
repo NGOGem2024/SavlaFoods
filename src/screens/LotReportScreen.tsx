@@ -1833,7 +1833,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   lotNo: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   lotNoHighlight: {
@@ -1843,7 +1843,7 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   detailText: {
-    fontSize: 16,
+    fontSize: 15,
     marginVertical: 2,
     color: '#333',
   },

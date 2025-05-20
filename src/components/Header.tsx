@@ -32,7 +32,7 @@ const Header: React.FC<HeaderProps> = ({
 
   onAccountSwitch,
   onCartPress,
-  appVersion = 'v1.6.0',
+  appVersion = 'v1.6',
 }) => {
   const navigation = useNavigation<any>();
   const route = useRoute();
