@@ -1851,6 +1851,11 @@ const ReportSummaryScreen: React.FC = () => {
   return (
     <LayoutWrapper showHeader={true} showTabBar={false} route={route}>
       <View style={styles.container}>
+        {/* Title */}
+        <View style={styles.titleContainer}>
+          <Text style={styles.titleText}>Report Summary</Text>
+        </View>
+
         {/* Date Range Selector */}
         <View style={styles.dateContainer}>
           <View style={styles.dateField}>
@@ -2080,10 +2085,23 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#fff',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  titleContainer: {
+    alignItems: 'center',
     marginBottom: 16,
+    backgroundColor: '#f9f9f9',
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eaeaea',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    elevation: 1,
+  },
+  titleText: {
+    fontSize: 20,
+    fontWeight: '600',
     color: '#F48221',
   },
   dateContainer: {

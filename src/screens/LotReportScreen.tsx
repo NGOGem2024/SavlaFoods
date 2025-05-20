@@ -1385,6 +1385,11 @@ const LotReportScreen = () => {
   return (
     <LayoutWrapper showHeader={true} showTabBar={false} route={route}>
       <View style={styles.container}>
+        {/* Title */}
+        <View style={styles.titleContainer}>
+          <Text style={styles.titleText}>Lot Report</Text>
+        </View>
+        
         {/* Fixed Search Container at the top */}
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
@@ -1614,6 +1619,25 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 10,
     backgroundColor: '#f5f5f5',
+  },
+  titleContainer: {
+    alignItems: 'center',
+    marginBottom: 5,
+    backgroundColor: '#f9f9f9',
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eaeaea',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    elevation: 1,
+  },
+  titleText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#F28C28',
   },
   mainScrollView: {
     flex: 1,

@@ -765,6 +765,11 @@ const ZeroStockReportScreen = () => {
   return (
     <LayoutWrapper showHeader={true} showTabBar={true} route={route}>
       <View style={styles.container}>
+        {/* Title */}
+        <View style={styles.titleContainer}>
+          <Text style={styles.titleText}>Zero Stock</Text>
+        </View>
+
         {/* Filters Section */}
         <View style={styles.filtersContainer}>
           <View style={styles.filterHeader}>
@@ -934,14 +939,27 @@ const stockReportStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 8,
-    paddingHorizontal: 3,
+    padding: 9,
+    // paddingHorizontal: 1,
     backgroundColor: '#fff',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  titleContainer: {
+    alignItems: 'center',
     marginBottom: 16,
+    backgroundColor: '#f9f9f9',
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eaeaea',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    elevation: 1,
+  },
+  titleText: {
+    fontSize: 20,
+    fontWeight: '600',
     color: '#F48221',
   },
   paginationContainer: {

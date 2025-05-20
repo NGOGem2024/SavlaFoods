@@ -749,7 +749,9 @@ const StockReportScreen: React.FC = () => {
         style={styles.container}
         contentContainerStyle={styles.contentContainer}>
         {/* Form header */}
-        <Text style={styles.screenTitle}>Stock Report</Text>
+        <View style={styles.titleContainer}>
+          <Text style={styles.titleText}>Stock Report</Text>
+        </View>
 
         <View style={styles.formRow}>
           <View style={styles.formColumn}>
@@ -1005,18 +1007,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    padding: 3,
   },
   contentContainer: {
     paddingBottom: 24,
   },
-  screenTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#E87830',
-    textAlign: 'center',
-    marginVertical: 16,
+  titleContainer: {
+    alignItems: 'center',
+    marginBottom: 9,
+    backgroundColor: '#f9f9f9',
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eaeaea',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    elevation: 1,
   },
-
+  titleText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#E87830',
+  },
   // Form styles
   formRow: {
     flexDirection: 'row',

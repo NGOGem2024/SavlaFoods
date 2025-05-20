@@ -418,7 +418,7 @@ const BottomTabNavigator: React.FC = () => {
               return getTabBarIcon(route, focused, color, size);
             },
             tabBarLabelStyle: {
-              fontSize: 13,
+              fontSize: 12,
             },
             tabBarActiveTintColor: '#F48221',
             tabBarInactiveTintColor: 'black',
