@@ -34,7 +34,7 @@ export const LayoutWrapper: React.FC<LayoutWrapperProps> = ({
         />
       )}
       <View style={styles.content}>{children}</View>
-      {showTabBar && <TabBar route={route} />}
+      {showTabBar && <TabBar route={route} style={styles.bottom} />}
     </SafeAreaView>
   );
 };
@@ -46,5 +46,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  bottom: {
+    padding: 50,
   },
 });

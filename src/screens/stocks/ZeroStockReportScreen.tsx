@@ -48,6 +48,15 @@ interface ZeroStockItem {
   STATUS: string;
   ITEM_CATEG_NAME: string;
   SUB_CATEGORY_NAME: string;
+  UNIT_NAME: string;
+}
+
+// Pagination interface for tracking pagination state
+interface PaginationState {
+  currentPage: number;
+  itemsPerPage: number;
+  totalItems: number;
+  totalPages: number;
 }
 
 // Props interface for CustomDropdown component
@@ -218,8 +227,19 @@ const ZeroStockReportScreen = () => {
   const [customerID, setCustomerID] = useState('');
   const [loading, setLoading] = useState(false);
   const [zeroStockItems, setZeroStockItems] = useState<ZeroStockItem[]>([]);
+  const [allZeroStockItems, setAllZeroStockItems] = useState<ZeroStockItem[]>(
+    [],
+  );
   const [error, setError] = useState<string | null>(null);
   const [searchInitiated, setSearchInitiated] = useState(false);
+
+  // Pagination state
+  const [pagination, setPagination] = useState<PaginationState>({
+    currentPage: 1,
+    itemsPerPage: 50, // Show 50 items per page
+    totalItems: 0,
+    totalPages: 1,
+  });
 
   // Log API endpoint for debugging
   console.log('Zero Stock API Endpoint:', API_ENDPOINTS.GET_ZERO_STOCK_REPORT);
@@ -388,6 +408,10 @@ const ZeroStockReportScreen = () => {
       setLoading(true);
       setError(null);
       setSearchInitiated(true);
+      setPagination({
+        ...pagination,
+        currentPage: 1, // Reset to first page on new search
+      });
 
       // Format request to exactly match the Postman format - using exact format from screenshot
       const requestData = {
@@ -416,18 +440,15 @@ const ZeroStockReportScreen = () => {
       console.log('API Response Data:', JSON.stringify(response.data, null, 2));
 
       // Handle response based on what we see in Postman
+      let dataArray: ZeroStockItem[] = [];
+
       if (response.data) {
         if (response.data.data && Array.isArray(response.data.data)) {
           console.log(
             'Found data array with length:',
             response.data.data.length,
           );
-          setZeroStockItems(response.data.data);
-          if (response.data.data.length === 0) {
-            setError('No zero stock items found');
-          } else {
-            setError(null);
-          }
+          dataArray = response.data.data;
         } else if (
           response.data.output &&
           Array.isArray(response.data.output)
@@ -436,26 +457,36 @@ const ZeroStockReportScreen = () => {
             'Found output array with length:',
             response.data.output.length,
           );
-          setZeroStockItems(response.data.output);
-          if (response.data.output.length === 0) {
-            setError('No zero stock items found');
-          } else {
-            setError(null);
-          }
+          dataArray = response.data.output;
         } else if (
           response.data.status === 'success' &&
           response.data.count > 0
         ) {
-          // This matches what we see in Postman - data in data[29]
           console.log('Found success status with count:', response.data.count);
-          setZeroStockItems(response.data.data);
-          setError(null);
-        } else {
-          console.log('No recognized data format in response');
-          setZeroStockItems([]);
+          dataArray = response.data.data;
+        }
+
+        // Store all data and update pagination
+        setAllZeroStockItems(dataArray);
+        const totalPages = Math.ceil(
+          dataArray.length / pagination.itemsPerPage,
+        );
+        setPagination({
+          ...pagination,
+          totalItems: dataArray.length,
+          totalPages: totalPages || 1,
+        });
+
+        // Set current page data
+        updateCurrentPageData(dataArray, 1, pagination.itemsPerPage);
+
+        if (dataArray.length === 0) {
           setError('No zero stock items found');
+        } else {
+          setError(null);
         }
       } else {
+        setAllZeroStockItems([]);
         setZeroStockItems([]);
         setError('No zero stock items found');
       }
@@ -481,6 +512,103 @@ const ZeroStockReportScreen = () => {
     }
   };
 
+  // Helper function to update current page data
+  const updateCurrentPageData = (
+    data: ZeroStockItem[],
+    page: number,
+    itemsPerPage: number,
+  ) => {
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedData = data.slice(startIndex, endIndex);
+    setZeroStockItems(paginatedData);
+  };
+
+  // Handle page change
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > pagination.totalPages) return;
+
+    setPagination({
+      ...pagination,
+      currentPage: newPage,
+    });
+
+    updateCurrentPageData(allZeroStockItems, newPage, pagination.itemsPerPage);
+  };
+
+  // Pagination UI component
+  const renderPagination = () => {
+    if (!searchInitiated || zeroStockItems.length === 0) return null;
+
+    const {currentPage, totalPages} = pagination;
+
+    return (
+      <View style={styles.paginationContainer}>
+        <View style={styles.paginationControls}>
+          <TouchableOpacity
+            style={[
+              styles.pageButton,
+              currentPage === 1 && styles.disabledButton,
+            ]}
+            onPress={() => handlePageChange(1)}
+            disabled={currentPage === 1}>
+            <MaterialIcons
+              name="first-page"
+              size={16}
+              color={currentPage === 1 ? '#9ca3af' : '#F48221'}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.pageButton,
+              currentPage === 1 && styles.disabledButton,
+            ]}
+            onPress={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}>
+            <MaterialIcons
+              name="chevron-left"
+              size={16}
+              color={currentPage === 1 ? '#9ca3af' : '#F48221'}
+            />
+          </TouchableOpacity>
+
+          <Text style={styles.pageInfo}>
+            {currentPage}/{totalPages}
+          </Text>
+
+          <TouchableOpacity
+            style={[
+              styles.pageButton,
+              currentPage === totalPages && styles.disabledButton,
+            ]}
+            onPress={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}>
+            <MaterialIcons
+              name="chevron-right"
+              size={16}
+              color={currentPage === totalPages ? '#9ca3af' : '#F48221'}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.pageButton,
+              currentPage === totalPages && styles.disabledButton,
+            ]}
+            onPress={() => handlePageChange(totalPages)}
+            disabled={currentPage === totalPages}>
+            <MaterialIcons
+              name="last-page"
+              size={16}
+              color={currentPage === totalPages ? '#9ca3af' : '#F48221'}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
   // Clear all filters
   const handleClearFilters = () => {
     setItemCategories([]);
@@ -499,7 +627,7 @@ const ZeroStockReportScreen = () => {
     console.log('Lot Number Input:', numericText);
   };
 
-  // Render table header and rows
+  // Render items with pagination
   const renderItems = () => {
     if (!searchInitiated) {
       return null;
@@ -538,22 +666,19 @@ const ZeroStockReportScreen = () => {
                   <Text style={styles.tableHeaderText}>#</Text>
                 </View>
                 <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.tableHeaderText}>Item ID</Text>
+                  <Text style={styles.tableHeaderText}>Balance Qty</Text>
                 </View>
-                <View style={styles.tableHeaderCell120}>
-                  <Text style={styles.tableHeaderText}>Item Code</Text>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.tableHeaderText}>Available Qty</Text>
                 </View>
-                <View style={styles.tableHeaderCell200}>
-                  <Text style={styles.tableHeaderText}>Description</Text>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.tableHeaderText}>Box Quantity</Text>
                 </View>
                 <View style={styles.tableHeaderCell200}>
                   <Text style={styles.tableHeaderText}>Item Name</Text>
                 </View>
                 <View style={styles.tableHeaderCell100}>
                   <Text style={styles.tableHeaderText}>Lot No</Text>
-                </View>
-                <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.tableHeaderText}>Unit ID</Text>
                 </View>
                 <View style={styles.tableHeaderCell120}>
                   <Text style={styles.tableHeaderText}>Item Marks</Text>
@@ -563,15 +688,6 @@ const ZeroStockReportScreen = () => {
                 </View>
                 <View style={styles.tableHeaderCell100}>
                   <Text style={styles.tableHeaderText}>Batch No</Text>
-                </View>
-                <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.tableHeaderText}>Balance Qty</Text>
-                </View>
-                <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.tableHeaderText}>Available Qty</Text>
-                </View>
-                <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.tableHeaderText}>Box Quantity</Text>
                 </View>
                 <View style={styles.tableHeaderCell120}>
                   <Text style={styles.tableHeaderText}>Expiry Date</Text>
@@ -585,8 +701,11 @@ const ZeroStockReportScreen = () => {
                 <View style={styles.tableHeaderCell120}>
                   <Text style={styles.tableHeaderText}>Category</Text>
                 </View>
-                <View style={styles.tableHeaderCell120}>
+                <View style={styles.tableHeaderCell150}>
                   <Text style={styles.tableHeaderText}>Subcategory</Text>
+                </View>
+                <View style={styles.tableHeaderCell60}>
+                  <Text style={styles.tableHeaderText}>Unit</Text>
                 </View>
               </View>
 
@@ -602,41 +721,11 @@ const ZeroStockReportScreen = () => {
                         : styles.tableRowOdd,
                     ]}>
                     <View style={styles.tableHeaderCell60}>
-                      <Text style={styles.tableRowText}>{index + 1}</Text>
-                    </View>
-                    <View style={styles.tableHeaderCell100}>
-                      <Text style={styles.tableRowText}>{item.ITEM_ID}</Text>
-                    </View>
-                    <View style={styles.tableHeaderCell120}>
-                      <Text style={styles.tableRowText}>{item.ITEM_CODE}</Text>
-                    </View>
-                    <View style={styles.tableHeaderCell200}>
                       <Text style={styles.tableRowText}>
-                        {item.DESCRIPTION || '-'}
-                      </Text>
-                    </View>
-                    <View style={styles.tableHeaderCell200}>
-                      <Text style={styles.tableRowText}>{item.ITEM_NAME}</Text>
-                    </View>
-                    <View style={styles.tableHeaderCell100}>
-                      <Text style={styles.tableRowText}>{item.LOT_NO}</Text>
-                    </View>
-                    <View style={styles.tableHeaderCell100}>
-                      <Text style={styles.tableRowText}>{item.FK_UNIT_ID}</Text>
-                    </View>
-                    <View style={styles.tableHeaderCell120}>
-                      <Text style={styles.tableRowText}>
-                        {item.ITEM_MARKS || '-'}
-                      </Text>
-                    </View>
-                    <View style={styles.tableHeaderCell100}>
-                      <Text style={styles.tableRowText}>
-                        {item.VAKAL_NO || '-'}
-                      </Text>
-                    </View>
-                    <View style={styles.tableHeaderCell100}>
-                      <Text style={styles.tableRowText}>
-                        {item.BATCH_NO || '-'}
+                        {(pagination.currentPage - 1) *
+                          pagination.itemsPerPage +
+                          index +
+                          1}
                       </Text>
                     </View>
                     <View style={styles.tableHeaderCell100}>
@@ -652,6 +741,27 @@ const ZeroStockReportScreen = () => {
                     <View style={styles.tableHeaderCell100}>
                       <Text style={styles.tableRowText}>
                         {item.BOX_QUANTITY}
+                      </Text>
+                    </View>
+                    <View style={styles.tableHeaderCell200}>
+                      <Text style={styles.tableRowText}>{item.ITEM_NAME}</Text>
+                    </View>
+                    <View style={styles.tableHeaderCell100}>
+                      <Text style={styles.tableRowText}>{item.LOT_NO}</Text>
+                    </View>
+                    <View style={styles.tableHeaderCell120}>
+                      <Text style={styles.tableRowText}>
+                        {item.ITEM_MARKS || '-'}
+                      </Text>
+                    </View>
+                    <View style={styles.tableHeaderCell100}>
+                      <Text style={styles.tableRowText}>
+                        {item.VAKAL_NO || '-'}
+                      </Text>
+                    </View>
+                    <View style={styles.tableHeaderCell100}>
+                      <Text style={styles.tableRowText}>
+                        {item.BATCH_NO || '-'}
                       </Text>
                     </View>
                     <View style={styles.tableHeaderCell120}>
@@ -674,10 +784,13 @@ const ZeroStockReportScreen = () => {
                         {item.ITEM_CATEG_NAME}
                       </Text>
                     </View>
-                    <View style={styles.tableHeaderCell120}>
+                    <View style={styles.tableHeaderCell150}>
                       <Text style={styles.tableRowText}>
                         {item.SUB_CATEGORY_NAME}
                       </Text>
+                    </View>
+                    <View style={styles.tableHeaderCell60}>
+                      <Text style={styles.tableRowText}>{item.UNIT_NAME}</Text>
                     </View>
                   </View>
                 ))
@@ -692,6 +805,7 @@ const ZeroStockReportScreen = () => {
             </View>
           </ScrollView>
         </ScrollView>
+        {renderPagination()}
       </View>
     );
   };
@@ -699,6 +813,11 @@ const ZeroStockReportScreen = () => {
   return (
     <LayoutWrapper showHeader={true} showTabBar={true} route={route}>
       <View style={styles.container}>
+        {/* Title */}
+        <View style={styles.titleContainer}>
+          <Text style={styles.titleText}>Zero Stock</Text>
+        </View>
+
         {/* Filters Section */}
         <View style={styles.filtersContainer}>
           <View style={styles.filterHeader}>
@@ -727,7 +846,7 @@ const ZeroStockReportScreen = () => {
                       setItemCategories(values);
                       console.log('Categories Selected:', values);
                     }}
-                    placeholder="Select Categories"
+                    placeholder="Select items"
                     primaryColor="#F48221"
                   />
                 </View>
@@ -762,7 +881,7 @@ const ZeroStockReportScreen = () => {
                       setItemSubcategories(values);
                       console.log('Subcategories Selected:', values);
                     }}
-                    placeholder="Select Subcategories"
+                    placeholder="Select items"
                     disabled={itemCategories.length === 0}
                     primaryColor="#F48221"
                   />
@@ -868,15 +987,57 @@ const stockReportStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 8,
-    paddingHorizontal: 3,
+    padding: 9,
+    // paddingHorizontal: 1,
     backgroundColor: '#fff',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  titleContainer: {
+    alignItems: 'center',
     marginBottom: 16,
+    backgroundColor: '#f9f9f9',
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eaeaea',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    elevation: 1,
+  },
+  titleText: {
+    fontSize: 20,
+    fontWeight: '600',
     color: '#F48221',
+  },
+  paginationContainer: {
+    marginVertical: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    backgroundColor: '#f9fafb',
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  paginationControls: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pageButton: {
+    padding: 3,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 3,
+    marginHorizontal: 2,
+    backgroundColor: '#fff',
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  pageInfo: {
+    fontSize: 12,
+    color: '#4b5563',
+    marginHorizontal: 4,
   },
   filtersContainer: {
     backgroundColor: '#ffffff',

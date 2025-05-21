@@ -121,7 +121,7 @@ const MainStackNavigator: React.FC = () => {
         <MainStack.Screen
           name="LotReportScreen"
           component={LotReportScreen}
-          options={{title: 'Lot Report'}}
+          options={{headerShown: false}}
         />
         {/* <MainStack.Screen
           name="ReportSummaryScreen"

@@ -159,6 +159,41 @@ const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({route}) => {
     };
   };
 
+  const formatAddress = (address: string) => {
+    if (!address) return '';
+
+    // Normalize the address string
+    const cleanAddress = address.replace(/\s+/g, ' ').trim();
+
+    // Extract pincode using a robust regex pattern
+    const pincodeRegex = /(pincode|pin|code)[:\s-]*(\d{6})/i;
+    const pincodeMatch = cleanAddress.match(pincodeRegex);
+    const pincode = pincodeMatch ? `Pincode - ${pincodeMatch[2]}` : '';
+
+    // Remove pincode from main address
+    let mainAddress = cleanAddress.replace(pincodeRegex, '').trim();
+
+    // Split address into logical components
+    const parts = mainAddress
+      .split(/,\s*(?![^(]*\))/) // Split on commas not within parentheses
+      .map(part => part.trim())
+      .filter(part => part.length > 0);
+
+    // Group into lines of 3 components each
+    const lines = [];
+    while (parts.length > 0) {
+      const lineParts = parts.splice(0, 3);
+      lines.push(lineParts.join(', '));
+    }
+
+    // Add pincode if found
+    if (pincode) {
+      lines.push(pincode);
+    }
+
+    return lines.join('\n');
+  };
+
   const totals = calculateTotals();
 
   // Loading state
@@ -193,22 +228,24 @@ const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({route}) => {
               <Text style={styles.valueText}>{headerDetails.GRN_DATE}</Text>
 
               <Text style={[styles.labelText, styles.spacer]}>ADDRESS</Text>
-              <Text style={styles.valueText}>{headerDetails.ADDRESS}</Text>
+              <Text style={styles.addressText}>
+                {formatAddress(headerDetails.ADDRESS)}
+              </Text>
 
               <Text style={[styles.labelText, styles.spacer]}>BILL MAKING</Text>
               <Text style={styles.valueText}>{headerDetails.BILL_MAKING}</Text>
             </View>
 
             <View style={styles.rightColumn}>
-              <Text style={styles.labelText}>PRE GRN NO.</Text>
+              <Text style={styles.labelText}>PRE GRN NO</Text>
               <Text style={styles.valueText}>{headerDetails.PRE_GRN_NO}</Text>
 
               <Text style={[styles.labelText, styles.spacer]}>
-                GATE PASS NO.
+                GATE PASS NO
               </Text>
               <Text style={styles.valueText}>{headerDetails.GATEPASS_NO}</Text>
 
-              <Text style={[styles.labelText, styles.spacer]}>VEHICLE NO.</Text>
+              <Text style={[styles.labelText, styles.spacer]}>VEHICLE NO</Text>
               <Text style={styles.valueText}>{headerDetails.VEHICLE_NO}</Text>
             </View>
           </View>
@@ -230,7 +267,7 @@ const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({route}) => {
                   <Text style={styles.tableHeaderText}>Lot No</Text>
                 </View>
                 <View style={styles.tableHeaderCell180}>
-                  <Text style={styles.tableHeaderText}>Item</Text>
+                  <Text style={styles.tableHeaderText}>Items</Text>
                 </View>
                 <View style={styles.tableHeaderCell110}>
                   <Text style={styles.tableHeaderText}>Item Marks</Text>
@@ -338,9 +375,7 @@ const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({route}) => {
                 <View style={styles.tableHeaderCell100}>
                   <Text style={styles.tableRowText}></Text>
                 </View>
-                <View style={styles.tableHeaderCell180}>
-                  <Text style={styles.totalText}>Total</Text>
-                </View>
+
                 <View style={styles.tableHeaderCell120}>
                   <Text style={styles.tableRowText}></Text>
                 </View>
@@ -358,6 +393,9 @@ const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({route}) => {
                 </View>
                 <View style={styles.tableHeaderCell180}>
                   <Text style={styles.tableRowText}></Text>
+                </View>
+                <View style={styles.tableHeaderCell180}>
+                  <Text style={styles.totalText}>Total :</Text>
                 </View>
                 <View style={styles.tableHeaderCell100}>
                   <Text style={styles.totalText}>{totals.totalQuantity}</Text>
@@ -468,6 +506,11 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     borderRadius: 4,
     marginTop: 10,
+    minWidth: Dimensions.get('window').width - 32, // Prevent horizontal scroll on small devices
+  },
+  tableRowText: {
+    fontSize: 13,
+    lineHeight: 18, // Ensure consistent row heights
   },
   tableHeaderRow: {
     flexDirection: 'row',
@@ -487,6 +530,15 @@ const styles = StyleSheet.create({
   },
   tableRowOdd: {
     backgroundColor: '#f9f9f9',
+  },
+  addressText: {
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 18,
+    marginTop: 2,
+    marginBottom: 5,
+    includeFontPadding: false,
+    textAlignVertical: 'top',
   },
   totalRow: {
     backgroundColor: '#f5f5f5',
@@ -532,9 +584,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 13,
   },
-  tableRowText: {
-    fontSize: 13,
-  },
+
   totalText: {
     fontWeight: 'bold',
     fontSize: 13,

@@ -1025,7 +1025,7 @@ const InwardOutwardReportScreen = () => {
             {/* Financial Year Selection - Moved outside the form container */}
             {timePeriod !== ('Custom' as TimePeriod) && (
               <View style={styles.financialYearContainer}>
-                <Text style={styles.label}>Financial Year :</Text>
+                <Text style={styles.label}>Financial Year:</Text>
                 <View style={styles.selectorWrapper}>
                   <TouchableOpacity
                     style={[
@@ -1763,7 +1763,7 @@ const InwardOutwardReportScreen = () => {
                   }))}
                   selectedValues={itemCategories}
                   onSelectChange={values => setItemCategories(values)}
-                  placeholder="Select Categories"
+                  placeholder="Select Items"
                   primaryColor={isInward ? '#F48221' : '#4682B4'}
                 />
               </View>
@@ -1775,7 +1775,7 @@ const InwardOutwardReportScreen = () => {
                   options={getAvailableSubcategories()}
                   selectedValues={itemSubcategories}
                   onSelectChange={values => setItemSubcategories(values)}
-                  placeholder="Select Subcategories"
+                  placeholder="Select Items"
                   disabled={itemCategories.length === 0}
                   primaryColor={isInward ? '#F48221' : '#4682B4'}
                 />
@@ -1880,7 +1880,11 @@ const InwardOutwardReportScreen = () => {
                       },
                       isPdfDownloading && styles.disabledButton,
                     ]}>
-                    <MaterialIcons name="upload" size={20} color="#FFFFFF" />
+                    <MaterialIcons
+                      name="file-download"
+                      size={20}
+                      color="#FFFFFF"
+                    />
                     <Text style={styles.pdfButtonText}>PDF</Text>
                   </TouchableOpacity>
                 </View>
@@ -2140,6 +2144,7 @@ const styles = StyleSheet.create({
   formContainer: {
     margin: 16,
     padding: 16,
+    marginTop: 0,
     borderRadius: 10,
     ...Platform.select({
       ios: {

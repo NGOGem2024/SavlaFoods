@@ -426,7 +426,11 @@ const BottomTabNavigator: React.FC = () => {
             headerShown: false,
             tabBarHideOnKeyboard: true,
           })}>
-          <Tab.Screen name="Home" component={HomeScreen} />
+          <Tab.Screen
+            name="Home"
+            component={HomeScreen}
+            // options={{headerShown: false}}
+          />
           {/* <Tab.Screen
             name="Search"
             component={SearchScreen}
@@ -468,7 +472,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   tabLabel: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   backButton: {

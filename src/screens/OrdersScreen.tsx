@@ -110,8 +110,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   menuIconContainer: {
-    // backgroundColor: '#FFF3E5',
-    // backgroundColor: '#FFE7D0',
     backgroundColor: '#e0f2fe',
     padding: 10,
     borderRadius: 10,

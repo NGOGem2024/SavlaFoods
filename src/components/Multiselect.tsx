@@ -8,6 +8,7 @@ import {
   StyleSheet,
   SafeAreaView,
   Platform,
+  Keyboard,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
@@ -46,6 +47,14 @@ const MultiSelect = ({
     return `${selectedValues.length} items selected`;
   };
 
+  // Handle press with keyboard dismiss
+  const handlePress = () => {
+    if (!disabled) {
+      Keyboard.dismiss();
+      setIsVisible(true);
+    }
+  };
+
   // Toggle selection of an item
   const toggleItem = (value: string) => {
     if (selectedValues.includes(value)) {
@@ -59,7 +68,7 @@ const MultiSelect = ({
     <View style={[styles.container, disabled && styles.disabled]}>
       <TouchableOpacity
         style={styles.inputContainer}
-        onPress={() => !disabled && setIsVisible(true)}
+        onPress={handlePress}
         disabled={disabled}>
         <Text
           style={[
@@ -94,6 +103,8 @@ const MultiSelect = ({
             <FlatList
               data={options}
               keyExtractor={item => item.value}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
               renderItem={({item}) => (
                 <TouchableOpacity
                   style={styles.optionItem}
