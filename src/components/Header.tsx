@@ -8,7 +8,6 @@ import {
   View,
   Alert,
   BackHandler,
-  Platform,
 } from 'react-native';
 // Import Icons from react-native-vector-icons instead of Expo
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -155,17 +154,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    ...Platform.select({
-      android: {
-        elevation: 3,
-      },
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-      },
-    }),
   },
   leftSection: {
     flexDirection: 'row',

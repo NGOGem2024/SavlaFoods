@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   FlatList,
   Platform,
   ActivityIndicator,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import axios, {AxiosError} from 'axios';
 import {API_ENDPOINTS, DEFAULT_HEADERS} from '../../config/api.config';
@@ -75,6 +77,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
               data={options}
               keyExtractor={item => item.value}
               style={{width: '100%'}}
+              keyboardShouldPersistTaps="handled"
               renderItem={({item}) => (
                 <TouchableOpacity
                   style={[
@@ -220,6 +223,7 @@ const StockReportScreen: React.FC = () => {
   const [qtyLessThan, setQtyLessThan] = useState('');
   const [reportType, setReportType] = useState('details');
 
+  const scrollViewRef = useRef<ScrollView>(null);
   // New state variables for API integration
   const [isLoading, setIsLoading] = useState(false);
   const [stockData, setStockData] = useState<
@@ -317,6 +321,8 @@ const StockReportScreen: React.FC = () => {
   const logAndSetReportType = (value: string) => {
     console.log('Report Type changed:', value);
     setReportType(value);
+    setStockData([]);
+    setTotalRecords(0);
   };
 
   // Handle item expansion/collapse
@@ -324,6 +330,11 @@ const StockReportScreen: React.FC = () => {
     setExpandedItemId(expandedItemId === id ? null : id);
   };
 
+  useEffect(() => {
+    if (stockData.length > 0) {
+      scrollViewRef.current?.scrollTo({y: 0, animated: true});
+    }
+  }, [stockData]);
   // Fetch subcategories from API
   useEffect(() => {
     const fetchSubCategories = async () => {
@@ -745,259 +756,265 @@ const StockReportScreen: React.FC = () => {
 
   return (
     <LayoutWrapper showHeader={true} showTabBar={false} route={route}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.contentContainer}>
-        {/* Form header */}
-        <View style={styles.titleContainer}>
-          <Text style={styles.titleText}>Stock Report</Text>
-        </View>
-
-        <View style={styles.formRow}>
-          <View style={styles.formColumn}>
-            <Text style={styles.label}>Customer Name</Text>
-            <CustomDropdown
-              options={customerOptions}
-              selectedValue={customerName}
-              onSelect={logAndSetCustomerName}
-              placeholder="--SELECT--"
-            />
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.container}
+          contentContainerStyle={styles.contentContainer}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag">
+          {/* Form header */}
+          <View style={styles.titleContainer}>
+            <Text style={styles.titleText}>Stock Report</Text>
           </View>
 
-          <View style={styles.formColumn}>
-            <Text style={styles.label}>Lot No</Text>
-            <TextInput
-              style={styles.input}
-              value={lotNo}
-              onChangeText={logAndSetLotNo}
-              placeholder=""
-              keyboardType="numeric"
-            />
-          </View>
-        </View>
-
-        <View style={styles.formRow}>
-          <View style={styles.formColumn}>
-            <Text style={styles.label}>Vakal No</Text>
-            <TextInput
-              style={styles.input}
-              value={vakalNo}
-              onChangeText={logAndSetVakalNo}
-              placeholder=""
-            />
-          </View>
-
-          <View style={styles.formColumn}>
-            <Text style={styles.label}>Item Sub Category</Text>
-            {subCategoryLoading ? (
-              <View style={[styles.input, styles.dropdownLoading]}>
-                <ActivityIndicator size="small" color="#E87830" />
-                <Text style={styles.dropdownLoadingText}>Loading...</Text>
-              </View>
-            ) : (
-              <MultiSelect
-                options={itemSubCategoryOptions}
-                selectedValues={itemSubCategory}
-                onSelectChange={logAndSetItemSubCategory}
+          <View style={styles.formRow}>
+            <View style={styles.formColumn}>
+              <Text style={styles.label}>Customer Name</Text>
+              <CustomDropdown
+                options={customerOptions}
+                selectedValue={customerName}
+                onSelect={logAndSetCustomerName}
                 placeholder="--SELECT--"
-                primaryColor="#E87830"
               />
-            )}
-          </View>
-        </View>
+            </View>
 
-        <View style={styles.formRow}>
-          <View style={styles.formColumn}>
-            <Text style={styles.label}>Item Marks</Text>
-            <TextInput
-              style={styles.input}
-              value={itemMarks}
-              onChangeText={logAndSetItemMarks}
-              placeholder=""
-            />
+            <View style={styles.formColumn}>
+              <Text style={styles.label}>Lot No</Text>
+              <TextInput
+                style={styles.input}
+                value={lotNo}
+                onChangeText={logAndSetLotNo}
+                placeholder=""
+                keyboardType="numeric"
+              />
+            </View>
           </View>
 
-          <View style={styles.formColumn}>
-            <Text style={styles.label}>Unit</Text>
-            <CustomDropdown
-              options={unitOptions}
-              selectedValue={unit}
-              onSelect={logAndSetUnit}
-              placeholder="--SELECT--"
-            />
-          </View>
-        </View>
+          <View style={styles.formRow}>
+            <View style={styles.formColumn}>
+              <Text style={styles.label}>Vakal No</Text>
+              <TextInput
+                style={styles.input}
+                value={vakalNo}
+                onChangeText={logAndSetVakalNo}
+                placeholder=""
+              />
+            </View>
 
-        <View style={styles.formRow}>
-          <View style={styles.formColumn}>
-            <Text style={styles.label}>To Date</Text>
+            <View style={styles.formColumn}>
+              <Text style={styles.label}>Item Sub Category</Text>
+              {subCategoryLoading ? (
+                <View style={[styles.input, styles.dropdownLoading]}>
+                  <ActivityIndicator size="small" color="#E87830" />
+                  <Text style={styles.dropdownLoadingText}>Loading...</Text>
+                </View>
+              ) : (
+                <MultiSelect
+                  options={itemSubCategoryOptions}
+                  selectedValues={itemSubCategory}
+                  onSelectChange={logAndSetItemSubCategory}
+                  placeholder="--SELECT--"
+                  primaryColor="#E87830"
+                />
+              )}
+            </View>
+          </View>
+
+          <View style={styles.formRow}>
+            <View style={styles.formColumn}>
+              <Text style={styles.label}>Item Marks</Text>
+              <TextInput
+                style={styles.input}
+                value={itemMarks}
+                onChangeText={logAndSetItemMarks}
+                placeholder=""
+              />
+            </View>
+
+            <View style={styles.formColumn}>
+              <Text style={styles.label}>Unit</Text>
+              <CustomDropdown
+                options={unitOptions}
+                selectedValue={unit}
+                onSelect={logAndSetUnit}
+                placeholder="--SELECT--"
+              />
+            </View>
+          </View>
+
+          <View style={styles.formRow}>
+            <View style={styles.formColumn}>
+              <Text style={styles.label}>To Date</Text>
+              <TouchableOpacity
+                style={styles.input}
+                activeOpacity={0.7}
+                onPress={() => {
+                  setTempToDate(toDate || new Date());
+                  setShowToDatePicker(true);
+                }}>
+                <Text
+                  style={
+                    isDateSelected ? styles.dateText : styles.placeholderText
+                  }>
+                  {isDateSelected ? formatDisplayDate(toDate) : 'DD/MM/YYYY'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.formColumn}>
+              <Text style={styles.label}>Qty Less Than</Text>
+              <TextInput
+                style={styles.input}
+                value={qtyLessThan}
+                onChangeText={logAndSetQtyLessThan}
+                keyboardType="numeric"
+                placeholder=""
+              />
+            </View>
+          </View>
+
+          <View style={styles.typeSection}>
+            <Text style={styles.reportTypeLabel}>Report Type</Text>
+            <View style={styles.radioGroupContainer}>
+              <RadioGroup
+                options={reportTypeOptions}
+                selectedValue={reportType}
+                onSelect={logAndSetReportType}
+              />
+            </View>
+          </View>
+
+          <View style={styles.buttonRow}>
             <TouchableOpacity
-              style={styles.input}
-              activeOpacity={0.7}
-              onPress={() => {
-                setTempToDate(toDate || new Date());
-                setShowToDatePicker(true);
-              }}>
-              <Text
-                style={
-                  isDateSelected ? styles.dateText : styles.placeholderText
-                }>
-                {isDateSelected ? formatDisplayDate(toDate) : 'DD/MM/YYYY'}
-              </Text>
+              style={[styles.button, styles.searchButton]}
+              onPress={handleSearch}>
+              <Text style={styles.buttonText}>Search</Text>
             </TouchableOpacity>
-          </View>
 
-          <View style={styles.formColumn}>
-            <Text style={styles.label}>Qty Less Than</Text>
-            <TextInput
-              style={styles.input}
-              value={qtyLessThan}
-              onChangeText={logAndSetQtyLessThan}
-              keyboardType="numeric"
-              placeholder=""
-            />
-          </View>
-        </View>
+            <TouchableOpacity
+              style={[styles.button, styles.clearButton]}
+              onPress={handleClear}>
+              <Text style={styles.buttonText}>Clear</Text>
+            </TouchableOpacity>
 
-        <View style={styles.typeSection}>
-          <Text style={styles.reportTypeLabel}>Report Type</Text>
-          <View style={styles.radioGroupContainer}>
-            <RadioGroup
-              options={reportTypeOptions}
-              selectedValue={reportType}
-              onSelect={logAndSetReportType}
-            />
-          </View>
-        </View>
-
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[styles.button, styles.searchButton]}
-            onPress={handleSearch}>
-            <Text style={styles.buttonText}>Search</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.button, styles.clearButton]}
-            onPress={handleClear}>
-            <Text style={styles.buttonText}>Clear</Text>
-          </TouchableOpacity>
-
-          {/* <TouchableOpacity
+            {/* <TouchableOpacity
  style={styles.downloadButton}
  onPress={handleDownload}>
  <Text style={styles.buttonText}>Download As PDF</Text>
  </TouchableOpacity> */}
-        </View>
+          </View>
 
-        {/* Results count and info message - centered with reduced width */}
-        {stockData.length > 0 && (
-          <View style={styles.resultInfoContainer}>
-            <View style={styles.resultInfo}>
-              <Text style={styles.resultCount}>
-                Total records: {totalRecords}
-              </Text>
-              {infoMessage && (
-                <Text style={styles.infoMessage}>{infoMessage}</Text>
-              )}
+          {/* Results count and info message - centered with reduced width */}
+          {stockData.length > 0 && (
+            <View style={styles.resultInfoContainer}>
+              <View style={styles.resultInfo}>
+                <Text style={styles.resultCount}>
+                  Total records: {totalRecords}
+                </Text>
+                {infoMessage && (
+                  <Text style={styles.infoMessage}>{infoMessage}</Text>
+                )}
+              </View>
             </View>
-          </View>
-        )}
+          )}
 
-        {/* Simplified list view with expandable details - now full width */}
-        {stockData.length > 0 ? (
-          <FlatList
-            data={stockData}
-            renderItem={renderStockItem}
-            keyExtractor={(item, index) => `stock-${index}`}
-            scrollEnabled={false}
-            contentContainerStyle={styles.listContent}
-          />
-        ) : (
-          !isLoading &&
-          !errorMessage && (
-            <View style={styles.noDataContainer}>
-              <Text style={styles.noDataText}>
-                No stock data available. Try adjusting your search criteria.
-              </Text>
+          {/* Simplified list view with expandable details - now full width */}
+          {stockData.length > 0 ? (
+            <FlatList
+              data={stockData}
+              renderItem={renderStockItem}
+              keyExtractor={(item, index) => `stock-${index}`}
+              scrollEnabled={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.listContent}
+            />
+          ) : (
+            !isLoading &&
+            !errorMessage && (
+              <View style={styles.noDataContainer}>
+                <Text style={styles.noDataText}>
+                  No stock data available. Try adjusting your search criteria.
+                </Text>
+              </View>
+            )
+          )}
+
+          {/* Loading indicator */}
+          {isLoading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#E87830" />
+              <Text style={styles.loadingText}>Loading stock report...</Text>
             </View>
-          )
-        )}
+          )}
 
-        {/* Loading indicator */}
-        {isLoading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#E87830" />
-            <Text style={styles.loadingText}>Loading stock report...</Text>
-          </View>
-        )}
+          {/* Error message */}
+          {errorMessage && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </View>
+          )}
 
-        {/* Error message */}
-        {errorMessage && (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{errorMessage}</Text>
-          </View>
-        )}
+          {/* Date Picker Modals */}
+          {Platform.OS === 'ios' ? (
+            // iOS date picker modal
+            <>
+              {showToDatePicker && (
+                <Modal
+                  transparent={true}
+                  animationType="fade"
+                  visible={showToDatePicker}>
+                  <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                      <Text style={styles.modalTitle}>Select Date</Text>
 
-        {/* Date Picker Modals */}
-        {Platform.OS === 'ios' ? (
-          // iOS date picker modal
-          <>
-            {showToDatePicker && (
-              <Modal
-                transparent={true}
-                animationType="fade"
-                visible={showToDatePicker}>
-                <View style={styles.modalOverlay}>
-                  <View style={styles.modalContent}>
-                    <Text style={styles.modalTitle}>Select Date</Text>
+                      <DateTimePicker
+                        value={tempToDate}
+                        mode="date"
+                        display="spinner"
+                        onChange={onToDateChange}
+                        style={styles.iosDatePicker}
+                        minimumDate={new Date(2020, 0, 1)}
+                        maximumDate={new Date()}
+                        textColor="#000000"
+                      />
 
-                    <DateTimePicker
-                      value={tempToDate}
-                      mode="date"
-                      display="spinner"
-                      onChange={onToDateChange}
-                      style={styles.iosDatePicker}
-                      minimumDate={new Date(2020, 0, 1)}
-                      maximumDate={new Date()}
-                      textColor="#000000"
-                    />
+                      <View style={styles.modalButtons}>
+                        <TouchableOpacity
+                          style={styles.cancelButton}
+                          onPress={() => setShowToDatePicker(false)}>
+                          <Text style={styles.buttonText}>Cancel</Text>
+                        </TouchableOpacity>
 
-                    <View style={styles.modalButtons}>
-                      <TouchableOpacity
-                        style={styles.cancelButton}
-                        onPress={() => setShowToDatePicker(false)}>
-                        <Text style={styles.buttonText}>Cancel</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={styles.confirmButton}
-                        onPress={confirmToDate}>
-                        <Text style={styles.buttonText}>Confirm</Text>
-                      </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.confirmButton}
+                          onPress={confirmToDate}>
+                          <Text style={styles.buttonText}>Confirm</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   </View>
-                </View>
-              </Modal>
-            )}
-          </>
-        ) : (
-          // Android date picker
-          <>
-            {showToDatePicker && (
-              <DateTimePicker
-                value={tempToDate}
-                mode="date"
-                is24Hour={true}
-                display="default"
-                onChange={onToDateChange}
-                minimumDate={new Date(2020, 0, 1)}
-                maximumDate={new Date()}
-              />
-            )}
-          </>
-        )}
-      </ScrollView>
+                </Modal>
+              )}
+            </>
+          ) : (
+            // Android date picker
+            <>
+              {showToDatePicker && (
+                <DateTimePicker
+                  value={tempToDate}
+                  mode="date"
+                  is24Hour={true}
+                  display="default"
+                  onChange={onToDateChange}
+                  minimumDate={new Date(2020, 0, 1)}
+                  maximumDate={new Date()}
+                />
+              )}
+            </>
+          )}
+        </ScrollView>
+      </TouchableWithoutFeedback>
     </LayoutWrapper>
   );
 };
@@ -1049,13 +1066,15 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   input: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     height: 44,
+    paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-    paddingHorizontal: 10,
-    backgroundColor: '#fff',
-    justifyContent: 'center', // Center content vertically
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
   },
   typeSection: {
     marginVertical: 14,
@@ -1284,12 +1303,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 50,
+    height: 44,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-    backgroundColor: '#fff',
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
   },
   dropdownSelectedText: {
     fontSize: 16,
@@ -1301,7 +1320,7 @@ const styles = StyleSheet.create({
   },
   dropdownIcon: {
     fontSize: 12,
-    color: '#666',
+    color: '#94A3B8',
   },
   modalOverlay: {
     flex: 1,
@@ -1439,9 +1458,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   placeholderText: {
-    fontSize: 15,
-    color: '#999',
-    paddingVertical: 4,
+    fontSize: 14,
+    color: '#94A3B8',
+    flex: 1,
   },
 });
 

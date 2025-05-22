@@ -862,6 +862,28 @@ const InwardOutwardReportScreen = () => {
     }
   }, [itemCategories]);
 
+  // Add this useEffect to update subcategories when categories change
+  useEffect(() => {
+    if (itemCategories.length === 0) {
+      // If no categories are selected, clear all subcategories
+      setItemSubcategories([]);
+    } else {
+      // Get all available subcategories based on selected categories
+      const availableSubcategories = getAvailableSubcategories().map(option => option.value);
+      
+      // Filter out subcategories that are no longer available
+      const filteredSubcategories = itemSubcategories.filter(subcat => 
+        availableSubcategories.includes(subcat)
+      );
+      
+      // Update the subcategories state
+      if (filteredSubcategories.length !== itemSubcategories.length) {
+        setItemSubcategories(filteredSubcategories);
+        console.log('Updated subcategories after category change:', filteredSubcategories);
+      }
+    }
+  }, [itemCategories, apiSubcategories]);
+
   // Configure notifications on component mount
   useEffect(() => {
     // Initialize push notifications
@@ -1025,7 +1047,7 @@ const InwardOutwardReportScreen = () => {
             {/* Financial Year Selection - Moved outside the form container */}
             {timePeriod !== ('Custom' as TimePeriod) && (
               <View style={styles.financialYearContainer}>
-                <Text style={styles.label}>Financial Year :</Text>
+                <Text style={styles.label}>Financial Year:</Text>
                 <View style={styles.selectorWrapper}>
                   <TouchableOpacity
                     style={[
@@ -1763,7 +1785,7 @@ const InwardOutwardReportScreen = () => {
                   }))}
                   selectedValues={itemCategories}
                   onSelectChange={values => setItemCategories(values)}
-                  placeholder="Select items"
+                  placeholder="Select Items"
                   primaryColor={isInward ? '#F48221' : '#4682B4'}
                 />
               </View>
@@ -1775,7 +1797,7 @@ const InwardOutwardReportScreen = () => {
                   options={getAvailableSubcategories()}
                   selectedValues={itemSubcategories}
                   onSelectChange={values => setItemSubcategories(values)}
-                  placeholder="Select items"
+                  placeholder="Select Items"
                   disabled={itemCategories.length === 0}
                   primaryColor={isInward ? '#F48221' : '#4682B4'}
                 />
@@ -1880,7 +1902,11 @@ const InwardOutwardReportScreen = () => {
                       },
                       isPdfDownloading && styles.disabledButton,
                     ]}>
-                    <MaterialIcons name="file-download" size={20} color="#FFFFFF" />
+                    <MaterialIcons
+                      name="file-download"
+                      size={20}
+                      color="#FFFFFF"
+                    />
                     <Text style={styles.pdfButtonText}>PDF</Text>
                   </TouchableOpacity>
                 </View>
@@ -2061,7 +2087,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#f8f8f8',
-    // Remove Android-specific padding that's causing the gap
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   container: {
     flex: 1,
@@ -2140,6 +2166,7 @@ const styles = StyleSheet.create({
   formContainer: {
     margin: 16,
     padding: 16,
+    marginTop: 0,
     borderRadius: 10,
     ...Platform.select({
       ios: {

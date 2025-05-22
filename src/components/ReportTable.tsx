@@ -20,6 +20,26 @@ const ReportTable = ({
   tableRef,
   onInwardOutwardNoPress,
 }: ReportTableProps) => {
+  // Define column widths as constants to ensure consistency
+  const columnWidths = {
+    number: 60,
+    unit: 70,
+    date: 100,
+    inwardOutwardNo: 100,
+    customer: 150,
+    vehicle: 120,
+    lotNo: 80,
+    itemName: 150,
+    remark: 100,
+    itemMark: 100,
+    vakkalNo: 80,
+    qty: 60,
+    deliveredTo: 120,
+  };
+
+  // Helper function for theme colors
+  const getThemeColor = () => (isInward ? '#F48221' : '#4682B4');
+
   return (
     <View style={styles.tableContainer}>
       <ScrollView
@@ -30,158 +50,123 @@ const ReportTable = ({
           nestedScrollEnabled={true}
           showsVerticalScrollIndicator={true}>
           <View style={styles.tableWrapper}>
+            {/* Table Header */}
             <View style={[styles.tableHeader, {backgroundColor: '#f8f8f8'}]}>
               <Text
                 style={[
                   styles.tableHeaderCell,
-                  {
-                    width: 40,
-                    color: isInward ? '#F48221' : '#4682B4',
-                  },
+                  {width: columnWidths.number, color: getThemeColor()},
                 ]}>
                 #
               </Text>
               <Text
                 style={[
                   styles.tableHeaderCell,
-                  {
-                    width: 70,
-                    color: isInward ? '#F48221' : '#4682B4',
-                  },
+                  {width: columnWidths.unit, color: getThemeColor()},
                 ]}>
                 Unit
               </Text>
               <Text
                 style={[
                   styles.tableHeaderCell,
-                  {
-                    width: 100,
-                    color: isInward ? '#F48221' : '#4682B4',
-                  },
+                  {width: columnWidths.date, color: getThemeColor()},
                 ]}>
                 {isInward ? 'Inward Date' : 'Outward Date'}
               </Text>
               <Text
                 style={[
                   styles.tableHeaderCell,
-                  {
-                    width: 100,
-                    color: isInward ? '#F48221' : '#4682B4',
-                  },
+                  {width: columnWidths.inwardOutwardNo, color: getThemeColor()},
                 ]}>
                 {isInward ? 'Inward No' : 'Outward No'}
               </Text>
               <Text
                 style={[
                   styles.tableHeaderCell,
-                  {
-                    width: 150,
-                    color: isInward ? '#F48221' : '#4682B4',
-                  },
+                  {width: columnWidths.customer, color: getThemeColor()},
                 ]}>
                 Customer
               </Text>
               <Text
                 style={[
                   styles.tableHeaderCell,
-                  {
-                    width: 120,
-                    color: isInward ? '#F48221' : '#4682B4',
-                  },
+                  {width: columnWidths.vehicle, color: getThemeColor()},
                 ]}>
                 Vehicle
               </Text>
               <Text
                 style={[
                   styles.tableHeaderCell,
-                  {
-                    width: 80,
-                    color: isInward ? '#F48221' : '#4682B4',
-                  },
+                  {width: columnWidths.lotNo, color: getThemeColor()},
                 ]}>
                 Lot No
               </Text>
               <Text
                 style={[
                   styles.tableHeaderCell,
-                  {
-                    width: 150,
-                    color: isInward ? '#F48221' : '#4682B4',
-                  },
+                  {width: columnWidths.itemName, color: getThemeColor()},
                 ]}>
                 Item Name
               </Text>
               <Text
                 style={[
                   styles.tableHeaderCell,
-                  {
-                    width: 100,
-                    color: isInward ? '#F48221' : '#4682B4',
-                    textAlign: 'center',
-                  },
+                  {width: columnWidths.remark, color: getThemeColor()},
                 ]}>
                 Remark
               </Text>
               <Text
                 style={[
                   styles.tableHeaderCell,
-                  {
-                    width: 100,
-                    color: isInward ? '#F48221' : '#4682B4',
-                  },
+                  {width: columnWidths.itemMark, color: getThemeColor()},
                 ]}>
                 Item Mark
               </Text>
               <Text
                 style={[
                   styles.tableHeaderCell,
-                  {
-                    width: 80,
-                    color: isInward ? '#F48221' : '#4682B4',
-                  },
+                  {width: columnWidths.vakkalNo, color: getThemeColor()},
                 ]}>
                 Vakkal No
               </Text>
               <Text
                 style={[
                   styles.tableHeaderCell,
-                  {
-                    width: 60,
-                    color: isInward ? '#F48221' : '#4682B4',
-                  },
+                  {width: columnWidths.qty, color: getThemeColor()},
                 ]}>
                 Qty
               </Text>
               <Text
                 style={[
                   styles.tableHeaderCell,
-                  {
-                    width: 120,
-                    color: isInward ? '#F48221' : '#4682B4',
-                  },
+                  {width: columnWidths.deliveredTo, color: getThemeColor()},
                 ]}>
                 Delivered To
               </Text>
             </View>
+
+            {/* Table Rows */}
             {reportData.map((item, index) => (
               <View
                 key={`row-${index}`}
                 style={[
                   styles.tableRow,
-                  index % 2 === 0
-                    ? {
-                        backgroundColor: isInward ? '#FFF9F2' : '#F0F7FF',
-                      }
-                    : {backgroundColor: '#FFFFFF'},
+                  {
+                    backgroundColor:
+                      index % 2 === 0
+                        ? isInward
+                          ? '#FFF9F2'
+                          : '#F0F7FF'
+                        : '#FFFFFF',
+                  },
                 ]}>
-                <Text
-                  style={[styles.tableCell, {width: 40, fontWeight: 'bold'}]}>
+                <Text style={[styles.tableCell, {width: columnWidths.number}]}>
                   {index + 1}
                 </Text>
-                <Text style={[styles.tableCell, {width: 70}]}>
+                <Text style={[styles.tableCell, {width: columnWidths.unit}]}>
                   {item.UNIT_NAME || '-'}
                 </Text>
-                <Text style={[styles.tableCell, {width: 100}]}>
+                <Text style={[styles.tableCell, {width: columnWidths.date}]}>
                   {isInward
                     ? item.GRN_DATE
                       ? new Date(item.GRN_DATE).toLocaleDateString()
@@ -190,9 +175,13 @@ const ReportTable = ({
                     ? new Date(item.OUTWARD_DATE).toLocaleDateString()
                     : '-'}
                 </Text>
+
                 {isInward ? (
                   <TouchableOpacity
-                    style={[styles.tableCellContainer, {width: 100}]}
+                    style={[
+                      styles.tableCellContainer,
+                      {width: columnWidths.inwardOutwardNo},
+                    ]}
                     onPress={() =>
                       onInwardOutwardNoPress && onInwardOutwardNoPress(item)
                     }
@@ -204,7 +193,7 @@ const ReportTable = ({
                         {
                           color:
                             onInwardOutwardNoPress && item.GRN_NO
-                              ? '#F48221'
+                              ? getThemeColor()
                               : '#334155',
                           width: '100%',
                         },
@@ -213,36 +202,45 @@ const ReportTable = ({
                     </Text>
                   </TouchableOpacity>
                 ) : (
-                  <Text style={[styles.tableCell, {width: 100}]}>
+                  <Text
+                    style={[
+                      styles.tableCell,
+                      {width: columnWidths.inwardOutwardNo},
+                    ]}>
                     {item.OUTWARD_NO || '-'}
                   </Text>
                 )}
-                <Text style={[styles.tableCell, {width: 150}]}>
+
+                <Text
+                  style={[styles.tableCell, {width: columnWidths.customer}]}>
                   {item.CUSTOMER_NAME || '-'}
                 </Text>
-                <Text style={[styles.tableCell, {width: 120}]}>
+                <Text style={[styles.tableCell, {width: columnWidths.vehicle}]}>
                   {item.VEHICLE_NO || '-'}
                 </Text>
-                <Text style={[styles.tableCell, {width: 80}]}>
+                <Text style={[styles.tableCell, {width: columnWidths.lotNo}]}>
                   {item.LOT_NO || '-'}
                 </Text>
-                <Text style={[styles.tableCell, {width: 150}]}>
+                <Text
+                  style={[styles.tableCell, {width: columnWidths.itemName}]}>
                   {item.ITEM_NAME || '-'}
                 </Text>
-                <Text
-                  style={[styles.tableCell, {width: 100, textAlign: 'center'}]}>
+                <Text style={[styles.tableCell, {width: columnWidths.remark}]}>
                   {item.REMARK || '-'}
                 </Text>
-                <Text style={[styles.tableCell, {width: 100}]}>
+                <Text
+                  style={[styles.tableCell, {width: columnWidths.itemMark}]}>
                   {item.ITEM_MARK || '-'}
                 </Text>
-                <Text style={[styles.tableCell, {width: 80}]}>
+                <Text
+                  style={[styles.tableCell, {width: columnWidths.vakkalNo}]}>
                   {item.VAKKAL_NO || '-'}
                 </Text>
-                <Text style={[styles.tableCell, {width: 60}]}>
+                <Text style={[styles.tableCell, {width: columnWidths.qty}]}>
                   {item.QTY || '-'}
                 </Text>
-                <Text style={[styles.tableCell, {width: 120}]}>
+                <Text
+                  style={[styles.tableCell, {width: columnWidths.deliveredTo}]}>
                   {item.DELIVERED_TO || '-'}
                 </Text>
               </View>
@@ -281,7 +279,7 @@ const styles = StyleSheet.create({
   tableRow: {
     flexDirection: 'row',
     paddingVertical: 14,
-    paddingHorizontal: 8,
+    paddingHorizontal: 0, // Changed from 8 to 0 to align with headers
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0',
   },

@@ -1,6 +1,6 @@
 // components/LayoutWrapper.tsx
 import React from 'react';
-import {View, StyleSheet, SafeAreaView, Platform} from 'react-native';
+import {View, StyleSheet, SafeAreaView} from 'react-native';
 import Header from './Header';
 import {useDisplayName} from '../contexts/DisplayNameContext';
 import {useCartNavigation} from '../hooks/useCartNavigation';
@@ -34,7 +34,7 @@ export const LayoutWrapper: React.FC<LayoutWrapperProps> = ({
         />
       )}
       <View style={styles.content}>{children}</View>
-      {showTabBar && <TabBar route={route} />}
+      {showTabBar && <TabBar route={route} style={styles.bottom} />}
     </SafeAreaView>
   );
 };
@@ -43,10 +43,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    // Ensure consistent padding across platforms
-    paddingTop: 0,
   },
   content: {
     flex: 1,
+  },
+  bottom: {
+    padding: 50,
   },
 });

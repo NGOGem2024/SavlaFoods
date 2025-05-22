@@ -237,8 +237,8 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
       // Define table columns with widths
       const tableColumns = [
         {title: '#', width: 25},
-        {title: 'Unit', width: 40},
-        {title: isInward ? 'Inward Date' : 'Outward Date', width: 70},
+        {title: 'Unit', width: 70},
+        {title: isInward ? 'Inward Date' : 'Outward Date', width: 90},
         {title: isInward ? 'Inward No' : 'Outward No', width: 60},
         {title: 'Customer', width: 80},
         {title: 'Vehicle', width: 60},

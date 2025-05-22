@@ -457,11 +457,14 @@ const HomeScreen: React.FC = () => {
               <TouchableOpacity
                 style={styles.addToCartButton}
                 onPress={() => handleAddToCart(item)}>
-                <Image
-                  source={require('../assets/images/cart.png')}
-                  style={{width: 32, height: 32, alignSelf: 'center'}}
-                  resizeMode="contain"
-                />
+                <View style={styles.cartIconWrapper}>
+                  {/* <Text style={styles.cartIcon}>🛒</Text> */}
+                  <Image
+                    source={require('../assets/images/cart.png')}
+                    style={{width: 32, height: 32, alignSelf: 'center'}}
+                    resizeMode="contain"
+                  />
+                </View>
               </TouchableOpacity>
             </Animated.View>
           </View>
@@ -925,11 +928,15 @@ const styles = StyleSheet.create({
   addToCartButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 5,
-    paddingVertical: 5,
+    // backgroundColor: '#FFFDD0',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderRadius: 25,
     elevation: 3,
+    shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
   cartIconWrapper: {
     // backgroundColor: 'rgba(255, 255, 255, 0.2)',

@@ -48,6 +48,7 @@ interface ZeroStockItem {
   STATUS: string;
   ITEM_CATEG_NAME: string;
   SUB_CATEGORY_NAME: string;
+  UNIT_NAME: string;
 }
 
 // Pagination interface for tracking pagination state
@@ -226,7 +227,9 @@ const ZeroStockReportScreen = () => {
   const [customerID, setCustomerID] = useState('');
   const [loading, setLoading] = useState(false);
   const [zeroStockItems, setZeroStockItems] = useState<ZeroStockItem[]>([]);
-  const [allZeroStockItems, setAllZeroStockItems] = useState<ZeroStockItem[]>([]);
+  const [allZeroStockItems, setAllZeroStockItems] = useState<ZeroStockItem[]>(
+    [],
+  );
   const [error, setError] = useState<string | null>(null);
   const [searchInitiated, setSearchInitiated] = useState(false);
 
@@ -277,7 +280,7 @@ const ZeroStockReportScreen = () => {
     }
   }, [customerID]);
 
-  // Reset subcategories when categories change
+  // Log whenever categories change
   useEffect(() => {
     // Clear subcategories when categories change
     if (itemCategories.length === 0) {
@@ -292,6 +295,28 @@ const ZeroStockReportScreen = () => {
   useEffect(() => {
     console.log('Selected Subcategories:', itemSubcategories);
   }, [itemSubcategories]);
+
+  // Add this useEffect to update subcategories when categories change
+  useEffect(() => {
+    if (itemCategories.length === 0) {
+      // If no categories are selected, clear all subcategories
+      setItemSubcategories([]);
+    } else {
+      // Get all available subcategories based on selected categories
+      const availableSubcategories = getAvailableSubcategories().map(option => option.value);
+      
+      // Filter out subcategories that are no longer available
+      const filteredSubcategories = itemSubcategories.filter(subcat => 
+        availableSubcategories.includes(subcat)
+      );
+      
+      // Update the subcategories state
+      if (filteredSubcategories.length !== itemSubcategories.length) {
+        setItemSubcategories(filteredSubcategories);
+        console.log('Updated subcategories after category change:', filteredSubcategories);
+      }
+    }
+  }, [itemCategories, apiSubcategories]);
 
   // Log whenever unit selection changes
   useEffect(() => {
@@ -407,7 +432,7 @@ const ZeroStockReportScreen = () => {
       setSearchInitiated(true);
       setPagination({
         ...pagination,
-        currentPage: 1 // Reset to first page on new search
+        currentPage: 1, // Reset to first page on new search
       });
 
       // Format request to exactly match the Postman format - using exact format from screenshot
@@ -438,7 +463,7 @@ const ZeroStockReportScreen = () => {
 
       // Handle response based on what we see in Postman
       let dataArray: ZeroStockItem[] = [];
-      
+
       if (response.data) {
         if (response.data.data && Array.isArray(response.data.data)) {
           console.log(
@@ -462,19 +487,21 @@ const ZeroStockReportScreen = () => {
           console.log('Found success status with count:', response.data.count);
           dataArray = response.data.data;
         }
-        
+
         // Store all data and update pagination
         setAllZeroStockItems(dataArray);
-        const totalPages = Math.ceil(dataArray.length / pagination.itemsPerPage);
+        const totalPages = Math.ceil(
+          dataArray.length / pagination.itemsPerPage,
+        );
         setPagination({
           ...pagination,
           totalItems: dataArray.length,
           totalPages: totalPages || 1,
         });
-        
+
         // Set current page data
         updateCurrentPageData(dataArray, 1, pagination.itemsPerPage);
-        
+
         if (dataArray.length === 0) {
           setError('No zero stock items found');
         } else {
@@ -506,64 +533,98 @@ const ZeroStockReportScreen = () => {
       setLoading(false);
     }
   };
-  
+
   // Helper function to update current page data
-  const updateCurrentPageData = (data: ZeroStockItem[], page: number, itemsPerPage: number) => {
+  const updateCurrentPageData = (
+    data: ZeroStockItem[],
+    page: number,
+    itemsPerPage: number,
+  ) => {
     const startIndex = (page - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const paginatedData = data.slice(startIndex, endIndex);
     setZeroStockItems(paginatedData);
   };
-  
+
   // Handle page change
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > pagination.totalPages) return;
-    
+
     setPagination({
       ...pagination,
-      currentPage: newPage
+      currentPage: newPage,
     });
-    
+
     updateCurrentPageData(allZeroStockItems, newPage, pagination.itemsPerPage);
   };
-  
+
   // Pagination UI component
   const renderPagination = () => {
     if (!searchInitiated || zeroStockItems.length === 0) return null;
-    
+
     const {currentPage, totalPages} = pagination;
-    
+
     return (
       <View style={styles.paginationContainer}>
         <View style={styles.paginationControls}>
-          <TouchableOpacity 
-            style={[styles.pageButton, currentPage === 1 && styles.disabledButton]}
+          <TouchableOpacity
+            style={[
+              styles.pageButton,
+              currentPage === 1 && styles.disabledButton,
+            ]}
             onPress={() => handlePageChange(1)}
             disabled={currentPage === 1}>
-            <MaterialIcons name="first-page" size={16} color={currentPage === 1 ? "#9ca3af" : "#F48221"} />
+            <MaterialIcons
+              name="first-page"
+              size={16}
+              color={currentPage === 1 ? '#9ca3af' : '#F48221'}
+            />
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.pageButton, currentPage === 1 && styles.disabledButton]}
+
+          <TouchableOpacity
+            style={[
+              styles.pageButton,
+              currentPage === 1 && styles.disabledButton,
+            ]}
             onPress={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}>
-            <MaterialIcons name="chevron-left" size={16} color={currentPage === 1 ? "#9ca3af" : "#F48221"} />
+            <MaterialIcons
+              name="chevron-left"
+              size={16}
+              color={currentPage === 1 ? '#9ca3af' : '#F48221'}
+            />
           </TouchableOpacity>
-          
-          <Text style={styles.pageInfo}>{currentPage}/{totalPages}</Text>
-          
-          <TouchableOpacity 
-            style={[styles.pageButton, currentPage === totalPages && styles.disabledButton]}
+
+          <Text style={styles.pageInfo}>
+            {currentPage}/{totalPages}
+          </Text>
+
+          <TouchableOpacity
+            style={[
+              styles.pageButton,
+              currentPage === totalPages && styles.disabledButton,
+            ]}
             onPress={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}>
-            <MaterialIcons name="chevron-right" size={16} color={currentPage === totalPages ? "#9ca3af" : "#F48221"} />
+            <MaterialIcons
+              name="chevron-right"
+              size={16}
+              color={currentPage === totalPages ? '#9ca3af' : '#F48221'}
+            />
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.pageButton, currentPage === totalPages && styles.disabledButton]}
+
+          <TouchableOpacity
+            style={[
+              styles.pageButton,
+              currentPage === totalPages && styles.disabledButton,
+            ]}
             onPress={() => handlePageChange(totalPages)}
             disabled={currentPage === totalPages}>
-            <MaterialIcons name="last-page" size={16} color={currentPage === totalPages ? "#9ca3af" : "#F48221"} />
+            <MaterialIcons
+              name="last-page"
+              size={16}
+              color={currentPage === totalPages ? '#9ca3af' : '#F48221'}
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -662,8 +723,11 @@ const ZeroStockReportScreen = () => {
                 <View style={styles.tableHeaderCell120}>
                   <Text style={styles.tableHeaderText}>Category</Text>
                 </View>
-                <View style={styles.tableHeaderCell120}>
+                <View style={styles.tableHeaderCell150}>
                   <Text style={styles.tableHeaderText}>Subcategory</Text>
+                </View>
+                <View style={styles.tableHeaderCell60}>
+                  <Text style={styles.tableHeaderText}>Unit</Text>
                 </View>
               </View>
 
@@ -680,7 +744,10 @@ const ZeroStockReportScreen = () => {
                     ]}>
                     <View style={styles.tableHeaderCell60}>
                       <Text style={styles.tableRowText}>
-                        {(pagination.currentPage - 1) * pagination.itemsPerPage + index + 1}
+                        {(pagination.currentPage - 1) *
+                          pagination.itemsPerPage +
+                          index +
+                          1}
                       </Text>
                     </View>
                     <View style={styles.tableHeaderCell100}>
@@ -739,10 +806,13 @@ const ZeroStockReportScreen = () => {
                         {item.ITEM_CATEG_NAME}
                       </Text>
                     </View>
-                    <View style={styles.tableHeaderCell120}>
+                    <View style={styles.tableHeaderCell150}>
                       <Text style={styles.tableRowText}>
                         {item.SUB_CATEGORY_NAME}
                       </Text>
+                    </View>
+                    <View style={styles.tableHeaderCell60}>
+                      <Text style={styles.tableRowText}>{item.UNIT_NAME}</Text>
                     </View>
                   </View>
                 ))
