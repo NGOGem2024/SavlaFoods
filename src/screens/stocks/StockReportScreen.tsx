@@ -222,8 +222,11 @@ const StockReportScreen: React.FC = () => {
   const [isDateSelected, setIsDateSelected] = useState<boolean>(false);
   const [qtyLessThan, setQtyLessThan] = useState('');
   const [reportType, setReportType] = useState('details');
+  const [isScrollingToResults, setIsScrollingToResults] = useState(false);
 
   const scrollViewRef = useRef<ScrollView>(null);
+  const resultsRef = useRef<View>(null);
+
   // New state variables for API integration
   const [isLoading, setIsLoading] = useState(false);
   const [stockData, setStockData] = useState<
@@ -330,11 +333,31 @@ const StockReportScreen: React.FC = () => {
     setExpandedItemId(expandedItemId === id ? null : id);
   };
 
+  // Scroll to results section when data loads
   useEffect(() => {
     if (stockData.length > 0) {
-      scrollViewRef.current?.scrollTo({y: 0, animated: true});
+      // Set scrolling indicator
+      setIsScrollingToResults(true);
+      
+      // Give a short delay to ensure the results are rendered
+      setTimeout(() => {
+        if (resultsRef.current) {
+          // Find the y-position of the results section and scroll to it
+          resultsRef.current.measure((x, y, width, height, pageX, pageY) => {
+            scrollViewRef.current?.scrollTo({y: pageY - 50, animated: true});
+            
+            // Reset scrolling indicator after animation completes
+            setTimeout(() => {
+              setIsScrollingToResults(false);
+            }, 500);
+          });
+        } else {
+          setIsScrollingToResults(false);
+        }
+      }, 100);
     }
   }, [stockData]);
+
   // Fetch subcategories from API
   useEffect(() => {
     const fetchSubCategories = async () => {
@@ -425,6 +448,7 @@ const StockReportScreen: React.FC = () => {
     // Reset previous data
     setErrorMessage(null);
     setInfoMessage(null);
+    setIsScrollingToResults(true);
 
     try {
       setIsLoading(true);
@@ -523,6 +547,7 @@ const StockReportScreen: React.FC = () => {
       }
       setStockData([]);
       setTotalRecords(0);
+      setIsScrollingToResults(false);
     } finally {
       setIsLoading(false);
     }
@@ -545,6 +570,7 @@ const StockReportScreen: React.FC = () => {
     setErrorMessage(null);
     setInfoMessage(null);
     setTotalRecords(0);
+    setIsScrollingToResults(false);
   };
 
   const handleDownload = () => {
@@ -905,10 +931,24 @@ const StockReportScreen: React.FC = () => {
  </TouchableOpacity> */}
           </View>
 
+          {/* Scrolling indicator */}
+          {isLoading && stockData.length === 0 && (
+            <View style={styles.scrollIndicatorContainer}>
+              <Text style={styles.scrollIndicatorText}>Loading results...</Text>
+              <Text style={styles.scrollIndicatorArrow}>↓</Text>
+            </View>
+          )}
+
           {/* Results count and info message - centered with reduced width */}
           {stockData.length > 0 && (
-            <View style={styles.resultInfoContainer}>
+            <View 
+              ref={resultsRef}
+              style={styles.resultInfoContainer}
+            >
               <View style={styles.resultInfo}>
+                {isScrollingToResults && (
+                  <ActivityIndicator size="small" color="#E87830" style={{marginBottom: 5}} />
+                )}
                 <Text style={styles.resultCount}>
                   Total records: {totalRecords}
                 </Text>
@@ -1461,6 +1501,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#94A3B8',
     flex: 1,
+  },
+  scrollIndicatorContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 10,
+    padding: 5,
+  },
+  scrollIndicatorText: {
+    fontSize: 14,
+    color: '#E87830',
+    marginBottom: 5,
+  },
+  scrollIndicatorArrow: {
+    fontSize: 24,
+    color: '#E87830',
+    fontWeight: 'bold',
   },
 });
 

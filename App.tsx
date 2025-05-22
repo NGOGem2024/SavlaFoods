@@ -167,44 +167,44 @@ function App(): JSX.Element {
   return (
     <GestureHandlerRootView style={{flex: 1}}>
       <SafeAreaProvider>
-        <DisplayNameProvider>
-          <NotificationProvider>
-            <CartProvider>
-              <CustomerProvider>
-                <NetworkProvider>
-                  <NavigationContainer>
-                    <RootStack.Navigator
-                      initialRouteName="SplashScreen"
-                      screenOptions={{
-                        headerShown: false,
-                        gestureEnabled: false,
-                      }}>
-                      <RootStack.Screen
-                        name="SplashScreen"
-                        component={SplashScreen}
-                      />
-                      <RootStack.Screen
-                        name="OtpVerificationScreen"
-                        component={OtpVerificationScreen}
-                        options={{headerShown: false, gestureEnabled: false}}
-                      />
-                      <RootStack.Screen
-                        name="Main"
-                        component={MainStackNavigator}
-                      />
-                      {/* <RootStack.Screen
-                        name="HomeScreen"
-                        component={MainStackNavigator}
-                        options={{headerShown: false}}
-                      /> */}
-                    </RootStack.Navigator>
-                  </NavigationContainer>
-                  <OfflineNotice />
-                </NetworkProvider>
-              </CustomerProvider>
-            </CartProvider>
-          </NotificationProvider>
-        </DisplayNameProvider>
+          <DisplayNameProvider>
+            <NotificationProvider>
+              <CartProvider>
+                <CustomerProvider>
+                  <NetworkProvider>
+                    <NavigationContainer>
+                      <RootStack.Navigator
+                        initialRouteName="SplashScreen"
+                        screenOptions={{
+                          headerShown: false,
+                          gestureEnabled: false,
+                        }}>
+                        <RootStack.Screen
+                          name="SplashScreen"
+                          component={SplashScreen}
+                        />
+                        <RootStack.Screen
+                          name="OtpVerificationScreen"
+                          component={OtpVerificationScreen}
+                          options={{headerShown: false, gestureEnabled: false}}
+                        />
+                        <RootStack.Screen
+                          name="Main"
+                          component={MainStackNavigator}
+                        />
+                        {/* <RootStack.Screen
+                          name="HomeScreen"
+                          component={MainStackNavigator}
+                          options={{headerShown: false}}
+                        /> */}
+                      </RootStack.Navigator>
+                    </NavigationContainer>
+                    <OfflineNotice />
+                  </NetworkProvider>
+                </CustomerProvider>
+              </CartProvider>
+            </NotificationProvider>
+          </DisplayNameProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
