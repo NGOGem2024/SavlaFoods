@@ -12,6 +12,7 @@ import {
   Platform,
   TextInput,
   ScrollView,
+  Keyboard,
 } from 'react-native';
 import axios from 'axios';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -422,6 +423,9 @@ const ZeroStockReportScreen = () => {
 
   // Fetch zero stock report data
   const fetchZeroStockItems = async () => {
+    // Dismiss keyboard when search is pressed
+    Keyboard.dismiss();
+
     if (!customerID) {
       return;
     }

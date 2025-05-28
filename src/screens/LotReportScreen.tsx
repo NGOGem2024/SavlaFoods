@@ -11,6 +11,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Modal,
+  Keyboard
 } from 'react-native';
 import {useRoute, RouteProp} from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -164,6 +165,7 @@ const LotReportScreen = () => {
     selectedTab === 'Inwards' ? inwardTransactions : outwardTransactions;
 
   const handleSearch = () => {
+    Keyboard.dismiss();
     fetchLotReport(searchLotNo);
   };
 

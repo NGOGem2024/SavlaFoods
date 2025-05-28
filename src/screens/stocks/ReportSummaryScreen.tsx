@@ -1277,7 +1277,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 12,
     color: '#444',
-    textAlign: 'center',
+    textAlign: 'left',
+    marginLeft: 10,
   },
   verticalScroll: {
     minHeight: 300,
