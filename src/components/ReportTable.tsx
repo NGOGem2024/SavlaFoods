@@ -198,13 +198,30 @@ const ReportTable = ({
                     </Text>
                   </TouchableOpacity>
                 ) : (
-                  <Text
+                  <TouchableOpacity
                     style={[
-                      styles.tableCell,
+                      styles.tableCellContainer,
                       {width: columnWidths.inwardOutwardNo},
-                    ]}>
-                    {item.OUTWARD_NO || '-'}
-                  </Text>
+                    ]}
+                    onPress={() =>
+                      onInwardOutwardNoPress && onInwardOutwardNoPress(item)
+                    }
+                    disabled={!(onInwardOutwardNoPress && item.OUTWARD_NO)}>
+                    <Text
+                      style={[
+                        styles.tableCell,
+                        styles.clickableCell,
+                        {
+                          color:
+                            onInwardOutwardNoPress && item.OUTWARD_NO
+                              ? getThemeColor()
+                              : '#334155',
+                          width: '100%',
+                        },
+                      ]}>
+                      {item.OUTWARD_NO || '-'}
+                    </Text>
+                  </TouchableOpacity>
                 )}
 
                 <Text style={[styles.tableCell, {width: columnWidths.lotNo}]}>

@@ -114,8 +114,16 @@ const InwardOutwardReportScreen = () => {
         item: item,
         customerId: item.CUSTOMER_ID,
       });
+    } else if (!isInward && item.OUTWARD_NO) {
+      // For outward items, navigate to OutwardDetailsScreen with the OUTWARD_NO
+      console.log('Navigating to OutwardDetailsScreen with OUTWARD_NO:', item.OUTWARD_NO);
+      // Pass all the item data to the detail screen
+      navigation.navigate('OutwardDetailsScreen', {
+        outwardNo: item.OUTWARD_NO,
+        item: item,
+        customerId: item.CUSTOMER_ID,
+      });
     }
-    // Future implementation for outward items can be added here
   };
 
   // Custom dropdown component defined inside the main component
