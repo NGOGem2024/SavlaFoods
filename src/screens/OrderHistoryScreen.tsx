@@ -21,7 +21,6 @@ import {MainStackParamList} from '../../src/type/type';
 import {LayoutWrapper} from '../components/AppLayout';
 
 interface OrderHistory {
-  cancelledRemark: React.JSX.Element;
   deliveryAddress: string;
   orderId: number;
   orderNo: string;
@@ -30,7 +29,6 @@ interface OrderHistory {
   status: string;
   transporterName: string;
   remarks: string;
-  cancelRemark: string;
   createdOn: string;
   customerName: string;
   customerMobile: number;
@@ -51,8 +49,6 @@ interface OrderHistory {
     status: string;
     supervisorName: string | null;
     mukadamName: string | null;
-    cancelledRemark: string | null;
-    cancelledDate: string | null;
   }>;
 }
 
@@ -82,7 +78,6 @@ const OrderHistoryScreen = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<string | null>('CANCEL');
 
   // Get customerID from context or route params
   const {customerID: contextCustomerID} = useCustomer();
@@ -92,7 +87,7 @@ const OrderHistoryScreen = () => {
   const hasSpecificOrder = params?.orderId && params?.orderNo;
 
   const fetchOrderHistory = useCallback(
-    async (pageNum = 1, refresh = false, status = selectedStatus) => {
+    async (pageNum = 1, refresh = false) => {
       try {
         if (!customerID) {
           setError('Customer ID not found. Please login again.');
@@ -109,15 +104,13 @@ const OrderHistoryScreen = () => {
 
         setError(null);
 
-        // Configure API parameters
+        // Configure API parameters - only fetch CLOSED orders
         const apiParams: any = {
           customerId: customerID,
           page: pageNum,
           limit: 10,
+          status: 'CLOSED',
         };
-
-        // Add status filter if selected
-        if (status) apiParams.status = status;
 
         console.log(
           'Fetching order history with params:',
@@ -164,7 +157,7 @@ const OrderHistoryScreen = () => {
         setIsLoadingMore(false);
       }
     },
-    [customerID, selectedStatus],
+    [customerID],
   );
 
   useEffect(() => {
@@ -176,17 +169,15 @@ const OrderHistoryScreen = () => {
         orderDate: params.orderDate || '',
         deliveryDate: params.deliveryDate || '',
         deliveryAddress: params.deliveryAddress || '',
-        status: params.status || 'NEW',
+        status: params.status || 'CLOSED',
         transporterName: params.transporterName || '',
         remarks: params.remarks || '',
-        cancelRemark: params.cancelRemark || '',
         createdOn: params.createdOn || '',
         customerName: params.customerName || '',
         customerMobile: params.customerMobile || 0,
         customerEmail: params.customerEmail || null,
         totalItems: params.items?.length || 0,
         itemCount: params.itemCount || params.items?.length || 0,
-        cancelledRemark: params.CancelledRemarks || null,
         totalQuantity:
           params.items?.reduce(
             (sum: any, item: {requestedQty: any}) =>
@@ -294,163 +285,15 @@ const OrderHistoryScreen = () => {
     }
   };
 
-  const handleStatusFilter = (status: string | null) => {
-    // Don't apply filters if we have a specific order from params
-    if (hasSpecificOrder) return;
-
-    // Set the status immediately
-    setSelectedStatus(status);
-
-    // Reset data and fetch with new status
-    setOrders([]);
-    setIsLoading(true);
-    setPage(1);
-
-    // Small timeout to ensure state is updated before fetch
-    setTimeout(() => {
-      const apiParams: any = {
-        customerId: customerID,
-        page: 1,
-        limit: 10,
-      };
-
-      if (status) apiParams.status = status;
-
-      console.log('Filtering with status:', status);
-
-      axios
-        .get<OrderHistoryResponse>(`${API_ENDPOINTS.GET_ORDER_HISTORY}`, {
-          params: apiParams,
-        })
-        .then(response => {
-          const result = response.data;
-
-          if (result.success) {
-            const ordersData = result.data.orders;
-
-            setOrders(ordersData);
-            setTotalPages(result.data.pagination.totalPages);
-            setPage(result.data.pagination.page);
-          } else {
-            setError(result.message || 'Failed to load order history');
-            setOrders([]);
-          }
-        })
-        .catch(err => {
-          console.error('Error fetching filtered orders:', err);
-          setError(err.message || 'Server error. Please try again later.');
-          setOrders([]);
-        })
-        .finally(() => {
-          setIsLoading(false);
-          setRefreshing(false);
-        });
-    }, 50);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'CLOSED':
-        return {bg: '#dcfce7', text: '#16a34a'};
-      case 'CANCEL':
-        return {bg: '#fee2e2', text: '#ef4444'};
-      default:
-        return {bg: '#f3f4f6', text: '#6B7280'};
-    }
-  };
-
-  const renderStatusFilter = () => {
-    // Don't show filters if we have a specific order from params
-    if (hasSpecificOrder) return null;
-
-    return (
-      <View style={styles.filterContainer}>
-        {/* <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}>
-            <MaterialIcons
-              name="arrow-back"
-              size={24}
-              style={{color: '#0284c7'}}
-            />
-          </TouchableOpacity>
-          <Text style={styles.headerText}>Order Confirmation</Text>
-          <View style={styles.headerSpacer}></View>
-        </View> */}
-        <View style={styles.filterHeader}>
-          <MaterialIcons name="tune" size={20} color="#0284c7" />
-          <Text style={styles.filterTitle}>Filter Orders</Text>
-        </View>
-        <View style={styles.statusButtons}>
-          <TouchableOpacity
-            style={[
-              styles.statusButton,
-              selectedStatus === 'CLOSED' && styles.statusButtonSelected,
-            ]}
-            activeOpacity={0.6}
-            onPress={() => handleStatusFilter('CLOSED')}>
-            <Text
-              style={[
-                styles.statusButtonText,
-                selectedStatus === 'CLOSED' && styles.statusButtonTextSelected,
-              ]}>
-              Closed
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.statusButton,
-              selectedStatus === 'CANCEL' && styles.statusButtonSelected,
-            ]}
-            activeOpacity={0.6}
-            onPress={() => handleStatusFilter('CANCEL')}>
-            <Text
-              style={[
-                styles.statusButtonText,
-                selectedStatus === 'CANCEL' && styles.statusButtonTextSelected,
-              ]}>
-              Cancelled
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  };
-
   const renderOrderCard = ({item}: {item: OrderHistory}) => {
-    // Check if any items have CANCEL status
-    const hasAnyCancelledItem =
-      item.items && item.items.some(orderItem => orderItem.status === 'CANCEL');
-
-    // If any item is cancelled, override the order status for display purposes
-    const displayStatus = hasAnyCancelledItem ? 'CANCEL' : item.status;
-
-    // Get the appropriate colors for the status
-    const statusColors = getStatusColor(displayStatus);
-
     return (
       <View style={styles.card}>
-        {/* Order Number and Status */}
+        {/* Order Number */}
         <View style={styles.orderHeaderTop}>
           <View style={styles.orderNumberContainer}>
-            {/* <MaterialIcons
-              name="receipt"
-              size={20}
-              color="#0284C7"
-              style={styles.orderIcon}
-            /> */}
             <Text style={styles.orderNumberLabel}>Order No:</Text>
             <Text style={styles.orderNumberValue}>{item.orderNo}</Text>
           </View>
-          {/* <View style={styles.statusContainer}>
-            <View
-              style={[styles.statusBadge, {backgroundColor: statusColors.bg}]}>
-              <Text style={[styles.statusText, {color: statusColors.text}]}>
-                {displayStatus}
-              </Text>
-            </View>
-          </View> */}
         </View>
 
         {/* Items List */}
@@ -583,51 +426,6 @@ const OrderHistoryScreen = () => {
             </View>
           </View>
 
-          {displayStatus === 'CANCEL' && (
-            <View style={styles.closedDateContainer}>
-              <MaterialIcons
-                name="block"
-                size={16}
-                color="#ef4444"
-                style={styles.closedDateIcon}
-              />
-              <Text style={styles.closedDateLabel}>Cancelled on:</Text>
-              <Text style={styles.closedDateValue}>
-                {formatDate(item.createdOn)}
-              </Text>
-            </View>
-          )}
-
-          {item.cancelRemark && (
-            <View style={styles.remarksContainer}>
-              <View style={styles.remarksHeader}>
-                <MaterialIcons
-                  name="comment"
-                  size={16}
-                  color="#4B5563"
-                  style={styles.remarksIcon}
-                />
-                <Text style={styles.remarksTitle}>Cancellation Remarks </Text>
-              </View>
-              <Text style={styles.remarksValue}>{item.cancelRemark}</Text>
-            </View>
-          )}
-
-          {/* {item.cancelledRemark && (
-            <View style={styles.remarksContainer}>
-              <View style={styles.remarksHeader}>
-                <MaterialIcons
-                  name="comment"
-                  size={16}
-                  color="#4B5563"
-                  style={styles.remarksIcon}
-                />
-                <Text style={styles.remarksTitle}>Cancelled Remark</Text>
-              </View>
-              <Text style={styles.remarksValue}>{item.cancelledRemark}</Text>
-            </View>
-          )} */}
-
           {item.transporterName && (
             <View style={styles.transporterContainer}>
               <View style={styles.transporterHeader}>
@@ -676,6 +474,27 @@ const OrderHistoryScreen = () => {
     );
   };
 
+  const renderHeader = () => {
+    return (
+      <View style={styles.headerContainer}>
+        <View style={styles.headerContent}>
+          <MaterialIcons
+            name="history"
+            size={18}
+            color="#0284C7"
+            style={styles.headerIcon}
+          />
+          <Text style={styles.headerTitle}>Closed Orders</Text>
+          {orders.length > 0 && (
+            <Text style={styles.headerSubtitle}>
+              ({orders.length})
+            </Text>
+          )}
+        </View>
+      </View>
+    );
+  };
+
   if (isLoading) {
     return (
       <View style={styles.centered}>
@@ -688,8 +507,6 @@ const OrderHistoryScreen = () => {
     <LayoutWrapper showHeader={true} showTabBar={false} route={route}>
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#f3f4f6" />
-
-        {renderStatusFilter()}
 
         {error && orders.length === 0 ? (
           <View style={styles.centered}>
@@ -711,7 +528,8 @@ const OrderHistoryScreen = () => {
             data={orders}
             keyExtractor={item => `order-history-${item.orderId}`}
             renderItem={renderOrderCard}
-            contentContainerStyle={styles.list}
+            ListHeaderComponent={renderHeader}
+            contentContainerStyle={{paddingBottom: 50}}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -726,12 +544,7 @@ const OrderHistoryScreen = () => {
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <MaterialIcons name="history" size={64} color="#d1d5db" />
-                <Text style={styles.emptyText}>No order history found</Text>
-                {/* {selectedStatus && (
-                <Text style={styles.filterInfoText}>
-                  Filter: {selectedStatus}
-                </Text>
-              )} */}
+                <Text style={styles.emptyText}>No closed orders found</Text>
               </View>
             }
           />
@@ -746,93 +559,51 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f3f4f6',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F7',
-    width: '100%',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-  },
-  backButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: '#F8F7FF',
-  },
-  headerSpacer: {
-    width: 40,
-  },
-  headerText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#0284c7',
-  },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
-  filterContainer: {
-    backgroundColor: '#ffffff',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  filterHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  filterTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0284c7',
-    marginLeft: 8,
-  },
-  statusButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 0,
-  },
-  statusButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: '#f3f4f6',
-    marginRight: 8,
-    marginBottom: 3,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  statusButtonSelected: {
-    backgroundColor: '#0284c7',
-    borderColor: '#0284c7',
-  },
-  statusButtonText: {
-    color: '#4b5563',
-    fontWeight: '500',
-    fontSize: 14,
-  },
-  statusButtonTextSelected: {
-    color: '#ffffff',
-  },
   list: {
     padding: 14,
     paddingBottom: 50,
   },
+  headerContainer: {
+    backgroundColor: '#ffffff',
+    marginBottom: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 0,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    width: '100%',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 14,
+  },
+  headerIcon: {
+    marginRight: 10,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+    textAlign: 'left',
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginLeft: 4,
+  },
   card: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
-    marginHorizontal: 8,
+    marginHorizontal: 14,
     marginVertical: 6,
     padding: 14,
     elevation: 2,
@@ -851,10 +622,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  orderIcon: {
-    marginRight: 8,
-    color: '#F48221',
-  },
   orderNumberLabel: {
     fontSize: 16,
     color: '#F48221',
@@ -865,26 +632,6 @@ const styles = StyleSheet.create({
     color: '#F48221',
     fontWeight: '600',
     marginLeft: 4,
-  },
-  statusContainer: {
-    alignItems: 'flex-end',
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    // backgroundColor: '#fee2e2',
-  },
-  statusIcon: {
-    marginRight: 6,
-    color: '#ef4444',
-  },
-  statusText: {
-    fontSize: 14,
-    color: '#ef4444',
-    fontWeight: '600',
   },
   itemsList: {
     marginTop: -4,
@@ -995,7 +742,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginRight: 4,
   },
-
+  vakalNoValue: {
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '500',
+  },
   locationContainer: {
     backgroundColor: '#f8fafc',
     padding: 10,
@@ -1021,11 +772,6 @@ const styles = StyleSheet.create({
     color: '#111827',
     lineHeight: 20,
     paddingLeft: 22,
-  },
-  vakalNoValue: {
-    fontSize: 14,
-    color: '#111827',
-    fontWeight: '500',
   },
   orderDetailsSection: {
     marginTop: 6,
@@ -1077,56 +823,6 @@ const styles = StyleSheet.create({
     color: '#111827',
     fontWeight: '500',
   },
-  closedDateContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    // backgroundColor: '#fee2e2',
-    backgroundColor: '#f8fafc',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  closedDateIcon: {
-    marginRight: 6,
-    color: '#ef4444',
-  },
-  closedDateLabel: {
-    fontSize: 14,
-    color: '#ef4444',
-    fontWeight: '600',
-    marginRight: 4,
-  },
-  closedDateValue: {
-    fontSize: 15,
-    color: '#111827',
-    fontWeight: '500',
-  },
-  remarksContainer: {
-    backgroundColor: '#f8fafc',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  remarksHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  remarksIcon: {
-    marginRight: 4,
-    color: '#4B5563',
-  },
-  remarksTitle: {
-    fontSize: 14,
-    color: '#4B5563',
-    fontWeight: '500',
-  },
-  remarksValue: {
-    fontSize: 15,
-    color: '#111827',
-    lineHeight: 20,
-    paddingLeft: 22,
-  },
   transporterContainer: {
     backgroundColor: '#f8fafc',
     padding: 10,
@@ -1171,12 +867,6 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     textAlign: 'center',
     padding: 16,
-  },
-  filterInfoText: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 8,
-    textAlign: 'center',
   },
   emptyContainer: {
     alignItems: 'center',

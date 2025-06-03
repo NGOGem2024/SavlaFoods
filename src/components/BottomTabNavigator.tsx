@@ -438,13 +438,13 @@ const BottomTabNavigator: React.FC = () => {
               headerShown: false,
             }}
           /> */}
+            <Tab.Screen name="Orders" component={OrdersStackNavigator} />
           <Tab.Screen
             name="Reports"
             component={ReportsStackNavigator}
             options={{title: 'Reports'}}
           />
           <Tab.Screen name="Alert" component={AlertScreen} />
-          <Tab.Screen name="Orders" component={OrdersStackNavigator} />
         </Tab.Navigator>
       </NavigationHistoryProvider>
     </CustomerProvider>

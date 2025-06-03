@@ -11,6 +11,7 @@ import axios from 'axios';
 import {API_ENDPOINTS} from '../config/api.config';
 import {RouteProp} from '@react-navigation/native';
 import {LayoutWrapper} from '../components/AppLayout';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 // Define types for the API response
 interface GrnHeaderDetails {
@@ -231,29 +232,26 @@ const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({route}) => {
               <Text style={styles.addressText}>
                 {formatAddress(headerDetails.ADDRESS)}
               </Text>
-
-              <Text style={[styles.labelText, styles.spacer]}>BILL MAKING</Text>
-              <Text style={styles.valueText}>{headerDetails.BILL_MAKING}</Text>
             </View>
 
             <View style={styles.rightColumn}>
-              <Text style={styles.labelText}>PRE GRN NO</Text>
-              <Text style={styles.valueText}>{headerDetails.PRE_GRN_NO}</Text>
-
-              <Text style={[styles.labelText, styles.spacer]}>
-                GATE PASS NO
-              </Text>
-              <Text style={styles.valueText}>{headerDetails.GATEPASS_NO}</Text>
-
-              <Text style={[styles.labelText, styles.spacer]}>VEHICLE NO</Text>
+              <Text style={[styles.labelText]}>VEHICLE NO</Text>
               <Text style={styles.valueText}>{headerDetails.VEHICLE_NO}</Text>
             </View>
           </View>
         </View>
 
         {/* GRN Details Section */}
+        
         <View style={styles.detailsTableContainer}>
           <Text style={styles.sectionTitle}>GRN DETAILS</Text>
+
+          <View style={styles.scrollHintContainer}>
+            <MaterialIcons name="swipe" size={18} color="#64748B" />
+            <Text style={styles.scrollHintText} numberOfLines={1} ellipsizeMode="tail">
+              Scroll horizontally to view all data
+            </Text>
+          </View>
 
           {/* Custom Table Implementation */}
           <ScrollView horizontal showsHorizontalScrollIndicator={true}>
@@ -272,7 +270,7 @@ const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({route}) => {
                 <View style={styles.tableHeaderCell110}>
                   <Text style={styles.tableHeaderText}>Item Marks</Text>
                 </View>
-                <View style={styles.tableHeaderCell100}>
+                <View style={styles.tableHeaderCell120}>
                   <Text style={styles.tableHeaderText}>Vakal No</Text>
                 </View>
                 <View style={styles.tableHeaderCell100}>
@@ -281,26 +279,8 @@ const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({route}) => {
                 <View style={styles.tableHeaderCell100}>
                   <Text style={styles.tableHeaderText}>Expiry Date</Text>
                 </View>
-                <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.tableHeaderText}>Location</Text>
-                </View>
-                <View style={styles.tableHeaderCell180}>
-                  <Text style={styles.tableHeaderText}>Scheme</Text>
-                </View>
                 <View style={styles.tableHeaderCell80}>
                   <Text style={styles.tableHeaderText}>Quantity</Text>
-                </View>
-                <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.tableHeaderText}>Received Qty</Text>
-                </View>
-                <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.tableHeaderText}>Deleted Qty</Text>
-                </View>
-                <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.tableHeaderText}>Balanced Qty</Text>
-                </View>
-                <View style={styles.tableHeaderCell120}>
-                  <Text style={styles.tableHeaderText}>Transhipment</Text>
                 </View>
               </View>
 
@@ -321,48 +301,26 @@ const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({route}) => {
                   <View style={styles.tableHeaderCell180}>
                     <Text style={styles.tableRowText}>{item.ITEM_NAME}</Text>
                   </View>
-                  <View style={styles.tableHeaderCell120}>
+                  <View style={styles.tableHeaderCell110}>
                     <Text style={styles.tableRowText}>{item.ITEM_MARKS}</Text>
                   </View>
-                  <View style={styles.tableHeaderCell110}>
+                  <View style={styles.tableHeaderCell140}>
                     <Text style={styles.tableRowText}>
                       {item.VAKAL_NO || '-'}
                     </Text>
                   </View>
-                  <View style={styles.tableHeaderCell80}>
+                  <View style={styles.tableHeaderCell100}>
                     <Text style={styles.tableRowText}>
                       {item.BATCH_NO || '-'}
                     </Text>
                   </View>
-                  <View style={styles.tableHeaderCell110}>
+                  <View style={styles.tableHeaderCell100}>
                     <Text style={styles.tableRowText}>
                       {item.EXPIRY_DATE || '-'}
                     </Text>
                   </View>
-                  <View style={styles.tableHeaderCell80}>
-                    <Text style={styles.tableRowText}>
-                      {item.LOCATION || '-'}
-                    </Text>
-                  </View>
-                  <View style={styles.tableHeaderCell200}>
-                    <Text style={styles.tableRowText}>{item.SCHEME}</Text>
-                  </View>
-                  <View style={styles.tableHeaderCell100}>
+                  <View style={styles.tableHeaderCell60}>
                     <Text style={styles.tableRowText}>{item.QUANTITY}</Text>
-                  </View>
-                  <View style={styles.tableHeaderCell100}>
-                    <Text style={styles.tableRowText}>{item.RECEIVED_QTY}</Text>
-                  </View>
-                  <View style={styles.tableHeaderCell100}>
-                    <Text style={styles.tableRowText}>{item.DELETED_QTY}</Text>
-                  </View>
-                  <View style={styles.tableHeaderCell100}>
-                    <Text style={styles.tableRowText}>{item.BALANCE_QTY}</Text>
-                  </View>
-                  <View style={styles.tableHeaderCell120}>
-                    <Text style={styles.tableRowText}>
-                      {item.IS_TRANSSHIPMENT}
-                    </Text>
                   </View>
                 </View>
               ))}
@@ -375,46 +333,23 @@ const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({route}) => {
                 <View style={styles.tableHeaderCell100}>
                   <Text style={styles.tableRowText}></Text>
                 </View>
-
-                <View style={styles.tableHeaderCell120}>
-                  <Text style={styles.tableRowText}></Text>
-                </View>
-                <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.tableRowText}></Text>
-                </View>
-                <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.tableRowText}></Text>
-                </View>
-                <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.tableRowText}></Text>
-                </View>
-                <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.tableRowText}></Text>
-                </View>
                 <View style={styles.tableHeaderCell180}>
                   <Text style={styles.tableRowText}></Text>
                 </View>
-                <View style={styles.tableHeaderCell180}>
-                  <Text style={styles.totalText}>Total :</Text>
+                <View style={styles.tableHeaderCell110}>
+                  <Text style={styles.tableRowText}></Text>
+                </View>
+                <View style={styles.tableHeaderCell80}>
+                  <Text style={styles.tableRowText}></Text>
+                </View>
+                <View style={styles.tableHeaderCell150}>
+                  <Text style={styles.tableRowText}></Text>
                 </View>
                 <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.totalText}>Total </Text>
+                </View>
+                <View style={styles.tableHeaderCell60}>
                   <Text style={styles.totalText}>{totals.totalQuantity}</Text>
-                </View>
-                <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.totalText}>
-                    {totals.totalReceivedQty}
-                  </Text>
-                </View>
-                <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.totalText}>{totals.totalDeletedQty}</Text>
-                </View>
-                <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.totalText}>
-                    {totals.totalBalancedQty}
-                  </Text>
-                </View>
-                <View style={styles.tableHeaderCell120}>
-                  <Text style={styles.tableRowText}></Text>
                 </View>
               </View>
             </View>
@@ -570,6 +505,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     justifyContent: 'center',
   },
+  tableHeaderCell140: {
+    width: 140,
+    paddingHorizontal: 6,
+    justifyContent: 'center',
+  },
+  tableHeaderCell150: {
+    width: 150,
+    paddingHorizontal: 6,
+    justifyContent: 'center',
+  },
   tableHeaderCell180: {
     width: 180,
     paddingHorizontal: 6,
@@ -611,6 +556,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#e74c3c',
     textAlign: 'center',
+  },
+  scrollHintContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    backgroundColor: '#f8f8f8',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    flex: 1,
+    paddingHorizontal: 28,
+    textAlign: 'center',
+    justifyContent: 'center',
+  },
+  scrollHintText: {
+    fontSize: 13,
+    color: '#64748B',
+    flexShrink: 1,
+    textAlign: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
   },
 });
 
