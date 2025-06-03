@@ -13,6 +13,7 @@ import {
   TextInput,
   Modal,
   FlatList,
+  Animated,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {Picker} from '@react-native-picker/picker';
@@ -71,7 +72,9 @@ const InwardOutwardReportScreen = () => {
   // Change from single selection to arrays
   const [itemCategories, setItemCategories] = useState<string[]>([]);
   const [itemSubcategories, setItemSubcategories] = useState<string[]>([]);
-  const [unit, setUnit] = useState('');
+  const [unit, setUnit] = useState<string[]>([]);
+  // Additional state for IOSPickerModal compatibility
+  const [unitString, setUnitString] = useState('');
 
   // Time period selection states
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('Custom');
@@ -102,6 +105,13 @@ const InwardOutwardReportScreen = () => {
   // Refs
   const tableRef = useRef<ScrollView>(null);
   const viewshotRef = useRef(null);
+
+  // Add state for custom alert
+  const [showCustomAlert, setShowCustomAlert] = useState(false);
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertType, setAlertType] = useState<'error' | 'warning' | 'info' | 'success'>('info');
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   // Handler for Inward/Outward No cell press
   const handleInwardOutwardNoPress = (item: any) => {
@@ -237,11 +247,126 @@ const InwardOutwardReportScreen = () => {
     updateProgressUI,
   } = usePdfGeneration({isInward});
 
+  // Helper function to get icon based on alert type
+  const getAlertIcon = () => {
+    switch (alertType) {
+      case 'error':
+        return <MaterialIcons name="error-outline" size={28} color="#E53E3E" />;
+      case 'warning':
+        return <MaterialIcons name="warning" size={28} color="#DD6B20" />;
+      case 'success':
+        return <MaterialIcons name="check-circle" size={28} color="#38A169" />;
+      case 'info':
+      default:
+        return <MaterialIcons name="info" size={28} color="#3182CE" />;
+    }
+  };
+
+  // Custom Alert Component with enhanced styling
+  const CustomAlert = () => {
+    useEffect(() => {
+      if (showCustomAlert) {
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      } else {
+        fadeAnim.setValue(0);
+      }
+    }, [showCustomAlert]);
+
+    if (!showCustomAlert) return null;
+
+    const alertColor = (() => {
+      switch (alertType) {
+        case 'error': return '#FED7D7';
+        case 'warning': return '#FEEBC8';
+        case 'success': return '#C6F6D5';
+        case 'info': default: return '#BEE3F8';
+      }
+    })();
+
+    const isRequiredFieldAlert = alertTitle === 'Required Field Missing';
+
+    return (
+      <Modal
+        transparent={true}
+        animationType="none"
+        visible={showCustomAlert}
+        onRequestClose={() => setShowCustomAlert(false)}>
+        <View style={styles.alertOverlay}>
+          <Animated.View
+            style={[
+              styles.alertContainer,
+              {
+                opacity: fadeAnim,
+                transform: [
+                  {
+                    translateY: fadeAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [50, 0],
+                    }),
+                  },
+                ],
+              },
+              isInward ? styles.inwardAlert : styles.outwardAlert,
+            ]}>
+            <View style={[styles.alertHeader, { backgroundColor: alertColor }]}>
+              <View style={styles.alertTitleContainer}>
+                {getAlertIcon()}
+                <Text style={styles.alertTitle}>{alertTitle}</Text>
+              </View>
+            </View>
+            <View style={styles.alertBody}>
+              <Text style={styles.alertMessage}>{alertMessage}</Text>
+         
+            </View>
+            <View style={styles.alertButtonsContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.alertButton,
+                  isInward ? styles.inwardAlertButton : styles.outwardAlertButton,
+                ]}
+                onPress={() => setShowCustomAlert(false)}>
+                <Text 
+                  style={[
+                    styles.alertButtonText,
+                    { color: isInward ? '#F48221' : '#4682B4' }
+                  ]}>
+                  OK
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
+    );
+  };
+
+  // Show custom alert helper function with type parameter
+  const showAlert = (title: string, message: string, type: 'error' | 'warning' | 'info' | 'success' = 'info') => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertType(type);
+    setShowCustomAlert(true);
+  };
+
   // Validate inputs before search
   const validateInputs = (): boolean => {
+    // Check if unit is selected
+    if (unit.length === 0) {
+      showAlert(
+        'Required Field Missing',
+        'Please select a Unit to continue.',
+        'warning'
+      );
+      return false;
+    }
+    
     // Simple validation example
     if (fromDate > toDate) {
-      Alert.alert('Invalid Date Range', 'From date cannot be after To date');
+      showAlert('Invalid Date Range', 'From date cannot be after To date', 'error');
       return false;
     }
     return true;
@@ -280,7 +405,8 @@ const InwardOutwardReportScreen = () => {
     setToDate(new Date());
     setItemCategories([]);
     setItemSubcategories([]);
-    setUnit('');
+    setUnit([]);
+    setUnitString('');
     setTimePeriod('Custom');
     setSelectedWeek(null);
     setSelectedMonth(null);
@@ -633,7 +759,7 @@ const InwardOutwardReportScreen = () => {
         customerName: string;
         itemCategoryName: string[] | null;
         itemSubCategoryName: string[] | null;
-        unitName: string | null;
+        unitName: string[] | null; // Changed from string to string array
       } = {
         fromDate: formatDateForApi(fromDate),
         toDate: formatDateForApi(toDate),
@@ -641,7 +767,7 @@ const InwardOutwardReportScreen = () => {
         itemCategoryName: itemCategories.length > 0 ? itemCategories : null,
         itemSubCategoryName:
           itemSubcategories.length > 0 ? itemSubcategories : null,
-        unitName: unit ? unit.trim() : null,
+        unitName: unit.length > 0 ? unit : null, // Changed to check array length
       };
 
       console.log('==== REQUEST DATA DETAILS ====');
@@ -757,7 +883,7 @@ const InwardOutwardReportScreen = () => {
           // Only apply filters for fields that were provided (not null)
           const unitMatch =
             requestData.unitName === null ||
-            item.UNIT_NAME === requestData.unitName;
+            (requestData.unitName && requestData.unitName.includes(item.UNIT_NAME));
 
           // Safe filtering for category and subcategory arrays
           const categoryMatch =
@@ -808,12 +934,13 @@ const InwardOutwardReportScreen = () => {
         setLocalReportData(normalizedData);
 
         if (normalizedData.length === 0) {
-          Alert.alert('No Data', 'No records found for the selected criteria.');
+          showAlert('No Data', 'No records found for the selected criteria.', 'info');
         }
       } else {
-        Alert.alert(
+        showAlert(
           'Error',
           response.data?.message || 'Failed to fetch report data.',
+          'error'
         );
       }
     } catch (error) {
@@ -822,9 +949,9 @@ const InwardOutwardReportScreen = () => {
       if (axios.isAxiosError(error)) {
         const errorMessage =
           (error as any).response?.data?.message || (error as Error).message;
-        Alert.alert('Error', `Failed to fetch report: ${errorMessage}`);
+        showAlert('Error', `Failed to fetch report: ${errorMessage}`, 'error');
       } else {
-        Alert.alert('Error', 'An unexpected error occurred.');
+        showAlert('Error', 'An unexpected error occurred.', 'error');
       }
     } finally {
       setIsReportLoading(false);
@@ -834,14 +961,14 @@ const InwardOutwardReportScreen = () => {
   // Handle PDF download
   const handlePdfDownload = async () => {
     if (localReportData.length === 0) {
-      Alert.alert('No Data', 'There is no data to download.');
+      showAlert('No Data', 'There is no data to download.', 'info');
       return;
     }
 
     try {
       // Create PDF with all necessary parameters
       await generatePdf(localReportData, fromDate, toDate, customerName, {
-        unit,
+        unit: unit.length > 0 ? unit.join(', ') : '',
         itemCategories,
         itemSubcategories,
       });
@@ -1007,6 +1134,12 @@ const InwardOutwardReportScreen = () => {
     }));
   };
 
+  // Helper function to sync unit array and unitString
+  const syncUnitState = (newUnit: string[]) => {
+    setUnit(newUnit);
+    setUnitString(newUnit.length > 0 ? newUnit[0] : '');
+  };
+
   return (
     <LayoutWrapper showHeader={true} showTabBar={false} route={route}>
       <SafeAreaView style={styles.safeArea}>
@@ -1014,6 +1147,9 @@ const InwardOutwardReportScreen = () => {
           backgroundColor={isInward ? '#F48221' : '#4682B4'}
           barStyle="light-content"
         />
+
+        {/* Custom Alert Component */}
+        <CustomAlert />
 
         {showForm ? (
           // Form Section
@@ -1812,12 +1948,24 @@ const InwardOutwardReportScreen = () => {
                 />
               </View>
 
-              {/* Unit Picker */}
+              {/* Unit Picker - Replace with MultiSelect */}
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Unit</Text>
-                {renderPicker('unit', unit, 'Unit', units, value =>
-                  setUnit(value),
-                )}
+                <Text style={styles.label}>
+                  Unit <Text style={styles.requiredField}>*</Text>
+                </Text>
+                <MultiSelect
+                  options={units.map(unit => ({
+                    label: unit,
+                    value: unit,
+                  }))}
+                  selectedValues={unit}
+                  onSelectChange={values => {
+                    setUnit(values);
+                    setUnitString(values.length > 0 ? values[0] : '');
+                  }}
+                  placeholder="Select Units"
+                  primaryColor={isInward ? '#F48221' : '#4682B4'}
+                />
               </View>
 
               {/* Buttons */}
@@ -1993,7 +2141,7 @@ const InwardOutwardReportScreen = () => {
           itemSubcategory={
             itemSubcategories.length > 0 ? itemSubcategories[0] : ''
           }
-          unit={unit}
+          unit={unitString}
           apiCategories={apiCategories}
           apiSubcategories={apiSubcategories}
           units={units}
@@ -2011,7 +2159,15 @@ const InwardOutwardReportScreen = () => {
               setItemSubcategories([]);
             }
           }}
-          setUnit={setUnit}
+          setUnit={value => {
+            if (value) {
+              setUnit([value]);
+              setUnitString(value);
+            } else {
+              setUnit([]);
+              setUnitString('');
+            }
+          }}
           onClose={() => setIsPickerVisible(false)}
         />
 
@@ -3055,6 +3211,105 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 16,
     textAlign: 'center',
+  },
+  disabledDateText: {
+    color: '#A0A0A0',
+  },
+  requiredField: {
+    color: 'red',
+    fontWeight: 'bold',
+  },
+  // Custom Alert Styles
+  alertOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  alertContainer: {
+    width: '85%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: {width: 0, height: 4},
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  inwardAlert: {
+    // borderLeftWidth: 5,
+    // borderLeftColor: '#F48221',
+  },
+  outwardAlert: {
+    // borderLeftWidth: 5,
+    // borderLeftColor: '#4682B4',
+  },
+  alertHeader: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  alertTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  alertTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2D3748',
+    marginLeft: 10,
+  },
+  alertBody: {
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+  },
+  alertMessage: {
+    fontSize: 16,
+    color: '#4A5568',
+    lineHeight: 22,
+  },
+  alertButtonsContainer: {
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  alertButton: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    width: '100%',
+  },
+  inwardAlertButton: {
+    backgroundColor: '#FFF8F3',
+  },
+  outwardAlertButton: {
+    backgroundColor: '#F5F9FF',
+  },
+  alertButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  requiredFieldIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    padding: 10,
+    backgroundColor: '#FFFAF0',
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#DD6B20',
+  },
+  requiredFieldText: {
+    fontSize: 14,
+    color: '#64748B',
+    marginLeft: 5,
+    flex: 1,
   },
 });
 
