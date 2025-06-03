@@ -24,6 +24,7 @@ interface MultiSelectProps {
   placeholder: string;
   disabled?: boolean;
   primaryColor?: string;
+  showSelectAll?: boolean;
 }
 
 const MultiSelect = ({
@@ -33,6 +34,7 @@ const MultiSelect = ({
   placeholder,
   disabled = false,
   primaryColor = '#F48221',
+  showSelectAll = true,
 }: MultiSelectProps) => {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -62,6 +64,69 @@ const MultiSelect = ({
     } else {
       onSelectChange([...selectedValues, value]);
     }
+  };
+
+  // Handle Select All functionality
+  const handleSelectAll = () => {
+    const allValues = options.map(option => option.value);
+    const allSelected = selectedValues.length === options.length;
+    
+    if (allSelected) {
+      // If all are selected, deselect all
+      onSelectChange([]);
+    } else {
+      // If not all are selected, select all
+      onSelectChange(allValues);
+    }
+  };
+
+  // Check if all items are selected
+  const isAllSelected = selectedValues.length === options.length && options.length > 0;
+
+  // Prepare data for FlatList (Select All + options)
+  const listData = showSelectAll && options.length > 0 
+    ? [{ label: 'Select All', value: '__SELECT_ALL__', isSelectAll: true }, ...options]
+    : options;
+
+  const renderItem = ({item}: {item: any}) => {
+    if (item.isSelectAll) {
+      return (
+        <View style={styles.selectAllContainer}>
+          <TouchableOpacity
+            style={[styles.optionItem, styles.selectAllItem]}
+            onPress={handleSelectAll}>
+            <Text style={[styles.optionText, styles.selectAllText]}>
+              {item.label}
+            </Text>
+            <MaterialIcons
+              name={isAllSelected ? 'check-box' : 'check-box-outline-blank'}
+              size={24}
+              color={isAllSelected ? primaryColor : '#CBD5E0'}
+            />
+          </TouchableOpacity>
+          <View style={styles.separator} />
+        </View>
+      );
+    }
+
+    return (
+      <TouchableOpacity
+        style={styles.optionItem}
+        onPress={() => toggleItem(item.value)}>
+        <Text style={styles.optionText}>{item.label}</Text>
+        <MaterialIcons
+          name={
+            selectedValues.includes(item.value)
+              ? 'check-box'
+              : 'check-box-outline-blank'
+          }
+          size={24}
+          color={
+            selectedValues.includes(item.value) ? primaryColor : '#CBD5E0'
+          }
+        />
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -101,30 +166,11 @@ const MultiSelect = ({
             </View>
 
             <FlatList
-              data={options}
-              keyExtractor={item => item.value}
+              data={listData}
+              keyExtractor={(item, index) => item.isSelectAll ? '__SELECT_ALL__' : item.value}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
-              renderItem={({item}) => (
-                <TouchableOpacity
-                  style={styles.optionItem}
-                  onPress={() => toggleItem(item.value)}>
-                  <Text style={styles.optionText}>{item.label}</Text>
-                  <MaterialIcons
-                    name={
-                      selectedValues.includes(item.value)
-                        ? 'check-box'
-                        : 'check-box-outline-blank'
-                    }
-                    size={24}
-                    color={
-                      selectedValues.includes(item.value)
-                        ? primaryColor
-                        : '#CBD5E0'
-                    }
-                  />
-                </TouchableOpacity>
-              )}
+              renderItem={renderItem}
               contentContainerStyle={styles.optionsList}
             />
           </SafeAreaView>
@@ -213,9 +259,31 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F7FAFC',
   },
+  selectAllContainer: {
+    marginBottom: 8,
+  },
+  selectAllItem: {
+    backgroundColor: '#F8FAFC',
+    borderBottomWidth: 0, // Remove bottom border as we'll use separator
+    paddingVertical: 14, // Match the regular item padding
+    paddingHorizontal: 16, // Match the regular item padding
+    marginHorizontal: 0, // Remove margin to align properly
+    borderRadius: 0, // Remove border radius to match regular items
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#E2E8F0',
+    marginHorizontal: 16,
+    marginTop: 4,
+  },
   optionText: {
     fontSize: 16,
     color: '#2D3748',
+  },
+  selectAllText: {
+    fontWeight: '600',
+    color: '#1A202C',
+    fontSize: 16, // Match the regular option text size
   },
 });
 
