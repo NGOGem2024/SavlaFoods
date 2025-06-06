@@ -253,6 +253,16 @@ export const TabBar = (props: any) => {
       label: 'Home',
     },
     {
+      name: 'Orders',
+      icon:
+        props.route?.name === 'Orders' ? (
+          <FontAwesome name="list-alt" size={24} color="#F48221" />
+        ) : (
+          <FontAwesome name="list-alt" size={24} color="black" />
+        ),
+      label: 'Orders',
+    },
+    {
       name: 'Reports',
       icon:
         props.route?.name === 'Reports' ? (
@@ -284,16 +294,7 @@ export const TabBar = (props: any) => {
         ),
       label: 'Alerts',
     },
-    {
-      name: 'Orders',
-      icon:
-        props.route?.name === 'Orders' ? (
-          <FontAwesome name="list-alt" size={24} color="#F48221" />
-        ) : (
-          <FontAwesome name="list-alt" size={24} color="black" />
-        ),
-      label: 'Orders',
-    },
+
   ];
 
   // Enhanced tab press handler with route history
@@ -307,7 +308,7 @@ export const TabBar = (props: any) => {
       addToHistory(props.route.name);
     }
 
-    if (['Home', 'Alert', 'Orders', 'Reports'].includes(routeName)) {
+    if (['Home','Orders','Reports','Alert'].includes(routeName)) {
       const currentParams = props.route?.params;
       const navigationParams = {
         screen: routeName,
@@ -382,6 +383,12 @@ const BottomTabNavigator: React.FC = () => {
             color={color}
           />
         );
+      case 'Orders':
+        return focused ? (
+          <FontAwesome name="list-alt" size={size} color={color} />
+        ) : (
+          <FontAwesome name="list-alt" size={size} color={color} />
+        );
       case 'Reports':
         return focused ? (
           <MaterialIcons name="assessment" size={size} color={color} />
@@ -398,12 +405,7 @@ const BottomTabNavigator: React.FC = () => {
         ) : (
           <MaterialIcons name="notifications-none" size={size} color={color} />
         );
-      case 'Orders':
-        return focused ? (
-          <FontAwesome name="list-alt" size={20} color={color} />
-        ) : (
-          <FontAwesome name="list-alt" size={20} color={color} />
-        );
+
       default:
         return <MaterialIcons name="circle" size={size} color={color} />;
     }

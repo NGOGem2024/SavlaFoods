@@ -230,8 +230,8 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
         {title: 'Lot No', width: 60},
         {title: 'Item Name', width: 96},
         {title: 'Vakkal No', width: 68},
-        {title: 'Item Mark', width: 68},
-        {title: 'Qty', width: 45},
+        {title: 'Item Mark', width: 72},
+        {title: 'Qty', width: 50},  // Increased width to create more space
         {title: 'Remark', width: 50},
         {title: 'Vehicle No', width: 68},
         ...(isInward ? [] : [{title: 'Delivered To', width: 65}]),
@@ -280,11 +280,9 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
           yPosition -= 30;
 
           // Second line: Company name with Unit
-          let companyText = 'Savla Foods ';
-          if (safeUnit) {
-            companyText += `Unit - ${safeUnit}`;
-          }
+          let companyText = 'Savla Foods';
           
+          // Draw company name
           page.drawText(companyText, {
             x: margin,
             y: yPosition - 20,
@@ -292,6 +290,18 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
             font: boldFont,
             color: rgb(0.2, 0.2, 0.2),
           });
+          
+          // Draw Unit separately with more spacing and less boldness
+          if (safeUnit) {
+            const regularFont = await pdfDoc.embedStandardFont(StandardFonts.TimesRoman);
+            page.drawText(`Unit - ${safeUnit}`, {
+              x: margin + boldFont.widthOfTextAtSize(companyText, 14) + 15, // Add 15 points of extra space
+              y: yPosition - 20,
+              size: 14,
+              font: regularFont, // Use regular font instead of bold
+              color: rgb(0.2, 0.2, 0.2),
+            });
+          }
 
           yPosition -= 30;
 
@@ -552,16 +562,42 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
             return total + (isNaN(qty) ? 0 : qty);
           }, 0);
 
-          // Draw total text
-          drawWrappedText(
-            page,
-            `Total Quantity: ${Math.round(totalQty)}`,
-            margin + 10,
-            totalRowY - rowHeight / 2,
-            tableWidth - 20,
-            headerSize,
-            {font: boldFont},
-          );
+          // Calculate positions for the total row
+          let itemMarkPosition = margin;
+          let qtyPosition = margin;
+          
+          // Get position of Item Mark column (column 7)
+          for (let i = 0; i < 7; i++) {
+            itemMarkPosition += tableColumns[i].width;
+          }
+          
+          // Get position of Qty column (column 8)
+          for (let i = 0; i < 8; i++) {
+            qtyPosition += tableColumns[i].width;
+          }
+          
+          // Draw "Total Quantity:" label directly without wrapping
+          const totalText = "Total Quantity";
+          const textWidth = boldFont.widthOfTextAtSize(totalText, headerSize);
+          
+          // Calculate the Item Mark column's center position
+          const itemMarkCenter = itemMarkPosition + tableColumns[7].width / 2;
+          
+          // Position label more to the left side
+          page.drawText(totalText, {
+            x: itemMarkCenter - textWidth / 2 - 15,  // Moved 15 points to the left
+            y: totalRowY - rowHeight / 2,
+            size: headerSize,
+            font: boldFont,
+          });
+          
+          // Draw the quantity value aligned with the Qty column above, but moved left
+          page.drawText(`${Math.round(totalQty)}`, {
+            x: qtyPosition + tableColumns[8].width / 2 - boldFont.widthOfTextAtSize(`${Math.round(totalQty)}`, headerSize) / 2 - 15, // Moved 15 points left to match label
+            y: totalRowY - rowHeight / 2,
+            size: headerSize,
+            font: boldFont,
+          });
         }
 
         // Add footer with page number and generation timestamp with better positioning
