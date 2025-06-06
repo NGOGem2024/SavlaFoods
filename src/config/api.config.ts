@@ -51,6 +51,9 @@ export const API_ENDPOINTS = {
   //GRNdetails
   GET_GRN_DETAILS: `${API_BASE_URL}/reports/GRNdetails`,
 
+  //DCdetails
+  GET_DC_DETAILS: `${API_BASE_URL}/lots/deliveryChallanDetails`,
+
   //ZeroStockReport
   GET_ZERO_STOCK_REPORT: `${API_BASE_URL}/zerostock/getZeroStock`,
 };

@@ -39,6 +39,7 @@ import OrderDetailsScreen from './src/screens/OrderDetailsScreen';
 import PendingOrdersScreen from './src/screens/PendingOrdersScreen';
 import EditOrderScreen from './src/components/EditOrderScreen.tsx';
 import GrnDetailsScreen from './src/screens/GRNDetailsScreen.tsx';
+import OutwardDetailsScreen from './src/screens/OutwardDetailsScreen.tsx';
 import ZeroStockReportScreen from './src/screens/stocks/ZeroStockReportScreen.tsx';
 
 const RootStack = createStackNavigator<RootStackParamList>();
@@ -80,6 +81,12 @@ const MainStackNavigator: React.FC = () => {
         <MainStack.Screen
           name="GrnDetailsScreen"
           component={GrnDetailsScreen}
+          options={{headerShown: false}}
+        />
+
+        <MainStack.Screen
+          name="OutwardDetailsScreen"
+          component={OutwardDetailsScreen}
           options={{headerShown: false}}
         />
 

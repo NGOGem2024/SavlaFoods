@@ -179,7 +179,7 @@ const LotReportScreen = () => {
     selectedTab === 'Inwards' ? inwardTransactions : outwardTransactions;
 
   // Get theme color based on selected tab
-  const getThemeColor = () => (selectedTab === 'Inwards' ? '#F28C28' : '#007bff');
+  const getThemeColor = () => (selectedTab === 'Inwards' ? '#F28C28' : '#4682B4');
 
   const handleSearch = () => {
     Keyboard.dismiss();

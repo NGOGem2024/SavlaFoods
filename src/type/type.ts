@@ -104,6 +104,11 @@ export type MainStackParamList = {
       UNIT_NAME: string;
     }>;
   };
+  OutwardDetailsScreen: {
+    customerId: string;
+    outwardNo: string;
+    item?: any;
+  };
   OrderHistoryScreen: {
     customerID: string;
     orderId: number;

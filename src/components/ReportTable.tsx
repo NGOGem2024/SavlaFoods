@@ -313,6 +313,7 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
     fontWeight: '500',
   },
+
 });
 
 export default ReportTable;
