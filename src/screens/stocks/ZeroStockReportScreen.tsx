@@ -257,6 +257,33 @@ const ZeroStockReportScreen = () => {
   const [lotNumber, setLotNumber] = useState('');
   const [selectedUnit, setSelectedUnit] = useState('');
 
+  // Add this useEffect to update subcategories when categories change
+  useEffect(() => {
+    if (itemCategories.length === 0) {
+      // If no categories are selected, clear all subcategories
+      setItemSubcategories([]);
+    } else {
+      // Get all available subcategories based on selected categories
+      const availableSubcategories = getAvailableSubcategories().map(
+        option => option.value,
+      );
+
+      // Filter out subcategories that are no longer available
+      const filteredSubcategories = itemSubcategories.filter(subcat =>
+        availableSubcategories.includes(subcat),
+      );
+
+      // Update the subcategories state
+      if (filteredSubcategories.length !== itemSubcategories.length) {
+        setItemSubcategories(filteredSubcategories);
+        console.log(
+          'Updated subcategories after category change:',
+          filteredSubcategories,
+        );
+      }
+    }
+  }, [itemCategories, apiSubcategories]);
+
   // Fetch customer ID on component mount
   useEffect(() => {
     const getCustomerID = async () => {
@@ -665,6 +692,25 @@ const ZeroStockReportScreen = () => {
                 <View style={styles.tableHeaderCell60}>
                   <Text style={styles.tableHeaderText}>#</Text>
                 </View>
+                <View style={styles.tableHeaderCell60}>
+                  <Text style={styles.tableHeaderText}>Unit</Text>
+                </View>
+                <View style={styles.tableHeaderCell120}>
+                  <Text style={styles.tableHeaderText}>Expiry Date</Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.tableHeaderText}>Lot No</Text>
+                </View>
+                <View style={styles.tableHeaderCell200}>
+                  <Text style={styles.tableHeaderText}>Item Name</Text>
+                </View>
+                <View style={styles.tableHeaderCell100}>
+                  <Text style={styles.tableHeaderText}>Vakal No</Text>
+                </View>
+
+                <View style={styles.tableHeaderCell120}>
+                  <Text style={styles.tableHeaderText}>Item Marks</Text>
+                </View>
                 <View style={styles.tableHeaderCell100}>
                   <Text style={styles.tableHeaderText}>Balance Qty</Text>
                 </View>
@@ -674,38 +720,13 @@ const ZeroStockReportScreen = () => {
                 <View style={styles.tableHeaderCell100}>
                   <Text style={styles.tableHeaderText}>Box Quantity</Text>
                 </View>
-                <View style={styles.tableHeaderCell200}>
-                  <Text style={styles.tableHeaderText}>Item Name</Text>
-                </View>
-                <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.tableHeaderText}>Lot No</Text>
-                </View>
-                <View style={styles.tableHeaderCell120}>
-                  <Text style={styles.tableHeaderText}>Item Marks</Text>
-                </View>
-                <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.tableHeaderText}>Vakal No</Text>
-                </View>
+
                 <View style={styles.tableHeaderCell100}>
                   <Text style={styles.tableHeaderText}>Batch No</Text>
                 </View>
-                <View style={styles.tableHeaderCell120}>
-                  <Text style={styles.tableHeaderText}>Expiry Date</Text>
-                </View>
+
                 <View style={styles.tableHeaderCell150}>
                   <Text style={styles.tableHeaderText}>Remarks</Text>
-                </View>
-                <View style={styles.tableHeaderCell100}>
-                  <Text style={styles.tableHeaderText}>Status</Text>
-                </View>
-                <View style={styles.tableHeaderCell120}>
-                  <Text style={styles.tableHeaderText}>Category</Text>
-                </View>
-                <View style={styles.tableHeaderCell150}>
-                  <Text style={styles.tableHeaderText}>Subcategory</Text>
-                </View>
-                <View style={styles.tableHeaderCell60}>
-                  <Text style={styles.tableHeaderText}>Unit</Text>
                 </View>
               </View>
 
@@ -728,6 +749,31 @@ const ZeroStockReportScreen = () => {
                           1}
                       </Text>
                     </View>
+                    <View style={styles.tableHeaderCell60}>
+                      <Text style={styles.tableRowText}>{item.UNIT_NAME}</Text>
+                    </View>
+                    <View style={styles.tableHeaderCell120}>
+                      <Text style={styles.tableRowText}>
+                        {item.EXPIRY_DATE || '-'}
+                      </Text>
+                    </View>
+                    <View style={styles.tableHeaderCell100}>
+                      <Text style={styles.tableRowText}>{item.LOT_NO}</Text>
+                    </View>
+                    <View style={styles.tableHeaderCell200}>
+                      <Text style={styles.tableRowText}>{item.ITEM_NAME}</Text>
+                    </View>
+
+                    <View style={styles.tableHeaderCell100}>
+                      <Text style={styles.tableRowText}>
+                        {item.VAKAL_NO || '-'}
+                      </Text>
+                    </View>
+                    <View style={styles.tableHeaderCell120}>
+                      <Text style={styles.tableRowText}>
+                        {item.ITEM_MARKS || '-'}
+                      </Text>
+                    </View>
                     <View style={styles.tableHeaderCell100}>
                       <Text style={styles.tableRowText}>
                         {item.BALANCE_QTY}
@@ -743,54 +789,16 @@ const ZeroStockReportScreen = () => {
                         {item.BOX_QUANTITY}
                       </Text>
                     </View>
-                    <View style={styles.tableHeaderCell200}>
-                      <Text style={styles.tableRowText}>{item.ITEM_NAME}</Text>
-                    </View>
-                    <View style={styles.tableHeaderCell100}>
-                      <Text style={styles.tableRowText}>{item.LOT_NO}</Text>
-                    </View>
-                    <View style={styles.tableHeaderCell120}>
-                      <Text style={styles.tableRowText}>
-                        {item.ITEM_MARKS || '-'}
-                      </Text>
-                    </View>
-                    <View style={styles.tableHeaderCell100}>
-                      <Text style={styles.tableRowText}>
-                        {item.VAKAL_NO || '-'}
-                      </Text>
-                    </View>
                     <View style={styles.tableHeaderCell100}>
                       <Text style={styles.tableRowText}>
                         {item.BATCH_NO || '-'}
                       </Text>
                     </View>
-                    <View style={styles.tableHeaderCell120}>
-                      <Text style={styles.tableRowText}>
-                        {item.EXPIRY_DATE || '-'}
-                      </Text>
-                    </View>
+
                     <View style={styles.tableHeaderCell150}>
                       <Text style={styles.tableRowText}>
                         {item.REMARKS || '-'}
                       </Text>
-                    </View>
-                    <View style={styles.tableHeaderCell100}>
-                      <Text style={styles.tableRowText}>
-                        {item.STATUS || '-'}
-                      </Text>
-                    </View>
-                    <View style={styles.tableHeaderCell120}>
-                      <Text style={styles.tableRowText}>
-                        {item.ITEM_CATEG_NAME}
-                      </Text>
-                    </View>
-                    <View style={styles.tableHeaderCell150}>
-                      <Text style={styles.tableRowText}>
-                        {item.SUB_CATEGORY_NAME}
-                      </Text>
-                    </View>
-                    <View style={styles.tableHeaderCell60}>
-                      <Text style={styles.tableRowText}>{item.UNIT_NAME}</Text>
                     </View>
                   </View>
                 ))

@@ -40,6 +40,7 @@ interface OrderItem {
 }
 
 interface Order {
+  orderBy: string;
   orderId: number;
   orderNo: string;
   orderDate: string;
@@ -372,6 +373,28 @@ const OrderDetailsScreen = ({
                     <Text style={styles.infoLabelNew}>Delivery Date</Text>
                     <Text style={styles.infoValueNew}>
                       {formatDate(order.deliveryDate)}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.dividerHorizontal} />
+
+              <View style={styles.infoRow}>
+                <View style={styles.infoItem}>
+                  <View style={styles.infoIcon}>
+                    <MaterialIcons
+                      name="directions-bus"
+                      size={16}
+                      color="#0284C7"
+                    />
+                  </View>
+                  <View style={{flex: 1}}>
+                    <Text style={styles.infoLabelNew}>Order By</Text>
+                    <Text
+                      style={[styles.infoValueNew, styles.transporterText]}
+                      numberOfLines={3}>
+                      {order.orderBy || 'Qqq'}
                     </Text>
                   </View>
                 </View>

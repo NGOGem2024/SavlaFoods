@@ -22,17 +22,17 @@ const ReportTable = ({
 }: ReportTableProps) => {
   // Define column widths as constants to ensure consistency
   const columnWidths = {
-    number: 60,
+    number: 65,
     unit: 70,
     date: 100,
     inwardOutwardNo: 100,
     customer: 150,
-    vehicle: 120,
+    vehicle: 100,
     lotNo: 80,
     itemName: 150,
     remark: 100,
-    itemMark: 100,
-    vakkalNo: 80,
+    itemMark: 120,
+    vakkalNo: 110,
     qty: 60,
     deliveredTo: 120,
   };
@@ -57,7 +57,7 @@ const ReportTable = ({
                   styles.tableHeaderCell,
                   {width: columnWidths.number, color: getThemeColor()},
                 ]}>
-                #
+                Sr.No
               </Text>
               <Text
                 style={[
@@ -83,20 +83,6 @@ const ReportTable = ({
               <Text
                 style={[
                   styles.tableHeaderCell,
-                  {width: columnWidths.customer, color: getThemeColor()},
-                ]}>
-                Customer
-              </Text>
-              <Text
-                style={[
-                  styles.tableHeaderCell,
-                  {width: columnWidths.vehicle, color: getThemeColor()},
-                ]}>
-                Vehicle
-              </Text>
-              <Text
-                style={[
-                  styles.tableHeaderCell,
                   {width: columnWidths.lotNo, color: getThemeColor()},
                 ]}>
                 Lot No
@@ -111,9 +97,9 @@ const ReportTable = ({
               <Text
                 style={[
                   styles.tableHeaderCell,
-                  {width: columnWidths.remark, color: getThemeColor()},
+                  {width: columnWidths.vakkalNo, color: getThemeColor()},
                 ]}>
-                Remark
+                Vakkal No
               </Text>
               <Text
                 style={[
@@ -125,13 +111,6 @@ const ReportTable = ({
               <Text
                 style={[
                   styles.tableHeaderCell,
-                  {width: columnWidths.vakkalNo, color: getThemeColor()},
-                ]}>
-                Vakkal No
-              </Text>
-              <Text
-                style={[
-                  styles.tableHeaderCell,
                   {width: columnWidths.qty, color: getThemeColor()},
                 ]}>
                 Qty
@@ -139,10 +118,27 @@ const ReportTable = ({
               <Text
                 style={[
                   styles.tableHeaderCell,
-                  {width: columnWidths.deliveredTo, color: getThemeColor()},
+                  {width: columnWidths.remark, color: getThemeColor()},
                 ]}>
-                Delivered To
+                Remark
               </Text>
+              <Text
+                style={[
+                  styles.tableHeaderCell,
+                  {width: columnWidths.vehicle, color: getThemeColor()},
+                ]}>
+                Vehicle
+              </Text>
+              {/* Show Delivered To column only for Outward */}
+              {!isInward && (
+                <Text
+                  style={[
+                    styles.tableHeaderCell,
+                    {width: columnWidths.deliveredTo, color: getThemeColor()},
+                  ]}>
+                  Delivered To
+                </Text>
+              )}
             </View>
 
             {/* Table Rows */}
@@ -202,22 +198,32 @@ const ReportTable = ({
                     </Text>
                   </TouchableOpacity>
                 ) : (
-                  <Text
+                  <TouchableOpacity
                     style={[
-                      styles.tableCell,
+                      styles.tableCellContainer,
                       {width: columnWidths.inwardOutwardNo},
-                    ]}>
-                    {item.OUTWARD_NO || '-'}
-                  </Text>
+                    ]}
+                    onPress={() =>
+                      onInwardOutwardNoPress && onInwardOutwardNoPress(item)
+                    }
+                    disabled={!(onInwardOutwardNoPress && item.OUTWARD_NO)}>
+                    <Text
+                      style={[
+                        styles.tableCell,
+                        styles.clickableCell,
+                        {
+                          color:
+                            onInwardOutwardNoPress && item.OUTWARD_NO
+                              ? getThemeColor()
+                              : '#334155',
+                          width: '100%',
+                        },
+                      ]}>
+                      {item.OUTWARD_NO || '-'}
+                    </Text>
+                  </TouchableOpacity>
                 )}
 
-                <Text
-                  style={[styles.tableCell, {width: columnWidths.customer}]}>
-                  {item.CUSTOMER_NAME || '-'}
-                </Text>
-                <Text style={[styles.tableCell, {width: columnWidths.vehicle}]}>
-                  {item.VEHICLE_NO || '-'}
-                </Text>
                 <Text style={[styles.tableCell, {width: columnWidths.lotNo}]}>
                   {item.LOT_NO || '-'}
                 </Text>
@@ -225,24 +231,33 @@ const ReportTable = ({
                   style={[styles.tableCell, {width: columnWidths.itemName}]}>
                   {item.ITEM_NAME || '-'}
                 </Text>
-                <Text style={[styles.tableCell, {width: columnWidths.remark}]}>
-                  {item.REMARK || '-'}
+                <Text
+                  style={[styles.tableCell, {width: columnWidths.vakkalNo}]}>
+                  {item.VAKKAL_NO || '-'}
                 </Text>
                 <Text
                   style={[styles.tableCell, {width: columnWidths.itemMark}]}>
                   {item.ITEM_MARK || '-'}
                 </Text>
-                <Text
-                  style={[styles.tableCell, {width: columnWidths.vakkalNo}]}>
-                  {item.VAKKAL_NO || '-'}
-                </Text>
                 <Text style={[styles.tableCell, {width: columnWidths.qty}]}>
                   {item.QTY || '-'}
                 </Text>
-                <Text
-                  style={[styles.tableCell, {width: columnWidths.deliveredTo}]}>
-                  {item.DELIVERED_TO || '-'}
+                <Text style={[styles.tableCell, {width: columnWidths.remark}]}>
+                  {item.REMARK || '-'}
                 </Text>
+                <Text style={[styles.tableCell, {width: columnWidths.vehicle}]}>
+                  {item.VEHICLE_NO || '-'}
+                </Text>
+                {/* Show Delivered To column only for Outward */}
+                {!isInward && (
+                  <Text
+                    style={[
+                      styles.tableCell,
+                      {width: columnWidths.deliveredTo},
+                    ]}>
+                    {item.DELIVERED_TO || '-'}
+                  </Text>
+                )}
               </View>
             ))}
           </View>

@@ -11,8 +11,9 @@ import {
   Alert,
   KeyboardAvoidingView,
   Modal,
+  Keyboard,
 } from 'react-native';
-import {useRoute, RouteProp} from '@react-navigation/native';
+import {useRoute, RouteProp, useNavigation} from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {API_ENDPOINTS} from '../config/api.config';
 import apiClient from '../utils/apiClient';
@@ -48,6 +49,7 @@ interface InwardTransaction {
   UNIT_NAME: string;
   REMARKS: string;
   CUSTOMER_NAME: string;
+  CUSTOMER_ID?: string | number;
   VEHICLE_NO?: string;
   ITEM_CATEG_NAME?: string;
   SUB_CATEGORY_NAME?: string;
@@ -64,6 +66,7 @@ interface OutwardTransaction {
   UNIT_NAME: string;
   REMARK: string;
   CUSTOMER_NAME: string;
+  CUSTOMER_ID?: string | number;
   DELIVERED_TO?: string;
   VEHICLE_NO?: string;
   ITEM_CATEG_NAME?: string;
@@ -97,6 +100,7 @@ interface LotReportResponse {
 
 const LotReportScreen = () => {
   const route = useRoute<RouteProp<RootStackParamList, 'LotReportScreen'>>();
+  const navigation = useNavigation<any>();
   const {lotNo: initialLotNo, customerID: routeCustomerId} = route.params || {};
   const [showNumberPad, setShowNumberPad] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'Inwards' | 'Outwards'>(
@@ -146,6 +150,23 @@ const LotReportScreen = () => {
         setInwardTransactions(response.inward.data);
         setOutwardTransactions(response.outward.data);
         setSummary(response.summary);
+
+        // Log to check if CUSTOMER_ID is present in the response
+        if (response.inward.data && response.inward.data.length > 0) {
+          console.log('Sample inward transaction:', response.inward.data[0]);
+          console.log(
+            'Has CUSTOMER_ID?',
+            'CUSTOMER_ID' in response.inward.data[0],
+          );
+        }
+
+        if (response.outward.data && response.outward.data.length > 0) {
+          console.log('Sample outward transaction:', response.outward.data[0]);
+          console.log(
+            'Has CUSTOMER_ID?',
+            'CUSTOMER_ID' in response.outward.data[0],
+          );
+        }
       } else {
         setError('Failed to load lot details');
         Alert.alert('Error', 'Failed to load lot details');
@@ -163,7 +184,12 @@ const LotReportScreen = () => {
   const currentTransactions =
     selectedTab === 'Inwards' ? inwardTransactions : outwardTransactions;
 
+  // Get theme color based on selected tab
+  const getThemeColor = () =>
+    selectedTab === 'Inwards' ? '#F28C28' : '#4682B4';
+
   const handleSearch = () => {
+    Keyboard.dismiss();
     fetchLotReport(searchLotNo);
   };
 
@@ -177,6 +203,63 @@ const LotReportScreen = () => {
 
   const toggleSummaryModal = () => {
     setSummaryModalVisible(!summaryModalVisible);
+  };
+
+  const handleDocumentNumberPress = (
+    item: InwardTransaction | OutwardTransaction,
+  ) => {
+    if ('GRN_NO' in item) {
+      // For inward items, navigate to GrnDetailsScreen with the GRN_NO
+      console.log('Navigating to GrnDetailsScreen with GRN_NO:', item.GRN_NO);
+
+      // Ensure GRN_NO is a string
+      const grnNo = String(item.GRN_NO);
+
+      // Use item.CUSTOMER_ID if available, otherwise fall back to routeCustomerId
+      const customerId = (item as any).CUSTOMER_ID || routeCustomerId;
+      console.log('Using customerId:', customerId);
+
+      try {
+        navigation.navigate('GrnDetailsScreen', {
+          grnNo: grnNo,
+          customerId: customerId,
+          item: item,
+        });
+      } catch (error) {
+        console.error('Navigation error:', error);
+        Alert.alert(
+          'Navigation Error',
+          `Error navigating to GRN Details: ${(error as Error).message}`,
+          [{text: 'OK'}],
+        );
+      }
+    } else if ('OUTWARD_NO' in item) {
+      // For outward items
+      console.log('Clicked on outward with OUTWARD_NO:', item.OUTWARD_NO);
+
+      // Ensure OUTWARD_NO is a string
+      const outwardNo = String(item.OUTWARD_NO);
+
+      // Use item.CUSTOMER_ID if available, otherwise fall back to routeCustomerId
+      const customerId = (item as any).CUSTOMER_ID || routeCustomerId;
+      console.log('Using customerId:', customerId);
+
+      // Check if OutwardDetailsScreen exists in the navigation stack
+      try {
+        navigation.navigate('OutwardDetailsScreen', {
+          outwardNo: outwardNo,
+          customerId: customerId,
+          item: item,
+        });
+      } catch (error) {
+        // If navigation fails, show an alert that the screen is under development
+        Alert.alert(
+          'Feature Coming Soon',
+          'Outward Details screen is under development.',
+          [{text: 'OK'}],
+        );
+      }
+    }
   };
 
   const renderSummaryModal = () => {
@@ -273,14 +356,28 @@ const LotReportScreen = () => {
               styles.tableRow,
               index % 2 === 0 ? styles.evenRow : styles.oddRow,
             ]}>
-            <Text style={styles.tableCell}>{inwardItem.GRN_NO || '-'}</Text>
+            <Text style={styles.tableCell}>{inwardItem.UNIT_NAME || '-'}</Text>
             <Text style={styles.tableCell}>
               {new Date(inwardItem.GRN_DATE).toLocaleDateString() || '-'}
             </Text>
-            <Text style={styles.tableCell}>{inwardItem.QUANTITY || '-'}</Text>
-            <Text style={styles.tableCell}>{inwardItem.ITEM_MARKS || '-'}</Text>
+            <TouchableOpacity
+              style={styles.tableCellContainer}
+              onPress={() => handleDocumentNumberPress(inwardItem)}
+              disabled={!inwardItem.GRN_NO}>
+              <Text
+                style={[
+                  styles.tableCell,
+                  styles.clickableCell,
+                  {
+                    color: inwardItem.GRN_NO ? getThemeColor() : '#334155',
+                  },
+                ]}>
+                {inwardItem.GRN_NO || '-'}
+              </Text>
+            </TouchableOpacity>
             <Text style={styles.tableCell}>{inwardItem.VAKAL_NO || '-'}</Text>
-            <Text style={styles.tableCell}>{inwardItem.UNIT_NAME || '-'}</Text>
+            <Text style={styles.tableCell}>{inwardItem.ITEM_MARKS || '-'}</Text>
+            <Text style={styles.tableCell}>{inwardItem.QUANTITY || '-'}</Text>
             <Text style={styles.tableCell}>{inwardItem.REMARKS || '-'}</Text>
             <Text style={styles.tableCell}>{inwardItem.VEHICLE_NO || '-'}</Text>
           </View>
@@ -294,24 +391,37 @@ const LotReportScreen = () => {
               styles.tableRow,
               index % 2 === 0 ? styles.evenRow : styles.oddRow,
             ]}>
-            <Text style={[styles.tableCell, {width: 110}]}>
-              {outwardItem.OUTWARD_NO || '-'}
-            </Text>
+            <Text style={styles.tableCell}>{outwardItem.UNIT_NAME || '-'}</Text>
             <Text style={styles.tableCell}>
               {new Date(outwardItem.OUTWARD_DATE).toLocaleDateString() || '-'}
             </Text>
-            <Text style={styles.tableCell}>{outwardItem.DC_QTY || '-'}</Text>
+            <TouchableOpacity
+              style={[styles.tableCellContainer, {width: 110}]}
+              onPress={() => handleDocumentNumberPress(outwardItem)}
+              disabled={!outwardItem.OUTWARD_NO}>
+              <Text
+                style={[
+                  styles.tableCell,
+                  styles.clickableCell,
+                  {
+                    color: outwardItem.OUTWARD_NO ? getThemeColor() : '#334155',
+                    width: '100%',
+                  },
+                ]}>
+                {outwardItem.OUTWARD_NO || '-'}
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.tableCell}>{outwardItem.VAKAL_NO || '-'}</Text>
             <Text style={styles.tableCell}>
               {outwardItem.ITEM_MARKS || '-'}
             </Text>
-            <Text style={styles.tableCell}>{outwardItem.VAKAL_NO || '-'}</Text>
-            <Text style={styles.tableCell}>{outwardItem.UNIT_NAME || '-'}</Text>
+            <Text style={styles.tableCell}>{outwardItem.DC_QTY || '-'}</Text>
             <Text style={styles.tableCell}>{outwardItem.REMARK || '-'}</Text>
             <Text style={styles.tableCell}>
-              {outwardItem.DELIVERED_TO || '-'}
+              {outwardItem.VEHICLE_NO || '-'}
             </Text>
             <Text style={styles.tableCell}>
-              {outwardItem.VEHICLE_NO || '-'}
+              {outwardItem.DELIVERED_TO || '-'}
             </Text>
           </View>
         );
@@ -501,14 +611,12 @@ const LotReportScreen = () => {
                   {selectedTab === 'Inwards' ? (
                     <>
                       <View style={styles.inwardTableHeader}>
-                        <Text style={styles.headerCell}>GRN No</Text>
-                        <Text style={styles.headerCell}>
-                          Transaction{'\n'}Date
-                        </Text>
-                        <Text style={styles.headerCell}>Quantity</Text>
-                        <Text style={styles.headerCell}>Item Marks</Text>
-                        <Text style={styles.headerCell}>Vakal No</Text>
                         <Text style={styles.headerCell}>Unit Name</Text>
+                        <Text style={styles.headerCell}>GRN Date</Text>
+                        <Text style={styles.headerCell}>GRN No</Text>
+                        <Text style={styles.headerCell}>Vakal No</Text>
+                        <Text style={styles.headerCell}>Item Marks</Text>
+                        <Text style={styles.headerCell}>Quantity</Text>
                         <Text style={styles.headerCell}>Remarks</Text>
                         <Text style={styles.headerCell}>Vehicle No</Text>
                       </View>
@@ -516,19 +624,19 @@ const LotReportScreen = () => {
                   ) : (
                     <>
                       <View style={styles.outwardTableHeader}>
+                        <Text style={styles.headerCell}>Unit Name</Text>
+                        <Text style={[styles.headerCell, {width: 110}]}>
+                          Delivery Challan Date
+                        </Text>
                         <Text style={[styles.headerCell, {width: 110}]}>
                           Delivery{'\n'}Challan No
                         </Text>
-                        <Text style={styles.headerCell}>
-                          Transaction{'\n'}Date
-                        </Text>
-                        <Text style={styles.headerCell}>Quantity</Text>
-                        <Text style={styles.headerCell}>Item Marks</Text>
                         <Text style={styles.headerCell}>Vakal No</Text>
-                        <Text style={styles.headerCell}>Unit Name</Text>
+                        <Text style={styles.headerCell}>Item Marks</Text>
+                        <Text style={styles.headerCell}>Quantity</Text>
                         <Text style={styles.headerCell}>Remarks</Text>
-                        <Text style={styles.headerCell}>Delivered To</Text>
                         <Text style={styles.headerCell}>Vehicle No</Text>
+                        <Text style={styles.headerCell}>Delivered To</Text>
                       </View>
                     </>
                   )}
@@ -851,6 +959,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
+  tableCellContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   tableCell: {
     color: '#333',
     fontSize: 13,
@@ -894,6 +1006,10 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 14,
     color: '#64748B',
+  },
+  clickableCell: {
+    textDecorationLine: 'underline',
+    fontWeight: '500',
   },
 });
 

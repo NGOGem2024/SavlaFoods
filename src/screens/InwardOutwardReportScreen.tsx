@@ -13,6 +13,7 @@ import {
   TextInput,
   Modal,
   FlatList,
+  Animated,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {Picker} from '@react-native-picker/picker';
@@ -71,7 +72,9 @@ const InwardOutwardReportScreen = () => {
   // Change from single selection to arrays
   const [itemCategories, setItemCategories] = useState<string[]>([]);
   const [itemSubcategories, setItemSubcategories] = useState<string[]>([]);
-  const [unit, setUnit] = useState('');
+  const [unit, setUnit] = useState<string[]>([]);
+  // Additional state for IOSPickerModal compatibility
+  const [unitString, setUnitString] = useState('');
 
   // Time period selection states
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('Custom');
@@ -103,6 +106,15 @@ const InwardOutwardReportScreen = () => {
   const tableRef = useRef<ScrollView>(null);
   const viewshotRef = useRef(null);
 
+  // Add state for custom alert
+  const [showCustomAlert, setShowCustomAlert] = useState(false);
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertType, setAlertType] = useState<
+    'error' | 'warning' | 'info' | 'success'
+  >('info');
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
   // Handler for Inward/Outward No cell press
   const handleInwardOutwardNoPress = (item: any) => {
     if (isInward && item.GRN_NO) {
@@ -114,8 +126,19 @@ const InwardOutwardReportScreen = () => {
         item: item,
         customerId: item.CUSTOMER_ID,
       });
+    } else if (!isInward && item.OUTWARD_NO) {
+      // For outward items, navigate to OutwardDetailsScreen with the OUTWARD_NO
+      console.log(
+        'Navigating to OutwardDetailsScreen with OUTWARD_NO:',
+        item.OUTWARD_NO,
+      );
+      // Pass all the item data to the detail screen
+      navigation.navigate('OutwardDetailsScreen', {
+        outwardNo: item.OUTWARD_NO,
+        item: item,
+        customerId: item.CUSTOMER_ID,
+      });
     }
-    // Future implementation for outward items can be added here
   };
 
   // Custom dropdown component defined inside the main component
@@ -229,37 +252,207 @@ const InwardOutwardReportScreen = () => {
     updateProgressUI,
   } = usePdfGeneration({isInward});
 
+  // Helper function to get icon based on alert type
+  const getAlertIcon = () => {
+    switch (alertType) {
+      case 'error':
+        return <MaterialIcons name="error-outline" size={28} color="#E53E3E" />;
+      case 'warning':
+        return <MaterialIcons name="warning" size={28} color="#DD6B20" />;
+      case 'success':
+        return <MaterialIcons name="check-circle" size={28} color="#38A169" />;
+      case 'info':
+      default:
+        return <MaterialIcons name="info" size={28} color="#3182CE" />;
+    }
+  };
+
+  // Custom Alert Component with enhanced styling
+  const CustomAlert = () => {
+    useEffect(() => {
+      if (showCustomAlert) {
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      } else {
+        fadeAnim.setValue(0);
+      }
+    }, [showCustomAlert]);
+
+    if (!showCustomAlert) return null;
+
+    const alertColor = (() => {
+      switch (alertType) {
+        case 'error':
+          return '#FED7D7';
+        case 'warning':
+          return '#FEEBC8';
+        case 'success':
+          return '#C6F6D5';
+        case 'info':
+        default:
+          return '#BEE3F8';
+      }
+    })();
+
+    const isRequiredFieldAlert = alertTitle === 'Required Field Missing';
+
+    return (
+      <Modal
+        transparent={true}
+        animationType="none"
+        visible={showCustomAlert}
+        onRequestClose={() => setShowCustomAlert(false)}>
+        <View style={styles.alertOverlay}>
+          <Animated.View
+            style={[
+              styles.alertContainer,
+              {
+                opacity: fadeAnim,
+                transform: [
+                  {
+                    translateY: fadeAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [50, 0],
+                    }),
+                  },
+                ],
+              },
+              isInward ? styles.inwardAlert : styles.outwardAlert,
+            ]}>
+            <View style={[styles.alertHeader, {backgroundColor: alertColor}]}>
+              <View style={styles.alertTitleContainer}>
+                {getAlertIcon()}
+                <Text style={styles.alertTitle}>{alertTitle}</Text>
+              </View>
+            </View>
+            <View style={styles.alertBody}>
+              <Text style={styles.alertMessage}>{alertMessage}</Text>
+            </View>
+            <View style={styles.alertButtonsContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.alertButton,
+                  isInward
+                    ? styles.inwardAlertButton
+                    : styles.outwardAlertButton,
+                ]}
+                onPress={() => setShowCustomAlert(false)}>
+                <Text
+                  style={[
+                    styles.alertButtonText,
+                    {color: isInward ? '#F48221' : '#4682B4'},
+                  ]}>
+                  OK
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
+    );
+  };
+
+  // Show custom alert helper function with type parameter
+  const showAlert = (
+    title: string,
+    message: string,
+    type: 'error' | 'warning' | 'info' | 'success' = 'info',
+  ) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertType(type);
+    setShowCustomAlert(true);
+  };
+
   // Validate inputs before search
   const validateInputs = (): boolean => {
+    // Check if unit is selected
+    if (unit.length === 0) {
+      showAlert(
+        'Required Field Missing',
+        'Please select a Unit to continue.',
+        'warning',
+      );
+      return false;
+    }
+
     // Simple validation example
     if (fromDate > toDate) {
-      Alert.alert('Invalid Date Range', 'From date cannot be after To date');
+      showAlert(
+        'Invalid Date Range',
+        'From date cannot be after To date',
+        'error',
+      );
       return false;
     }
     return true;
   };
 
-  // Date picker handlers with platform-specific implementation
-  const showDatePicker = (pickerType: 'from' | 'to') => {
-    if (pickerType === 'from') {
-      setShowFromDatePicker(true);
+  // 1. Update the date picker trigger functions
+  const showDatePicker = (type: 'from' | 'to') => {
+    if (Platform.OS === 'ios') {
+      if (type === 'from') {
+        // Ensure fromDate is a valid Date object before showing picker
+        if (
+          !fromDate ||
+          !(fromDate instanceof Date) ||
+          isNaN(fromDate.getTime())
+        ) {
+          setFromDate(new Date()); // Set to current date if invalid
+        }
+        setShowFromDatePicker(true);
+      } else {
+        // Ensure toDate is a valid Date object before showing picker
+        if (!toDate || !(toDate instanceof Date) || isNaN(toDate.getTime())) {
+          setToDate(new Date()); // Set to current date if invalid
+        }
+        setShowToDatePicker(true);
+      }
     } else {
-      setShowToDatePicker(true);
+      // Android logic remains the same
+      if (type === 'from') {
+        setShowFromDatePicker(true);
+      } else {
+        setShowToDatePicker(true);
+      }
     }
   };
 
   const onFromDateChange = (event: any, selectedDate?: Date) => {
-    const currentDate = selectedDate || fromDate;
-    setShowFromDatePicker(Platform.OS === 'ios');
-    setFromDate(currentDate);
+    if (Platform.OS === 'android') {
+      setShowFromDatePicker(false);
+    }
+
+    if (
+      selectedDate &&
+      selectedDate instanceof Date &&
+      !isNaN(selectedDate.getTime())
+    ) {
+      setFromDate(selectedDate);
+    }
   };
 
   const onToDateChange = (event: any, selectedDate?: Date) => {
-    const currentDate = selectedDate || toDate;
-    setShowToDatePicker(Platform.OS === 'ios');
-    setToDate(currentDate);
+    if (Platform.OS === 'android') {
+      setShowToDatePicker(false);
+    }
+
+    if (
+      selectedDate &&
+      selectedDate instanceof Date &&
+      !isNaN(selectedDate.getTime())
+    ) {
+      setToDate(selectedDate);
+    }
   };
 
+  // 4. Add this validation function at the top of your component (optional but recommended)
+  const isValidDate = (date: any): date is Date => {
+    return date instanceof Date && !isNaN(date.getTime());
+  };
   // Helper function to show picker modal (for iOS)
   const openPicker = (pickerName: string) => {
     setCurrentPicker(pickerName);
@@ -272,7 +465,8 @@ const InwardOutwardReportScreen = () => {
     setToDate(new Date());
     setItemCategories([]);
     setItemSubcategories([]);
-    setUnit('');
+    setUnit([]);
+    setUnitString('');
     setTimePeriod('Custom');
     setSelectedWeek(null);
     setSelectedMonth(null);
@@ -526,10 +720,10 @@ const InwardOutwardReportScreen = () => {
 
     // Calendar year quarters: Q1: Jan-Mar, Q2: Apr-Jun, Q3: Jul-Sep, Q4: Oct-Dec
     const quarterMonths = [
-      {start: 0, end: 2}, // Q1: Jan-Mar
       {start: 3, end: 5}, // Q2: Apr-Jun
       {start: 6, end: 8}, // Q3: Jul-Sep
       {start: 9, end: 11}, // Q4: Oct-Dec
+      {start: 0, end: 2}, // Q1: Jan-Mar
     ];
 
     const quarterData = quarterMonths[quarter - 1];
@@ -624,7 +818,7 @@ const InwardOutwardReportScreen = () => {
         customerName: string;
         itemCategoryName: string[] | null;
         itemSubCategoryName: string[] | null;
-        unitName: string | null;
+        unitName: string[] | null; // Changed from string to string array
       } = {
         fromDate: formatDateForApi(fromDate),
         toDate: formatDateForApi(toDate),
@@ -632,7 +826,7 @@ const InwardOutwardReportScreen = () => {
         itemCategoryName: itemCategories.length > 0 ? itemCategories : null,
         itemSubCategoryName:
           itemSubcategories.length > 0 ? itemSubcategories : null,
-        unitName: unit ? unit.trim() : null,
+        unitName: unit.length > 0 ? unit : null, // Changed to check array length
       };
 
       console.log('==== REQUEST DATA DETAILS ====');
@@ -748,7 +942,8 @@ const InwardOutwardReportScreen = () => {
           // Only apply filters for fields that were provided (not null)
           const unitMatch =
             requestData.unitName === null ||
-            item.UNIT_NAME === requestData.unitName;
+            (requestData.unitName &&
+              requestData.unitName.includes(item.UNIT_NAME));
 
           // Safe filtering for category and subcategory arrays
           const categoryMatch =
@@ -799,12 +994,17 @@ const InwardOutwardReportScreen = () => {
         setLocalReportData(normalizedData);
 
         if (normalizedData.length === 0) {
-          Alert.alert('No Data', 'No records found for the selected criteria.');
+          showAlert(
+            'No Data',
+            'No records found for the selected criteria.',
+            'info',
+          );
         }
       } else {
-        Alert.alert(
+        showAlert(
           'Error',
           response.data?.message || 'Failed to fetch report data.',
+          'error',
         );
       }
     } catch (error) {
@@ -813,9 +1013,9 @@ const InwardOutwardReportScreen = () => {
       if (axios.isAxiosError(error)) {
         const errorMessage =
           (error as any).response?.data?.message || (error as Error).message;
-        Alert.alert('Error', `Failed to fetch report: ${errorMessage}`);
+        showAlert('Error', `Failed to fetch report: ${errorMessage}`, 'error');
       } else {
-        Alert.alert('Error', 'An unexpected error occurred.');
+        showAlert('Error', 'An unexpected error occurred.', 'error');
       }
     } finally {
       setIsReportLoading(false);
@@ -825,14 +1025,14 @@ const InwardOutwardReportScreen = () => {
   // Handle PDF download
   const handlePdfDownload = async () => {
     if (localReportData.length === 0) {
-      Alert.alert('No Data', 'There is no data to download.');
+      showAlert('No Data', 'There is no data to download.', 'info');
       return;
     }
 
     try {
       // Create PDF with all necessary parameters
       await generatePdf(localReportData, fromDate, toDate, customerName, {
-        unit,
+        unit: unit.length > 0 ? unit.join(', ') : '',
         itemCategories,
         itemSubcategories,
       });
@@ -861,6 +1061,33 @@ const InwardOutwardReportScreen = () => {
       setItemSubcategories([]);
     }
   }, [itemCategories]);
+
+  // Add this useEffect to update subcategories when categories change
+  useEffect(() => {
+    if (itemCategories.length === 0) {
+      // If no categories are selected, clear all subcategories
+      setItemSubcategories([]);
+    } else {
+      // Get all available subcategories based on selected categories
+      const availableSubcategories = getAvailableSubcategories().map(
+        option => option.value,
+      );
+
+      // Filter out subcategories that are no longer available
+      const filteredSubcategories = itemSubcategories.filter(subcat =>
+        availableSubcategories.includes(subcat),
+      );
+
+      // Update the subcategories state
+      if (filteredSubcategories.length !== itemSubcategories.length) {
+        setItemSubcategories(filteredSubcategories);
+        console.log(
+          'Updated subcategories after category change:',
+          filteredSubcategories,
+        );
+      }
+    }
+  }, [itemCategories, apiSubcategories]);
 
   // Configure notifications on component mount
   useEffect(() => {
@@ -976,6 +1203,12 @@ const InwardOutwardReportScreen = () => {
     }));
   };
 
+  // Helper function to sync unit array and unitString
+  const syncUnitState = (newUnit: string[]) => {
+    setUnit(newUnit);
+    setUnitString(newUnit.length > 0 ? newUnit[0] : '');
+  };
+
   return (
     <LayoutWrapper showHeader={true} showTabBar={false} route={route}>
       <SafeAreaView style={styles.safeArea}>
@@ -983,6 +1216,9 @@ const InwardOutwardReportScreen = () => {
           backgroundColor={isInward ? '#F48221' : '#4682B4'}
           barStyle="light-content"
         />
+
+        {/* Custom Alert Component */}
+        <CustomAlert />
 
         {showForm ? (
           // Form Section
@@ -1490,7 +1726,7 @@ const InwardOutwardReportScreen = () => {
                           selectedQuarter === 'Q1' &&
                             styles.selectedTimeItemText,
                         ]}>
-                        Jan-Mar
+                        Apr-Jun
                       </Text>
                     </TouchableOpacity>
 
@@ -1528,7 +1764,7 @@ const InwardOutwardReportScreen = () => {
                           selectedQuarter === 'Q2' &&
                             styles.selectedTimeItemText,
                         ]}>
-                        Apr-Jun
+                        Jul-Sep
                       </Text>
                     </TouchableOpacity>
 
@@ -1566,7 +1802,7 @@ const InwardOutwardReportScreen = () => {
                           selectedQuarter === 'Q3' &&
                             styles.selectedTimeItemText,
                         ]}>
-                        Jul-Sep
+                        Oct-Dec
                       </Text>
                     </TouchableOpacity>
 
@@ -1604,7 +1840,7 @@ const InwardOutwardReportScreen = () => {
                           selectedQuarter === 'Q4' &&
                             styles.selectedTimeItemText,
                         ]}>
-                        Oct-Dec
+                        Jan-Mar
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -1781,12 +2017,24 @@ const InwardOutwardReportScreen = () => {
                 />
               </View>
 
-              {/* Unit Picker */}
+              {/* Unit Picker - Replace with MultiSelect */}
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Unit</Text>
-                {renderPicker('unit', unit, 'Unit', units, value =>
-                  setUnit(value),
-                )}
+                <Text style={styles.label}>
+                  Unit <Text style={styles.requiredField}>*</Text>
+                </Text>
+                <MultiSelect
+                  options={units.map(unit => ({
+                    label: unit,
+                    value: unit,
+                  }))}
+                  selectedValues={unit}
+                  onSelectChange={values => {
+                    setUnit(values);
+                    setUnitString(values.length > 0 ? values[0] : '');
+                  }}
+                  placeholder="Select Units"
+                  primaryColor={isInward ? '#F48221' : '#4682B4'}
+                />
               </View>
 
               {/* Buttons */}
@@ -1902,27 +2150,6 @@ const InwardOutwardReportScreen = () => {
                       Generating PDF...
                     </Text>
                   </View>
-                ) : isReportLoading ? (
-                  <View style={styles.loadingIndicatorContainer}>
-                    <ActivityIndicator
-                      size="small"
-                      color={isInward ? '#F48221' : '#4682B4'}
-                    />
-                    <Text style={styles.loadingIndicatorText}>
-                      Searching for data...
-                    </Text>
-                  </View>
-                ) : localReportData.length > 0 ? (
-                  <View style={styles.resultsSummaryContainer}>
-                    <MaterialIcons name="list-alt" size={20} color="#64748B" />
-                    <Text
-                      style={[
-                        styles.reportCountText,
-                        {color: isInward ? '#F48221' : '#4682B4'},
-                      ]}>
-                      {localReportData.length} records found
-                    </Text>
-                  </View>
                 ) : null}
               </View>
 
@@ -1983,7 +2210,7 @@ const InwardOutwardReportScreen = () => {
           itemSubcategory={
             itemSubcategories.length > 0 ? itemSubcategories[0] : ''
           }
-          unit={unit}
+          unit={unitString}
           apiCategories={apiCategories}
           apiSubcategories={apiSubcategories}
           units={units}
@@ -2001,37 +2228,65 @@ const InwardOutwardReportScreen = () => {
               setItemSubcategories([]);
             }
           }}
-          setUnit={setUnit}
+          setUnit={value => {
+            if (value) {
+              setUnit([value]);
+              setUnitString(value);
+            } else {
+              setUnit([]);
+              setUnitString('');
+            }
+          }}
           onClose={() => setIsPickerVisible(false)}
         />
 
         {/* iOS Date Picker Modal */}
         <IOSDatePickerModal
           visible={showFromDatePicker && Platform.OS === 'ios'}
-          date={fromDate}
+          date={
+            fromDate && fromDate instanceof Date && !isNaN(fromDate.getTime())
+              ? fromDate
+              : new Date()
+          }
           isInward={isInward}
           title="Select From Date"
           onClose={() => setShowFromDatePicker(false)}
           onDateChange={(event: any, date?: Date) => {
-            if (date) setFromDate(date);
+            if (date && date instanceof Date && !isNaN(date.getTime())) {
+              setFromDate(date);
+            }
           }}
           onConfirm={() => {
-            onFromDateChange({}, fromDate);
+            const validFromDate =
+              fromDate && fromDate instanceof Date && !isNaN(fromDate.getTime())
+                ? fromDate
+                : new Date();
+            onFromDateChange({}, validFromDate);
             setShowFromDatePicker(false);
           }}
         />
 
         <IOSDatePickerModal
           visible={showToDatePicker && Platform.OS === 'ios'}
-          date={toDate}
+          date={
+            toDate && toDate instanceof Date && !isNaN(toDate.getTime())
+              ? toDate
+              : new Date()
+          }
           isInward={isInward}
           title="Select To Date"
           onClose={() => setShowToDatePicker(false)}
           onDateChange={(event: any, date?: Date) => {
-            if (date) setToDate(date);
+            if (date && date instanceof Date && !isNaN(date.getTime())) {
+              setToDate(date);
+            }
           }}
           onConfirm={() => {
-            onToDateChange({}, toDate);
+            const validToDate =
+              toDate && toDate instanceof Date && !isNaN(toDate.getTime())
+                ? toDate
+                : new Date();
+            onToDateChange({}, validToDate);
             setShowToDatePicker(false);
           }}
         />
@@ -2757,6 +3012,7 @@ const styles = StyleSheet.create({
   // Time Period Selector Container
   timePeriodSelectorContainer: {
     marginBottom: 16,
+    paddingHorizontal: 12,
   },
   monthNavHeader: {
     flexDirection: 'row',
@@ -2787,60 +3043,42 @@ const styles = StyleSheet.create({
     padding: 9,
     paddingVertical: 16,
     backgroundColor: '#FFFFFF',
-    width: 340,
+    width: '100%', // Changed from fixed 340px to 100%
     minHeight: 140,
     alignSelf: 'center',
   },
-  // Month Navigation
-  monthNavigationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingBottom: 8,
-  },
-  monthNavigationButton: {
-    padding: 4,
-  },
-  monthNavigationText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2C3E50',
-  },
-  // Weeks Grid
   weeksGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    // alignContent: 'flex-start',
-    paddingHorizontal: 8,
-    gap: 10,
+    justifyContent: 'center', // Changed from flex-start to center
+    alignItems: 'center',
+    gap: 8, // Reduced gap
   },
   weekItem: {
-    width: '28%',
-    margin: 0,
-    marginRight: 9,
-    marginBottom: 10,
+    width: '28%', // Keep percentage-based width
+    marginHorizontal: 4, // Added horizontal margin
+    marginVertical: 4, // Added vertical margin
     paddingVertical: 8,
     paddingHorizontal: 2,
     borderRadius: 8,
     backgroundColor: '#F5F5F5',
     alignItems: 'center',
   },
-  selectedTimeItem: {
-    backgroundColor: '#5A5A5A',
-    borderColor: 'transparent',
-  },
   weekItemTitle: {
-    fontSize: 12,
+    fontSize: 11, // Slightly reduced font size
     fontWeight: '500',
     color: '#2C3E50',
     marginBottom: 2,
     textAlign: 'center',
   },
   weekItemDates: {
-    fontSize: 11,
+    fontSize: 10, // Slightly reduced font size
     color: '#64748B',
     textAlign: 'center',
+  },
+  selectedTimeItem: {
+    backgroundColor: '#5A5A5A',
+    borderColor: 'transparent',
   },
   selectedTimeItemText: {
     color: '#FFFFFF',
@@ -2849,124 +3087,145 @@ const styles = StyleSheet.create({
   monthsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-around',
-    alignContent: 'space-around',
-    width: 340,
-    height: 170,
+    justifyContent: 'space-between',
+    alignContent: 'flex-start',
+    width: '100%',
+    minHeight: 170,
     borderRadius: 8,
-    padding: 8,
-    paddingVertical: 10,
-    alignSelf: 'center',
+    padding: 10,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
   monthItem: {
-    width: 71,
-    height: 42,
-    marginTop: 4,
-    marginBottom: 4,
+    width: '31%',
+    height: 36,
+    marginBottom: 8,
     borderRadius: 8,
     backgroundColor: '#F5F5F5',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: {width: 0, height: 1},
+        shadowOpacity: 0.1,
+        shadowRadius: 1,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
   },
   monthItemText: {
-    fontSize: 11,
-    fontWeight: '400',
-    lineHeight: 12,
+    fontSize: 12,
+    fontWeight: '500',
     color: '#2C3E50',
+    textAlign: 'center',
   },
   // Quarters Grid
   quartersGrid: {
     flexDirection: 'row',
-    flexWrap: 'nowrap',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    width: 340,
+    alignContent: 'flex-start',
+    width: '100%',
     alignSelf: 'center',
     padding: 10,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
   },
   quarterItem: {
-    width: '22%',
+    width: '23%',
+    height: 50,
+    marginBottom: 8,
     paddingVertical: 8,
     paddingHorizontal: 5,
     borderRadius: 8,
     backgroundColor: '#F5F5F5',
     alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: {width: 0, height: 1},
+        shadowOpacity: 0.1,
+        shadowRadius: 1,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
   },
   quarterItemTitle: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#2C3E50',
     marginBottom: 2,
+    textAlign: 'center',
   },
   quarterItemDates: {
     fontSize: 11,
     color: '#64748B',
+    textAlign: 'center',
   },
-  // Halfs Grid
   halfsGrid: {
     flexDirection: 'row',
-    flexWrap: 'nowrap',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    width: 340,
+    alignContent: 'flex-start',
+    width: '100%',
     alignSelf: 'center',
     padding: 10,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
   },
   halfItem: {
-    width: '47%',
+    width: '48%',
+    height: 50,
+    marginBottom: 8,
     paddingVertical: 8,
     paddingHorizontal: 5,
     borderRadius: 8,
     backgroundColor: '#F5F5F5',
     alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: {width: 0, height: 1},
+        shadowOpacity: 0.1,
+        shadowRadius: 1,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
   },
   halfItemTitle: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
     color: '#2C3E50',
     marginBottom: 2,
+    textAlign: 'center',
   },
   halfItemDates: {
     fontSize: 11,
     color: '#64748B',
+    textAlign: 'center',
   },
-  // Years Grid
-  yearsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginTop: 12,
-  },
-  yearItem: {
-    width: '48%',
-    marginBottom: 10,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 8,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-  },
-  yearItemText: {
-    fontSize: 14,
-    color: '#2C3E50',
-  },
-  // Disabled date inputs
-  disabledDateText: {
-    color: '#94A3B8',
-  },
-  // Add new styles for CustomDropdown
   customDropdownContainer: {
     position: 'relative',
     marginBottom: 8,
@@ -3041,6 +3300,105 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 16,
     textAlign: 'center',
+  },
+  disabledDateText: {
+    color: '#A0A0A0',
+  },
+  requiredField: {
+    color: 'red',
+    fontWeight: 'bold',
+  },
+  // Custom Alert Styles
+  alertOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  alertContainer: {
+    width: '85%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: {width: 0, height: 4},
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  inwardAlert: {
+    // borderLeftWidth: 5,
+    // borderLeftColor: '#F48221',
+  },
+  outwardAlert: {
+    // borderLeftWidth: 5,
+    // borderLeftColor: '#4682B4',
+  },
+  alertHeader: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  alertTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  alertTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2D3748',
+    marginLeft: 10,
+  },
+  alertBody: {
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+  },
+  alertMessage: {
+    fontSize: 16,
+    color: '#4A5568',
+    lineHeight: 22,
+  },
+  alertButtonsContainer: {
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  alertButton: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    width: '100%',
+  },
+  inwardAlertButton: {
+    backgroundColor: '#FFF8F3',
+  },
+  outwardAlertButton: {
+    backgroundColor: '#F5F9FF',
+  },
+  alertButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  requiredFieldIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    padding: 10,
+    backgroundColor: '#FFFAF0',
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#DD6B20',
+  },
+  requiredFieldText: {
+    fontSize: 14,
+    color: '#64748B',
+    marginLeft: 5,
+    flex: 1,
   },
 });
 

@@ -1,5 +1,5 @@
 //vaishnavi
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Modal,
   Platform,
   Alert,
+  Dimensions,
 } from 'react-native';
 import axios from 'axios';
 import DateTimePicker, {
@@ -21,23 +22,18 @@ import {useRoute} from '@react-navigation/core';
 import {LayoutWrapper} from '../../components/AppLayout';
 
 // Define types for API responses
+
 interface SummaryData {
   inward?: {
     TOTAL_INWARD_QUANTITY?: number | string;
-    TOTAL_INWARD_DOCUMENTS?: number;
-    TOTAL_INWARD_CUSTOMERS?: number;
-    TOTAL_INWARD_LOTS?: number;
   };
   outward?: {
     TOTAL_OUTWARD_QUANTITY?: number | string;
     TOTAL_REQUESTED_QUANTITY?: number | string;
-    TOTAL_OUTWARD_DOCUMENTS?: number;
-    TOTAL_OUTWARD_CUSTOMERS?: number;
-    TOTAL_OUTWARD_LOTS?: number;
   };
   summary?: {
-    TOTAL_QUANTITY_DIFFERENCE?: number | string;
-    TOTAL_DOCUMENTS?: number;
+    NET_QUANTITY: number;
+    PENDING_QUANTITY?: number | string; // Add this line
     DELIVERY_FULFILLMENT_RATE?: number | string;
   };
 }
@@ -107,6 +103,34 @@ const ReportSummaryScreen: React.FC = () => {
   const [lastApiRequestTime, setLastApiRequestTime] = useState<Date | null>(
     null,
   );
+  const [tableHeight, setTableHeight] = useState<number>(550);
+
+  // Add useRef for the main ScrollView to ensure we can scroll back to top when switching tabs
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // Calculate appropriate table height based on screen dimensions
+  useEffect(() => {
+    const calculateTableHeight = () => {
+      const screenHeight = Dimensions.get('window').height;
+      // Adjust the calculation based on other UI elements
+      // Roughly 60% of screen height, but minimum 400px and maximum 650px
+      const calculatedHeight = Math.min(Math.max(screenHeight * 0.6, 400), 650);
+      setTableHeight(calculatedHeight);
+    };
+
+    calculateTableHeight();
+
+    // Add event listener for screen dimension changes (orientation changes)
+    const dimensionsListener = Dimensions.addEventListener(
+      'change',
+      calculateTableHeight,
+    );
+
+    // Clean up listener
+    return () => {
+      dimensionsListener.remove();
+    };
+  }, []);
 
   // Format dates for display
   const formatDisplayDate = (date: Date): string => {
@@ -444,20 +468,12 @@ const ReportSummaryScreen: React.FC = () => {
       'TOTAL_OUTWARD_QUANTITY formatted:',
       formatNumber(outward.TOTAL_OUTWARD_QUANTITY),
     );
-    console.log(
-      'TOTAL_QUANTITY_DIFFERENCE raw value:',
-      summary.TOTAL_QUANTITY_DIFFERENCE,
-    );
-    console.log(
-      'TOTAL_QUANTITY_DIFFERENCE formatted:',
-      formatNumber(summary.TOTAL_QUANTITY_DIFFERENCE),
-    );
 
     // Check if there's meaningful data
     const hasData =
       inward.TOTAL_INWARD_QUANTITY != null ||
       outward.TOTAL_OUTWARD_QUANTITY != null ||
-      summary.TOTAL_QUANTITY_DIFFERENCE != null;
+      summary.TOTAL_FULLFILLMENT_RATE != null;
 
     if (!hasData) {
       return (
@@ -480,7 +496,7 @@ const ReportSummaryScreen: React.FC = () => {
               {formatNumber(inward.TOTAL_INWARD_QUANTITY)}
             </Text>
           </View>
-          <View style={styles.metricRow}>
+          {/* <View style={styles.metricRow}>
             <Text style={styles.metricLabel}>Total Documents:</Text>
             <Text style={styles.metricValue}>
               {inward.TOTAL_INWARD_DOCUMENTS || 0}
@@ -497,7 +513,7 @@ const ReportSummaryScreen: React.FC = () => {
             <Text style={styles.metricValue}>
               {inward.TOTAL_INWARD_LOTS || 0}
             </Text>
-          </View>
+          </View> */}
         </View>
 
         <View style={styles.reportSection}>
@@ -514,46 +530,20 @@ const ReportSummaryScreen: React.FC = () => {
               {formatNumber(outward.TOTAL_REQUESTED_QUANTITY)}
             </Text>
           </View>
-          <View style={styles.metricRow}>
-            <Text style={styles.metricLabel}>Total Documents:</Text>
-            <Text style={styles.metricValue}>
-              {outward.TOTAL_OUTWARD_DOCUMENTS || 0}
-            </Text>
-          </View>
-          <View style={styles.metricRow}>
-            <Text style={styles.metricLabel}>Total Customers:</Text>
-            <Text style={styles.metricValue}>
-              {outward.TOTAL_OUTWARD_CUSTOMERS || 0}
-            </Text>
-          </View>
-          <View style={styles.metricRow}>
-            <Text style={styles.metricLabel}>Total Lots:</Text>
-            <Text style={styles.metricValue}>
-              {outward.TOTAL_OUTWARD_LOTS || 0}
-            </Text>
-          </View>
         </View>
 
         <View style={styles.reportSection}>
           <Text style={styles.sectionTitle}>Summary</Text>
           <View style={styles.metricRow}>
-            <Text style={styles.metricLabel}>Quantity Difference:</Text>
-            <Text
-              style={[
-                styles.metricValue,
-                Number(summary.TOTAL_QUANTITY_DIFFERENCE) > 0
-                  ? styles.positive
-                  : Number(summary.TOTAL_QUANTITY_DIFFERENCE) < 0
-                  ? styles.negative
-                  : null,
-              ]}>
-              {formatNumber(summary.TOTAL_QUANTITY_DIFFERENCE)}
+            <Text style={styles.metricLabel}>Net Quantity:</Text>
+            <Text style={styles.metricValue}>
+              {formatNumber(summary.NET_QUANTITY)}
             </Text>
           </View>
           <View style={styles.metricRow}>
-            <Text style={styles.metricLabel}>Total Documents:</Text>
+            <Text style={styles.metricLabel}>Pending Quantity:</Text>
             <Text style={styles.metricValue}>
-              {summary.TOTAL_DOCUMENTS || 0}
+              {formatNumber(summary.PENDING_QUANTITY)}
             </Text>
           </View>
           <View style={styles.metricRow}>
@@ -620,81 +610,101 @@ const ReportSummaryScreen: React.FC = () => {
           Item-wise Summary ({itemWiseData.length} items)
         </Text>
 
-        {/* Horizontal Scroll Container */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-          {/* Table Container with Fixed Width */}
-          <View style={styles.tableContainer}>
-            {/* Table Header */}
-            <View style={styles.tableHeader}>
-              <View style={[styles.headerCell, {width: 200}]}>
-                <Text style={styles.headerText} numberOfLines={2}>
-                  Item Details
-                </Text>
+        <View style={styles.minimumScrollHint}>
+          <Text style={styles.minimumScrollHintText}>
+            ⟷ Scroll horizontally to see more columns
+          </Text>
+        </View>
+
+        {/* Main table container with proper sizing */}
+        <View style={styles.tableWrapper}>
+          {/* Horizontal Scroll Container */}
+          <ScrollView
+            horizontal={true}
+            showsHorizontalScrollIndicator={true}
+            contentContainerStyle={{minWidth: 620}}>
+            {/* Table Container with Fixed Width */}
+            <View style={styles.tableContainer}>
+              {/* Table Header */}
+              <View style={styles.tableHeader}>
+                <View style={[styles.headerCell, {width: 200}]}>
+                  <Text style={styles.headerText} numberOfLines={2}>
+                    Item Details
+                  </Text>
+                </View>
+                <View style={[styles.headerCell, {width: 100}]}>
+                  <Text style={styles.headerText}>Inward Qty</Text>
+                </View>
+                <View style={[styles.headerCell, {width: 100}]}>
+                  <Text style={styles.headerText}>Outward Qty</Text>
+                </View>
+                <View style={[styles.headerCell, {width: 120}]}>
+                  <Text style={styles.headerText}>Requested Qty</Text>
+                </View>
+                <View style={[styles.headerCell, {width: 100}]}>
+                  <Text style={styles.headerText}>Net Qty</Text>
+                </View>
               </View>
-              <View style={[styles.headerCell, {width: 100}]}>
-                <Text style={styles.headerText}>Inward Qty</Text>
-              </View>
-              <View style={[styles.headerCell, {width: 100}]}>
-                <Text style={styles.headerText}>Outward Qty</Text>
-              </View>
-              <View style={[styles.headerCell, {width: 120}]}>
-                <Text style={styles.headerText}>Requested Qty</Text>
-              </View>
-              <View style={[styles.headerCell, {width: 100}]}>
-                <Text style={styles.headerText}>Net Balance</Text>
+
+              {/* Fixed-height container for vertical scrolling */}
+              <View style={{height: Math.min(tableHeight, 450)}}>
+                {/* Vertical Scroll for Rows */}
+                <ScrollView
+                  nestedScrollEnabled={true}
+                  showsVerticalScrollIndicator={true}
+                  persistentScrollbar={true}>
+                  {itemWiseData.map((item, index) => (
+                    <View
+                      key={`${item.ITEM_ID}-${index}`}
+                      style={[styles.tableRow, {minWidth: 620}]}>
+                      {/* Item Details Column */}
+                      <View style={[styles.dataCell, {width: 200}]}>
+                        <Text style={styles.itemName} numberOfLines={1}>
+                          {item.ITEM_NAME || 'Unknown Item'}
+                        </Text>
+                        {/* <Text style={styles.itemCategory} numberOfLines={1}>
+                          {[item.ITEM_CATEG_NAME, item.SUB_CATEGORY_NAME]
+                            .filter(Boolean)
+                            .join(' / ')}
+                        </Text> */}
+                      </View>
+
+                      {/* Data Columns */}
+                      <View style={[styles.dataCell, {width: 100}]}>
+                        <Text style={styles.dataText}>
+                          {formatNumber(item.TOTAL_INWARD_QUANTITY)}
+                        </Text>
+                      </View>
+                      <View style={[styles.dataCell, {width: 100}]}>
+                        <Text style={styles.dataText}>
+                          {formatNumber(item.TOTAL_OUTWARD_QUANTITY)}
+                        </Text>
+                      </View>
+                      <View style={[styles.dataCell, {width: 120}]}>
+                        <Text style={styles.dataText}>
+                          {formatNumber(item.TOTAL_REQUESTED_QUANTITY)}
+                        </Text>
+                      </View>
+                      <View style={[styles.dataCell, {width: 100}]}>
+                        <Text
+                          style={[
+                            styles.dataText,
+                            Number(item.NET_QUANTITY) > 0
+                              ? styles.positive
+                              : Number(item.NET_QUANTITY) < 0
+                              ? styles.negative
+                              : null,
+                          ]}>
+                          {formatNumber(Math.abs(Number(item.NET_QUANTITY)))}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </ScrollView>
               </View>
             </View>
-
-            {/* Vertical Scroll for Rows */}
-            <ScrollView style={styles.verticalScroll}>
-              {itemWiseData.map((item, index) => (
-                <View key={`${item.ITEM_ID}-${index}`} style={styles.tableRow}>
-                  {/* Item Details Column */}
-                  <View style={[styles.dataCell, {width: 200}]}>
-                    <Text style={styles.itemName} numberOfLines={1}>
-                      {item.ITEM_NAME || 'Unknown Item'}
-                    </Text>
-                    <Text style={styles.itemCategory} numberOfLines={1}>
-                      {[item.ITEM_CATEG_NAME, item.SUB_CATEGORY_NAME]
-                        .filter(Boolean)
-                        .join(' / ')}
-                    </Text>
-                  </View>
-
-                  {/* Data Columns */}
-                  <View style={[styles.dataCell, {width: 100}]}>
-                    <Text style={styles.dataText}>
-                      {formatNumber(item.TOTAL_INWARD_QUANTITY)}
-                    </Text>
-                  </View>
-                  <View style={[styles.dataCell, {width: 100}]}>
-                    <Text style={styles.dataText}>
-                      {formatNumber(item.TOTAL_OUTWARD_QUANTITY)}
-                    </Text>
-                  </View>
-                  <View style={[styles.dataCell, {width: 120}]}>
-                    <Text style={styles.dataText}>
-                      {formatNumber(item.TOTAL_REQUESTED_QUANTITY)}
-                    </Text>
-                  </View>
-                  <View style={[styles.dataCell, {width: 100}]}>
-                    <Text
-                      style={[
-                        styles.dataText,
-                        Number(item.NET_QUANTITY) > 0
-                          ? styles.positive
-                          : Number(item.NET_QUANTITY) < 0
-                          ? styles.negative
-                          : null,
-                      ]}>
-                      {formatNumber(Math.abs(Number(item.NET_QUANTITY)))}
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </View>
       </View>
     );
   };
@@ -814,7 +824,7 @@ const ReportSummaryScreen: React.FC = () => {
 
         {/* Report Content */}
         {!loading && !error && (
-          <ScrollView style={styles.scrollContainer}>
+          <ScrollView ref={scrollViewRef} style={styles.scrollContainer}>
             {reportType === 'all' ? renderSummaryData() : renderItemWiseData()}
           </ScrollView>
         )}
@@ -936,7 +946,8 @@ const ReportSummaryScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
     backgroundColor: '#fff',
   },
   titleContainer: {
@@ -1012,7 +1023,8 @@ const styles = StyleSheet.create({
   },
   reportSection: {
     backgroundColor: '#f9f9f9',
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 6,
     borderRadius: 8,
     marginBottom: 16,
     shadowColor: '#000',
@@ -1213,67 +1225,6 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 12,
   },
-
-  // tableHeader: {
-  //   flexDirection: 'row',
-  //   justifyContent: 'space-between',
-  //   paddingVertical: 10,
-  //   paddingHorizontal: 5,
-  //   borderBottomWidth: 2,
-  //   borderBottomColor: '#ddd',
-  //   marginBottom: 8,
-  //   backgroundColor: '#f2f2f2',
-  //   borderRadius: 4,
-  //   alignItems: 'center',
-  //   minHeight: 44,
-  //   width: '100%',
-  // },
-  // headerCell: {
-  //   fontWeight: 'bold',
-  //   fontSize: 13,
-  //   color: '#555',
-  //   textAlign: 'center',
-  //   paddingHorizontal: 2,
-  //   flex: 1,
-  // },
-  itemDetailsHeader: {
-    fontWeight: 'bold',
-    fontSize: 13,
-    color: '#555',
-    textAlign: 'left',
-    paddingHorizontal: 5,
-    flex: 2.5,
-  },
-  // tableRow: {
-  //   flexDirection: 'row',
-  //   justifyContent: 'space-between',
-  //   paddingVertical: 12,
-  //   paddingHorizontal: 5,
-  //   borderBottomWidth: 1,
-  //   borderBottomColor: '#eee',
-  //   alignItems: 'center',
-  //   minHeight: 64,
-  // },
-  itemNameColumn: {
-    paddingRight: 5,
-    flex: 2.5,
-    justifyContent: 'center',
-  },
-
-  itemId: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-    textAlign: 'left',
-  },
-  tableNote: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 8,
-    marginBottom: 12,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
   tableContainer: {
     flexDirection: 'column',
     minWidth: 620, // Total of all column widths
@@ -1296,7 +1247,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   verticalScroll: {
-    maxHeight: 400, // Adjust based on your needs
+    minHeight: 300,
+    maxHeight: 650,
   },
   tableRow: {
     flexDirection: 'row',
@@ -1322,6 +1274,56 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#666',
     marginTop: 4,
+  },
+  scrollIndicator: {
+    padding: 10,
+    backgroundColor: '#f0f0f0',
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+    alignItems: 'center',
+  },
+  scrollIndicatorText: {
+    color: '#F48221',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  scrollHint: {
+    padding: 10,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 4,
+    alignItems: 'center',
+    marginBottom: 5,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  scrollHintText: {
+    color: '#F48221',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  tableWrapper: {
+    flex: 1,
+    flexDirection: 'column',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginBottom: 10,
+    marginHorizontal: 0,
+    minHeight: 500,
+    width: '100%', // Take full available width
+  },
+  minimumScrollHint: {
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 4,
+    alignItems: 'center',
+    marginBottom: 3,
+  },
+  minimumScrollHintText: {
+    color: '#666',
+    fontSize: 11,
   },
 });
 

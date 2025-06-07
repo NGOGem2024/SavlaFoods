@@ -25,7 +25,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import axios from 'axios';
 import {API_ENDPOINTS} from '../config/api.config';
-import LinearGradient from 'react-native-linear-gradient';
+
 import DateTimePicker from '@react-native-community/datetimepicker';
 import PendingOrdersScreen from './PendingOrdersScreen';
 
@@ -114,7 +114,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
   // Get today's date in YYYY-MM-DD format
   const today = new Date();
   const formattedToday = today.toISOString().split('T')[0];
-
+  const [orderBy, setOrderBy] = useState('');
   // Reference for picker timer
   const datePickerTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
@@ -456,6 +456,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
         orderDate: orderDetails.orderDate,
         deliveryDate: orderDetails.deliveryDate,
         transporterName: formattedTransporterName,
+        ORDER_BY: orderBy,
         CUST_DELIVERY_ADD: orderDetails.CUST_DELIVERY_ADD,
         remarks: orderDetails.remarks,
         userSupervisorId,
@@ -578,6 +579,26 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
           keyboardShouldPersistTaps="always"
           keyboardDismissMode="none">
           <View style={styles.cardContainer}>
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>
+                Order By
+                <Text style={{color: 'red'}}> *</Text>
+              </Text>
+              <View style={styles.inputContainer}>
+                <MaterialIcons
+                  name="person-pin"
+                  size={20}
+                  color="#718096"
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={[styles.fieldInput, styles.inputWithIcon]}
+                  value={orderBy}
+                  onChangeText={setOrderBy}
+                  placeholder="Enter order creator name"
+                />
+              </View>
+            </View>
             {/* Transporter Details Section */}
             <View style={styles.sectionHeader}>
               <MaterialIcons name="local-shipping" size={24} color="#2C3E50" />
@@ -863,11 +884,11 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
           <View style={styles.successModalOverlay}>
             <View style={styles.successModalContent}>
               <View style={styles.successHeader}>
-                <LinearGradient
-                  colors={['#4CAF50', '#45a049']}
+                <View
+                  // colors={['#4CAF50', '#45a049']}
                   style={styles.successIconCircle}>
                   <Ionicons name="checkmark-sharp" size={40} color="#FFFFFF" />
-                </LinearGradient>
+                </View>
                 <Text style={styles.successTitle}>
                   Order Placed Successfully!
                 </Text>
@@ -913,6 +934,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
                           orderId: order.orderId,
                           orderNo: order.orderNo,
                           transporterName: successData.formattedTransporterName,
+                          orderBy: order.orderBy,
                           deliveryDate: orderDetails.deliveryDate,
                           deliveryAddress: orderDetails.CUST_DELIVERY_ADD,
                           orderDate: orderDetails.orderDate,
@@ -923,8 +945,8 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
                       }, 100);
                     }
                   }}>
-                  <LinearGradient
-                    colors={['#0284c7', '#0264a7']}
+                  <View
+                    // colors={['#0284c7', '#0264a7']}
                     style={styles.viewOrderGradient}>
                     <MaterialIcons
                       name="visibility"
@@ -936,7 +958,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
                         ? 'View Orders'
                         : 'View Order'}
                     </Text>
-                  </LinearGradient>
+                  </View>
                 </TouchableOpacity>
               </View>
             </View>
@@ -951,14 +973,14 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
           onRequestClose={() => setShowValidationModal(false)}>
           <View style={styles.validationModalOverlay}>
             <View style={styles.validationModalContent}>
-              <LinearGradient
-                colors={['#F8FAFC', '#EDF2F7']}
+              <View
+                // colors={['#F8FAFC', '#EDF2F7']}
                 style={styles.validationModalHeader}>
                 <MaterialIcons name="info-outline" size={30} color="#dc3545" />
                 <Text style={styles.validationHeaderText}>
                   Missing Required Information
                 </Text>
-              </LinearGradient>
+              </View>
 
               <View style={styles.validationBodyContainer}>
                 {validationMessage.split('\n').map((message, index) =>
@@ -997,11 +1019,11 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
           <View style={styles.resubmissionModalOverlay}>
             <View style={styles.resubmissionModalContent}>
               <View style={styles.resubmissionIconContainer}>
-                <LinearGradient
-                  colors={['#FF6B6B', '#FF5252']}
+                <View
+                  // colors={['#FF6B6B', '#FF5252']}
                   style={styles.resubmissionIconCircle}>
                   <MaterialIcons name="warning" size={40} color="#FFFFFF" />
-                </LinearGradient>
+                </View>
               </View>
               <View style={styles.resubmissionTextContainer}>
                 <Text style={styles.resubmissionTitle}>Already Submitted!</Text>
@@ -1017,8 +1039,8 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
                     setShowResubmissionModal(false);
                     navigation.goBack();
                   }}>
-                  <LinearGradient
-                    colors={['#4CAF50', '#45a049']}
+                  <View
+                    // colors={['#4CAF50', '#45a049']}
                     style={styles.resubmissionButtonGradient}>
                     <MaterialIcons
                       name="arrow-back"
@@ -1026,7 +1048,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
                       color="#FFFFFF"
                     />
                     <Text style={styles.resubmissionButtonText}>Go Back</Text>
-                  </LinearGradient>
+                  </View>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1602,6 +1624,8 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
+    color: '#45a049',
+    backgroundColor: '#4CAF50',
   },
   successTextContainer: {
     alignItems: 'center',
@@ -1617,7 +1641,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1A202C',
     marginBottom: 10,
-    marginTop: 5,
+    marginTop: 10,
     textAlign: 'center',
     width: '100%',
   },
@@ -1674,6 +1698,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 0,
+    color: '#0264a7',
   },
   viewOrderText: {
     color: '#FFFFFF',
@@ -1721,6 +1746,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E2E8F0',
     marginTop: 10,
     width: '100%',
+    color: '#EDF2F7',
   },
   validationHeaderText: {
     fontSize: Platform.OS === 'ios' ? 16 : 16,
@@ -1870,6 +1896,7 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    color: '#FF5252',
   },
   resubmissionButtonGradient: {
     flexDirection: 'row',
@@ -1878,6 +1905,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 24,
     gap: 8,
+    color: '#45a049',
   },
   resubmissionButtonText: {
     color: '#FFFFFF',

@@ -78,6 +78,7 @@ export type MainStackParamList = {
     orderDate: string;
     deliveryDate: string;
     deliveryAddress: string;
+    orderBy: string;
     refreshData?: boolean;
     updatedOrder?: any;
     items: Array<{
@@ -103,6 +104,11 @@ export type MainStackParamList = {
       VAKAL_NO?: string;
       UNIT_NAME: string;
     }>;
+  };
+  OutwardDetailsScreen: {
+    customerId: string;
+    outwardNo: string;
+    item?: any;
   };
   OrderHistoryScreen: {
     customerID: string;
@@ -195,6 +201,7 @@ export type MainStackParamList = {
     userMukadamId?: number;
     stockLotLocationId?: number;
     deliveryAddress?: string;
+    orderBy?: string;
     unitId?: number;
     finYearId?: number;
     shouldRefresh: boolean;
@@ -217,6 +224,7 @@ export type MainStackParamList = {
     userSupervisorId: string;
     CUST_DELIVERY_ADD?: string;
     deliveryAddress?: string;
+    orderBy?: string;
     userMukadamId: string;
     stockLotLocationId: string;
     unitId?: number;
