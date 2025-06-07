@@ -439,34 +439,31 @@ const HomeScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
 
-            <Animated.View
-              style={[
-                styles.addToCartContainer,
-                {
-                  transform: [
+                            <Animated.View
+                  style={[
+                    styles.addToCartContainer,
                     {
-                      scale:
-                        cartAnimations[item.LOT_NO]?.interpolate({
-                          inputRange: [0, 0.5, 1],
-                          outputRange: [1, 1.2, 1],
-                        }) || 1,
+                      transform: [
+                        {
+                          scale:
+                            cartAnimations[item.LOT_NO]?.interpolate({
+                              inputRange: [0, 0.5, 1],
+                              outputRange: [1, 1.2, 1],
+                            }) || 1,
+                        },
+                      ],
                     },
-                  ],
-                },
-              ]}>
-              <TouchableOpacity
-                style={styles.addToCartButton}
-                onPress={() => handleAddToCart(item)}>
-                <View style={styles.cartIconWrapper}>
-                  {/* <Text style={styles.cartIcon}>🛒</Text> */}
-                  <Image
-                    source={require('../assets/images/cart.png')}
-                    style={{width: 32, height: 32, alignSelf: 'center'}}
-                    resizeMode="contain"
-                  />
-                </View>
-              </TouchableOpacity>
-            </Animated.View>
+                  ]}>
+                  <TouchableOpacity
+                    style={styles.addToCartButton}
+                    onPress={() => handleAddToCart(item)}>
+                    <Image
+                      source={require('../assets/images/cart.png')}
+                      style={{width: 32, height: 32, alignSelf: 'center'}}
+                      resizeMode="contain"
+                    />
+                  </TouchableOpacity>
+                </Animated.View>
           </View>
 
           <View style={styles.itemNameContainer}>
@@ -928,22 +925,11 @@ const styles = StyleSheet.create({
   addToCartButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    // backgroundColor: '#FFFDD0',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderRadius: 25,
+    paddingHorizontal: 5,
+    paddingVertical: 5,
     elevation: 3,
-    shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.2,
-    shadowRadius: 3,
-  },
-  cartIconWrapper: {
-    // backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 20,
-  },
-  cartIcon: {
-    fontSize: 20,
   },
   highlightedCard: {
     borderWidth: 2,
