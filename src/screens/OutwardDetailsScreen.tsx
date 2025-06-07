@@ -277,14 +277,14 @@ const OutwardDetailsScreen: React.FC<OutwardDetailsProps> = ({route}) => {
                 <View style={styles.tableHeaderCell100}>
                   <Text style={styles.tableHeaderText}>Lot No</Text>
                 </View>
-                <View style={styles.tableHeaderCell180}>
-                  <Text style={styles.tableHeaderText}>Items</Text>
+                <View style={styles.tableHeaderCell170}>
+                  <Text style={styles.tableHeaderText}>Item Name</Text>
+                </View>
+                <View style={styles.tableHeaderCell140}>
+                  <Text style={styles.tableHeaderText}>Vakal No</Text>
                 </View>
                 <View style={styles.tableHeaderCell110}>
                   <Text style={styles.tableHeaderText}>Item Marks</Text>
-                </View>
-                <View style={styles.tableHeaderCell120}>
-                  <Text style={styles.tableHeaderText}>Vakal No</Text>
                 </View>
                 <View style={styles.tableHeaderCell100}>
                   <Text style={styles.tableHeaderText}>Batch No</Text>
@@ -311,16 +311,16 @@ const OutwardDetailsScreen: React.FC<OutwardDetailsProps> = ({route}) => {
                   <View style={styles.tableHeaderCell100}>
                     <Text style={styles.tableRowText}>{item.LOT_NO}</Text>
                   </View>
-                  <View style={styles.tableHeaderCell180}>
+                  <View style={styles.tableHeaderCell170}>
                     <Text style={styles.tableRowText}>{item.ITEM_NAME}</Text>
-                  </View>
-                  <View style={styles.tableHeaderCell110}>
-                    <Text style={styles.tableRowText}>{item.ITEM_MARKS}</Text>
                   </View>
                   <View style={styles.tableHeaderCell140}>
                     <Text style={styles.tableRowText}>
                       {item.VAKAL_NO || '-'}
                     </Text>
+                  </View>
+                  <View style={styles.tableHeaderCell140}>
+                    <Text style={styles.tableRowText}>{item.ITEM_MARKS}</Text>
                   </View>
                   <View style={styles.tableHeaderCell100}>
                     <Text style={styles.tableRowText}>
@@ -358,7 +358,7 @@ const OutwardDetailsScreen: React.FC<OutwardDetailsProps> = ({route}) => {
                 <View style={styles.tableHeaderCell150}>
                   <Text style={styles.tableRowText}></Text>
                 </View>
-                <View style={styles.tableHeaderCell100}>
+                <View style={styles.tableHeaderCell110}>
                   <Text style={styles.totalText}>Total </Text>
                 </View>
                 <View style={styles.tableHeaderCell60}>
@@ -524,6 +524,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tableHeaderCell150: {
+    width: 150,
+    paddingHorizontal: 6,
+    justifyContent: 'center',
+  },
+  tableHeaderCell170: {
     width: 150,
     paddingHorizontal: 6,
     justifyContent: 'center',
