@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getSecureItem, setSecureItem } from '../utils/secureStorage';
 
 type Notification = {
   id: string;
@@ -13,10 +13,7 @@ type NotificationContextType = {
   clearNotifications: () => void;
 }
 
-
-
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
-
 
 type NotificationProviderProps = {
   children: ReactNode;
@@ -31,7 +28,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   const loadNotifications = async () => {
     try {
-      const storedNotifications = await AsyncStorage.getItem('notifications');
+      const storedNotifications = await getSecureItem('notifications');
       if (storedNotifications) {
         setNotifications(JSON.parse(storedNotifications));
       }
@@ -42,7 +39,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   const saveNotifications = async (newNotifications: Notification[]) => {
     try {
-      await AsyncStorage.setItem('notifications', JSON.stringify(newNotifications));
+      await setSecureItem('notifications', JSON.stringify(newNotifications));
     } catch (error) {
       console.error('Error saving notifications:', error);
     }

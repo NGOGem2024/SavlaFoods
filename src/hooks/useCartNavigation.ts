@@ -2,17 +2,21 @@
 import {useCallback} from 'react';
 import {Alert} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {getSecureItem} from '../utils/secureStorage';
+import {getSecureOrAsyncItem} from '../utils/migrationHelper';
 import {useCart} from '../contexts/CartContext';
-import {MainStackParamList} from '../type/type';
+import {MainStackParamList, RootStackParamList} from '../type/type';
+
+type NavigationType = StackNavigationProp<MainStackParamList & RootStackParamList>;
 
 export const useCartNavigation = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationType>();
   const {cartItems} = useCart();
 
   const handleCartPress = useCallback(async () => {
     try {
-      const customerID = await AsyncStorage.getItem('customerID');
+      const customerID = await getSecureOrAsyncItem('customerID');
 
       if (customerID) {
         navigation.navigate('PlaceOrderScreen', {
@@ -32,7 +36,7 @@ export const useCartNavigation = () => {
   const handleAccountSwitch = useCallback(async () => {
     try {
       // Get the new customer ID
-      const newCustomerId = await AsyncStorage.getItem('customerID');
+      const newCustomerId = await getSecureOrAsyncItem('customerID');
 
       if (newCustomerId) {
         // Navigate to home screen with the new customer ID

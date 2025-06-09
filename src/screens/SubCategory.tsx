@@ -1,20 +1,24 @@
+//Mayur
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import axios from 'axios';
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {LayoutWrapper} from '../components/AppLayout';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Dimensions,
   FlatList,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
   TextInput,
+  ToastAndroid,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -25,7 +29,15 @@ import {
   ImageMapping,
 } from '../utils/imageRegistry';
 import {API_BASE_URL} from '../config/api.config';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import {getSecureItem, setSecureItem} from '../utils/secureStorage';
+import {getSecureOrAsyncItem} from '../utils/migrationHelper';
 
+interface CustomToastProps {
+  message: string;
+  visible: boolean;
+  setVisible: (visible: boolean) => void;
+}
 
 type MainStackParamList = {
   SubCategory: {
@@ -59,6 +71,57 @@ type NavigationProp = {
 
 const {width} = Dimensions.get('window');
 
+// Custom Toast component for iOS
+const CustomToast: React.FC<CustomToastProps> = ({
+  message,
+  visible,
+  setVisible,
+}) => {
+  // Component logic
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.sequence([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.delay(2000),
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => setVisible(false));
+    }
+  }, [visible, fadeAnim, setVisible]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View
+      style={[
+        styles.toast,
+        {
+          opacity: fadeAnim,
+          transform: [
+            {
+              translateY: fadeAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [20, 0],
+              }),
+            },
+          ],
+        },
+      ]}>
+      <Text style={styles.toastText}>{message}</Text>
+    </Animated.View>
+  );
+};
+
 const SubCategory: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<SubCategoryScreenRouteProp>();
@@ -71,10 +134,30 @@ const SubCategory: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
   const [imageMappings, setImageMappings] = useState<{
     categories: ImageMapping[];
     subcategories: ImageMapping[];
   }>({categories: [], subcategories: []});
+
+  // Show toast function
+  const showToast = (message: string) => {
+    if (Platform.OS === 'android') {
+      ToastAndroid.showWithGravity(
+        message,
+        ToastAndroid.SHORT,
+        ToastAndroid.BOTTOM,
+      );
+    } else {
+      // For iOS
+      setToastMessage(message);
+      setToastVisible(true);
+    }
+  };
 
   useEffect(() => {
     const loadImageMappings = async () => {
@@ -87,7 +170,7 @@ const SubCategory: React.FC = () => {
   useEffect(() => {
     const fetchCustomerID = async () => {
       try {
-        let id = await AsyncStorage.getItem('customerID');
+        let id = await getSecureOrAsyncItem('customerID');
         if (id) {
           setCustomerID(id);
         } else {
@@ -95,7 +178,7 @@ const SubCategory: React.FC = () => {
           id = response.data.customerID;
           if (id) {
             setCustomerID(id);
-            await AsyncStorage.setItem('customerID', id);
+            await setSecureItem('customerID', id);
           }
         }
       } catch (error) {
@@ -147,8 +230,13 @@ const SubCategory: React.FC = () => {
           }),
         );
 
-        setSubCategories(uniqueSubCategories);
-        setFilteredSubCategories(uniqueSubCategories);
+        // Sort subcategories alphabetically by SUBCATDESC
+        const sortedSubCategories = [...uniqueSubCategories].sort((a, b) =>
+          a.SUBCATDESC.localeCompare(b.SUBCATDESC),
+        );
+
+        setSubCategories(sortedSubCategories);
+        setFilteredSubCategories(sortedSubCategories);
       } else {
         setError('No data received from server');
       }
@@ -185,6 +273,25 @@ const SubCategory: React.FC = () => {
     [subCategories],
   );
 
+  const handleSort = useCallback(
+    (order: 'asc' | 'desc') => {
+      setSortOrder(order);
+      const sorted = [...filteredSubCategories].sort((a, b) => {
+        if (order === 'asc') {
+          return a.SUBCATDESC.localeCompare(b.SUBCATDESC);
+        } else {
+          return b.SUBCATDESC.localeCompare(a.SUBCATDESC);
+        }
+      });
+      setFilteredSubCategories(sorted);
+
+      showToast(
+        `Sorted in ${order === 'asc' ? 'ascending' : 'descending'} order`,
+      );
+    },
+    [filteredSubCategories],
+  );
+
   const handleSubCategoryPress = useCallback(
     (item: SubCategoryItem) => {
       console.log('Navigating to ItemDetailScreen with:', {
@@ -216,12 +323,12 @@ const SubCategory: React.FC = () => {
               source={item.imageUrl}
               style={styles.cardImage}
               resizeMode="contain"
-              onError={error => {
-                console.warn(
-                  `Failed to load image for subcategory ${item.SUBCATID}:`,
-                  error,
-                );
-              }}
+              // onError={error => {
+              //   console.warn(
+              //     `Failed to load image for subcategory ${item.SUBCATID}:`,
+              //     error,
+              //   );
+              // }}
             />
           </View>
           <View style={styles.cardContent}>
@@ -244,40 +351,94 @@ const SubCategory: React.FC = () => {
     );
   }
   return (
-    // <SafeAreaView style={styles.safeArea}>
-    // <StatusBar barStyle="dark-content" backgroundColor="#ddd" />
     <LayoutWrapper showHeader={true} route={route}>
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search subcategories..."
-          placeholderTextColor="#888"
-          value={searchQuery}
-          onChangeText={handleSearch}
-        />
-        <TouchableOpacity style={styles.searchButton}>
-          <MaterialIcons name="search" size={24} style={{color:"#000"}} />
-        </TouchableOpacity>
-      </View>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <View style={styles.mainContainer}>
+          <View style={styles.searchContainer}>
+            <View style={styles.searchBar}>
+              <Icon
+                name="search"
+                size={24}
+                color="#777"
+                style={styles.searchIcon}
+              />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search by subcategories..."
+                placeholderTextColor="#888"
+                value={searchQuery}
+                onChangeText={handleSearch}
+              />
+            </View>
 
-      <FlatList
-        data={filteredSubCategories}
-        renderItem={renderSubCategoryItem}
-        keyExtractor={item => item.SUBCATID}
-        numColumns={2}
-        contentContainerStyle={styles.listContainer}
-        onRefresh={fetchSubCategories}
-        refreshing={refreshing}
-        ListEmptyComponent={() => (
-          <View style={styles.centerContainer}>
-            <Text style={styles.emptyText}>
-              {error || 'No subcategories found'}
-            </Text>
+            <View style={styles.sortButtonsContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.sortButton,
+                  sortOrder === 'asc' ? styles.activeSort : styles.inactiveSort,
+                ]}
+                onPress={() => handleSort('asc')}>
+                <MaterialIcons
+                  name="arrow-upward"
+                  size={20}
+                  style={[
+                    styles.sortIcon,
+                    sortOrder === 'asc'
+                      ? styles.activeSortIcon
+                      : styles.inactiveSortIcon,
+                  ]}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.sortButton,
+                  sortOrder === 'desc'
+                    ? styles.activeSort
+                    : styles.inactiveSort,
+                ]}
+                onPress={() => handleSort('desc')}>
+                <MaterialIcons
+                  name="arrow-downward"
+                  size={20}
+                  style={[
+                    styles.sortIcon,
+                    sortOrder === 'desc'
+                      ? styles.activeSortIcon
+                      : styles.inactiveSortIcon,
+                  ]}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
-        )}
-      />
+        </View>
+        <FlatList
+          data={filteredSubCategories}
+          renderItem={renderSubCategoryItem}
+          keyExtractor={item => item.SUBCATID}
+          numColumns={2}
+          contentContainerStyle={styles.listContainer}
+          onRefresh={fetchSubCategories}
+          refreshing={refreshing}
+          keyboardShouldPersistTaps="handled"
+          ListEmptyComponent={() => (
+            <View style={styles.centerContainer}>
+              <Text style={styles.emptyText}>
+                {error || 'No subcategories found'}
+              </Text>
+            </View>
+          )}
+        />
 
-      {/* <TabBar route={{name: route.name}} /> */}
+        {Platform.OS === 'ios' && (
+          <CustomToast
+            message={toastMessage}
+            visible={toastVisible}
+            setVisible={setToastVisible}
+          />
+        )}
+      </KeyboardAvoidingView>
     </LayoutWrapper>
   );
 };
@@ -292,28 +453,94 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  mainContainer: {
+    flexDirection: 'column',
+  },
   searchContainer: {
     flexDirection: 'row',
     padding: 10,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    // width: '90%',
   },
   searchInput: {
     flex: 1,
     height: 40,
     backgroundColor: '#f5f5f5',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    marginRight: 10,
+    borderRadius: 18,
+    paddingHorizontal: 5,
+    marginRight: 8,
+    fontSize: 14,
+    width: '20%',
   },
-  searchButton: {
-    width: 40,
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginRight: 8,
     height: 40,
+  },
+
+  searchIcon: {
+    marginRight: 6,
+  },
+
+  searchButton: {
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f5f5f5',
+    borderRadius: 18,
+    marginRight: 8,
+  },
+  sortButtonsContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f8f9fa',
     borderRadius: 20,
+    padding: 4.3,
+    marginLeft: 8,
+  },
+  sortButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 16,
+    marginHorizontal: 2,
+  },
+  activeSort: {
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5,
+    zIndex: 2,
+  },
+  inactiveSort: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    elevation: 0,
+    shadowColor: 'transparent',
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0,
+    shadowRadius: 0,
+  },
+  sortIcon: {
+    margin: 0,
+  },
+  activeSortIcon: {
+    color: '#2196F3',
+  },
+  inactiveSortIcon: {
+    color: '#90A4AE',
   },
   listContainer: {
     padding: 10,
@@ -358,6 +585,35 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
+  keyboardAvoidView: {
+    flex: 1,
+    width: '100%',
+  },
+  toast: {
+    position: 'absolute',
+    bottom: 30,
+    alignSelf: 'center',
+    backgroundColor: '#2196F3',
+    padding: 10,
+    paddingHorizontal: 16,
+    borderRadius: 25,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 6,
+    maxWidth: width * 0.8,
+  },
+  toastIcon: {
+    marginRight: 8,
+  },
+  toastText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
+  },
 });
-
 export default SubCategory;

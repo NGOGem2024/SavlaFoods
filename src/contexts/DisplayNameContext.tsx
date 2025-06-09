@@ -1,5 +1,6 @@
 import React, {createContext, useContext, useState, useEffect} from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {getSecureItem} from '../utils/secureStorage';
+import {getSecureOrAsyncItem} from '../utils/migrationHelper';
 
 type CustomerContextType = {
   customerID: string | null;
@@ -16,9 +17,9 @@ export const CustomerProvider: React.FC<{children: React.ReactNode}> = ({
   const [customerID, setCustomerID] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load customerID from AsyncStorage when the app starts
+    // Load customerID from secure storage when the app starts
     const loadCustomerID = async () => {
-      const storedID = await AsyncStorage.getItem('customerID');
+      const storedID = await getSecureOrAsyncItem('customerID');
       if (storedID) {
         setCustomerID(storedID);
       }

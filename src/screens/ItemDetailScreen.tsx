@@ -18,7 +18,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons'; // Changed import
 import {MainStackParamList} from '../type/type';
 import {LayoutWrapper} from '../components/AppLayout';
-import { getSubcategoryImage } from '../utils/imageRegistry';
+import {getSubcategoryImage} from '../utils/imageRegistry';
 
 const {width} = Dimensions.get('window');
 
@@ -98,7 +98,32 @@ const ItemDetailScreen: React.FC<ItemDetailScreenProps> = ({
           response.data?.status === 'success' &&
           response.data?.output?.items
         ) {
-          setItems(response.data.output.items);
+          // More robust filtering to remove items with no meaningful data
+          const filteredItems = response.data.output.items.filter(
+            (item: Item) =>
+              // Check for meaningful content in key fields
+              item.ITEM_NAME &&
+              item.ITEM_NAME.trim() !== '' &&
+              item.DESCRIPTION &&
+              item.DESCRIPTION.trim() !== '' &&
+              // Additional checks to ensure the item has useful data
+              item.ITEM_CODE &&
+              item.ITEM_CODE.trim() !== '' &&
+              // Optional: Add more specific checks if needed
+              item.ITEM_ID !== null &&
+              item.ITEM_ID !== undefined,
+          );
+
+          console.log(
+            `Total items: ${response.data.output.items.length}, Filtered items: ${filteredItems.length}`,
+          );
+
+          setItems(filteredItems);
+
+          // If no items after filtering, set an appropriate error message
+          if (filteredItems.length === 0) {
+            setError('No items with complete information found');
+          }
         } else {
           setError(response.data?.message || 'No items available');
           setItems([]);
@@ -190,13 +215,16 @@ const ItemDetailScreen: React.FC<ItemDetailScreenProps> = ({
         {imageError && (
           <View style={styles.fallbackImageContainer}>
             <Text style={styles.imageErrorText}>Image not available</Text>
-            <Ionicons name="image-outline" size={40} style={{color:"#cccccc"}} />
+            <Ionicons
+              name="image-outline"
+              size={40}
+              style={{color: '#cccccc'}}
+            />
           </View>
         )}
       </View>
     );
   }, [subcategoryId, subcategoryImage, imageError]);
-
 
   const renderItem = useCallback(
     ({item}: {item: Item}) => {
@@ -214,7 +242,7 @@ const ItemDetailScreen: React.FC<ItemDetailScreenProps> = ({
                 <Ionicons
                   name="arrow-forward-outline"
                   size={20}
-                  style={{color:"#2196f3"}}
+                  style={{color: '#2196f3'}}
                 />
               </TouchableOpacity>
             </View>
@@ -249,9 +277,16 @@ const ItemDetailScreen: React.FC<ItemDetailScreenProps> = ({
                 {subcategoryName}
               </Text>
               <View style={styles.statsContainer}>
-                <Ionicons name="cube-outline" size={16} style={{color:"#666666"}} />
+                <Ionicons
+                  name="cube-outline"
+                  size={16}
+                  style={{color: '#666666'}}
+                />
                 <Text style={styles.statsText}>
-                  {items.length} Items Available
+                  {items.length}{' '}
+                  {items.length === 0 || items.length === 1
+                    ? 'Item Available'
+                    : 'Items Available'}
                 </Text>
               </View>
             </View>
@@ -328,7 +363,7 @@ const styles = StyleSheet.create({
   statsText: {
     marginLeft: 5,
     color: '#666',
-    fontSize: 12,
+    fontSize: 14,
   },
   imageContainer: {
     width: 100,
@@ -377,14 +412,14 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   description: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
     marginTop: 5,
   },
   viewDetailsButton: {
     position: 'absolute',
     right: 0,
-    top: 0,
+    top: 10,
   },
   emptyContainer: {
     flex: 1,
@@ -411,4 +446,3 @@ const styles = StyleSheet.create({
 });
 
 export default ItemDetailScreen;
-
