@@ -25,7 +25,7 @@ const ReportsScreen = ({navigation}: {navigation: any}) => {
       title: 'Stock Report',
       icon: 'inventory', // Represents stock/items
       screen: 'StockReportScreen',
-      description: 'View current stock levels and availability',
+      description: 'View current stock levels and Zero Stock',
     },
     {
       title: 'Lot Report',
@@ -39,12 +39,12 @@ const ReportsScreen = ({navigation}: {navigation: any}) => {
       screen: 'ReportSummary',
       description: 'View summary reports and analytics',
     },
-    {
-      title: 'Zero Stock',
-      icon: 'remove-circle-outline', // Direct numeric zero symbol
-      screen: 'ZeroStockReportScreen',
-      description: 'Items with zero available quantity in inventory',
-    },
+    // {
+    //   title: 'Zero Stock',
+    //   icon: 'remove-circle-outline', // Direct numeric zero symbol
+    //   screen: 'ZeroStockReportScreen',
+    //   description: 'Items with zero available quantity in inventory',
+    // },
   ];
 
   return (
