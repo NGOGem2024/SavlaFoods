@@ -42,6 +42,7 @@ import { getSecureItem } from '../utils/secureStorage';
 
 // Get a value
 const token = await getSecureItem('userToken');
+
 ```
 
 #### Writing Secure Data
@@ -51,6 +52,7 @@ import { setSecureItem } from '../utils/secureStorage';
 
 // Store a value
 await setSecureItem('userToken', 'your-secure-token');
+
 ```
 
 #### Removing Secure Data
@@ -60,6 +62,7 @@ import { removeSecureItem } from '../utils/secureStorage';
 
 // Remove a value
 await removeSecureItem('userToken');
+
 ```
 
 ### 5. Transition Period
@@ -71,6 +74,7 @@ import { getSecureOrAsyncItem } from '../utils/migrationHelper';
 
 // This will check Keychain first, then AsyncStorage, and migrate if found
 const value = await getSecureOrAsyncItem('key');
+
 ```
 
 ## Security Considerations
@@ -83,4 +87,4 @@ const value = await getSecureOrAsyncItem('key');
 
 1. Add biometric authentication for accessing sensitive data
 2. Implement timeout-based automatic logout
-3. Add secure storage for larger objects with encryption 
+3. Add secure storage for larger objects with encryption

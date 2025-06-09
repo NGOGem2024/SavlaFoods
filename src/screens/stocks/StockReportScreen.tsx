@@ -111,7 +111,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
 interface StockReportItem {
  ITEM_ID: number;
  ITEM_CODE: string;
- DESCRIPTION: string;
+ ITEM_DESCRIPTION: string;
  ITEM_NAME: string;
  LOT_NO: number;
  UNIT_NAME: string[] | string; // Modified to handle both array and string
@@ -124,8 +124,10 @@ interface StockReportItem {
  EXPIRY_DATE: string | null;
  REMARKS: string | null;
  STATUS: string;
- ITEM_CATEG_NAME: string;
+//  ITEM_CATEG_NAME: string;
  SUB_CATEGORY_NAME: string;
+ NET_QTY: number;
+ INWARD_DT: string | null;
 }
 
 interface StockReportResponse {
@@ -382,6 +384,14 @@ const StockReportScreen: React.FC = () => {
    const endIndex = startIndex + itemsPerPage;
    const paginatedData = data.slice(startIndex, endIndex);
    setStockData(paginatedData);
+   
+   // Update pagination info
+   setPagination(prev => ({
+     ...prev,
+     currentPage: page,
+     totalItems: data.length,
+     totalPages: Math.ceil(data.length / itemsPerPage) || 1
+   }));
  };
 
  // Handle page change
@@ -462,9 +472,13 @@ const StockReportScreen: React.FC = () => {
  };
 
  const handleSearch = async () => {
-   // Reset previous data
+   // Reset previous data and show loader immediately
    setErrorMessage(null);
    setIsScrollingToResults(true);
+   setStockData([]); // Clear previous data immediately
+   setAllStockData([]); // Clear previous data immediately
+   setTotalRecords(0);
+   
    setPagination({
      ...pagination,
      currentPage: 1, // Reset to first page on new search
@@ -480,6 +494,19 @@ const StockReportScreen: React.FC = () => {
      if (isZeroStock) {
        // Call Zero Stock API
        await fetchZeroStockItems();
+       
+       // Update pagination for zero stock data
+       if (allStockData.length > 0) {
+         const totalPages = Math.ceil(allStockData.length / pagination.itemsPerPage);
+         setPagination({
+           ...pagination,
+           totalItems: allStockData.length,
+           totalPages: totalPages || 1,
+         });
+         
+         // Set current page data for zero stock
+         updateCurrentPageData(allStockData, 1, pagination.itemsPerPage);
+       }
      } else {
        // Call Regular Stock Report API
        await fetchStockReportItems();
@@ -505,9 +532,6 @@ const StockReportScreen: React.FC = () => {
      } else {
        setErrorMessage(axiosError.message || 'An unknown error occurred');
      }
-     setStockData([]);
-     setAllStockData([]);
-     setTotalRecords(0);
      setIsScrollingToResults(false);
    } finally {
      setIsLoading(false);
@@ -516,17 +540,17 @@ const StockReportScreen: React.FC = () => {
 
  // Fetch regular stock report items
  const fetchStockReportItems = async () => {
-   // Prepare the request payload matching the API structure
+   // Prepare the request payload matching the API structure shown in screenshot
    const payload = {
      customerName: customerName || null,
      lotNo: lotNo ? Number(lotNo) : null,
      vakalNo: vakalNo || null,
      itemSubCategory: itemSubCategory.length > 0 ? itemSubCategory : null,
      itemMarks: itemMarks || null,
-     unit: unit.length > 0 ? unit : null,
-     fromDate: formatApiDate(fromDate),
-     toDate: formatApiDate(toDate),
-     qtyLessThan: qtyLessThan ? Number(qtyLessThan) : null,
+     unit: unit.length > 0 ? unit[0] : null,
+     fromDate: fromDate ? formatApiDate(fromDate) : null,
+     toDate: toDate ? formatApiDate(toDate) : null,
+     qtyLessThan: qtyLessThan ? Number(qtyLessThan) : null
    };
 
    const apiEndpoint = `${API_ENDPOINTS.GET_STOCK_REPORT}?customerId=${customerId}`;
@@ -564,63 +588,49 @@ const StockReportScreen: React.FC = () => {
 
  // Fetch zero stock items
  const fetchZeroStockItems = async () => {
-   // Format request to match the Zero Stock API
-   const requestData = {
-     customerID: parseInt(customerId),
-     itemCategoryName: null, // Not using category in this merged view
-     itemSubCategoryName: itemSubCategory.length > 0 ? itemSubCategory : null,
-     lotNo: lotNo ? parseInt(lotNo) : null,
-     unit: unit.length > 0 ? unit[0] : null, // Zero stock API takes single unit
+   // Format request to match the Zero Stock API using the same structure as regular stock report
+   const payload = {
+     customerName: customerName || null,
+     lotNo: lotNo ? Number(lotNo) : null,
+     vakalNo: vakalNo || null,
+     itemSubCategory: itemSubCategory.length > 0 ? itemSubCategory : null,
+     itemMarks: itemMarks || null,
+     unit: unit.length > 0 ? unit[0] : null,
+     fromDate: fromDate ? formatApiDate(fromDate) : null,
+     toDate: toDate ? formatApiDate(toDate) : null,
+     qtyLessThan: qtyLessThan ? Number(qtyLessThan) : null
    };
 
-   console.log('Zero Stock API Request:', JSON.stringify(requestData, null, 2));
+   const apiEndpoint = `${API_ENDPOINTS.GET_ZERO_STOCK_REPORT}?customerId=${customerId}`;
 
-   const headers = await getAuthHeaders();
-   const response = await axios.post(
-     API_ENDPOINTS.GET_ZERO_STOCK_REPORT,
-     requestData,
-     {headers: headers},
-   );
+   console.log(`Using Zero Stock API endpoint: ${apiEndpoint}`);
+   console.log('Zero Stock Request payload:', JSON.stringify(payload, null, 2));
+
+   // Make the API call
+   const response = await axios.post(apiEndpoint, payload, {
+     headers: DEFAULT_HEADERS,
+   });
 
    console.log('Zero Stock API Response:', JSON.stringify(response.data, null, 2));
 
-   // Handle response
-   let dataArray: StockReportItem[] = [];
+   const result = response.data;
 
-   if (response.data) {
-     if (response.data.data && Array.isArray(response.data.data)) {
-       console.log('Found data array with length:', response.data.data.length);
-       dataArray = response.data.data;
-     } else if (response.data.output && Array.isArray(response.data.output)) {
-       console.log('Found output array with length:', response.data.output.length);
-       dataArray = response.data.output;
-     } else if (response.data.status === 'success' && response.data.count > 0) {
-       console.log('Found success status with count:', response.data.count);
-       dataArray = response.data.data;
-     }
+   if (result.status === 'success') {
+     setAllStockData(result.data || []);
+     setStockData(result.data || []);
+     setTotalRecords(result.count || 0);
+     console.log('Zero Stock data records:', result.count);
 
-     // Store all data and update pagination
-     setAllStockData(dataArray);
-     const totalPages = Math.ceil(dataArray.length / pagination.itemsPerPage);
-     setPagination({
-       ...pagination,
-       totalItems: dataArray.length,
-       totalPages: totalPages || 1,
-     });
-
-     // Set current page data
-     updateCurrentPageData(dataArray, 1, pagination.itemsPerPage);
-     setTotalRecords(dataArray.length);
-
-     if (dataArray.length === 0) {
-       setErrorMessage('No zero stock items found');
+     if (result.data && result.data.length > 0) {
+       console.log(
+         'First zero stock record sample:',
+         JSON.stringify(result.data[0], null, 2),
+       );
      } else {
-       setErrorMessage(null);
+       console.log('No zero stock records found');
      }
    } else {
-     setAllStockData([]);
-     setStockData([]);
-     setErrorMessage('No zero stock items found');
+     throw new Error(result.message || 'Failed to fetch zero stock data');
    }
  };
 
@@ -711,25 +721,14 @@ const StockReportScreen: React.FC = () => {
  const renderTableHeader = () => (
  <View style={styles.tableHeader}>
  <Text style={[styles.tableHeaderCell, styles.unitColumn]}>Unit</Text>
+ <Text style={[styles.tableHeaderCell, styles.inwardDateColumn]}>Inward Date</Text>
  <Text style={[styles.tableHeaderCell, styles.lotColumn]}>Lot No</Text>
- <Text style={[styles.tableHeaderCell, styles.itemNameColumn]}>
- Item Name
- </Text>
-
- <Text style={[styles.tableHeaderCell, styles.balanceColumn]}>
- Balance
- </Text>
- <Text style={[styles.tableHeaderCell, styles.availableColumn]}>
- Available
- </Text>
-
- {/* <Text style={[styles.tableHeaderCell, styles.statusColumn]}>Status</Text>
- <Text style={[styles.tableHeaderCell, styles.categoryColumn]}>
- Category
- </Text> */}
- <Text style={[styles.tableHeaderCell, styles.remarksColumn]}>
- Remarks
- </Text>
+ <Text style={[styles.tableHeaderCell, styles.itemDescColumn]}>Description</Text>
+ <Text style={[styles.tableHeaderCell, styles.vakalNoColumn]}>Vakal No</Text>
+ <Text style={[styles.tableHeaderCell, styles.itemMarksColumn]}>Item Marks</Text>
+ <Text style={[styles.tableHeaderCell, styles.netQtyColumn]}>Available Qty</Text>
+ <Text style={[styles.tableHeaderCell, styles.expiryDateColumn]}>Expiry Date</Text>
+ <Text style={[styles.tableHeaderCell, styles.remarksColumn]}>Remarks</Text>
  </View>
  );
 
@@ -751,22 +750,25 @@ const StockReportScreen: React.FC = () => {
  ? item.UNIT_NAME.join(', ')
  : item.UNIT_NAME}
  </Text>
+ <Text style={[styles.tableCell, styles.inwardDateColumn]} numberOfLines={1}>
+ {item.INWARD_DT || '-'}
+ </Text>
  <Text style={[styles.tableCell, styles.lotColumn]}>{item.LOT_NO}</Text>
- <Text style={[styles.tableCell, styles.itemNameColumn]} numberOfLines={2}>
- {item.ITEM_NAME}
+ <Text style={[styles.tableCell, styles.itemDescColumn]} numberOfLines={2}>
+ {item.ITEM_DESCRIPTION}
  </Text>
-
- <Text style={[styles.tableCell, styles.balanceColumn]}>
- {item.BALANCE_QTY}
+ <Text style={[styles.tableCell, styles.vakalNoColumn]} numberOfLines={3}>
+ {item.VAKAL_NO || '-'}
  </Text>
- <Text style={[styles.tableCell, styles.availableColumn]}>
- {item.AVAILABLE_QTY}
+ <Text style={[styles.tableCell, styles.itemMarksColumn]} numberOfLines={3}>
+ {item.ITEM_MARKS || '-'}
  </Text>
-
- {/* <Text style={[styles.tableCell, styles.statusColumn]}>{item.STATUS}</Text>
- <Text style={[styles.tableCell, styles.categoryColumn]} numberOfLines={2}>
- {item.SUB_CATEGORY_NAME}
- </Text> */}
+ <Text style={[styles.tableCell, styles.netQtyColumn]}>
+ {item.NET_QTY}
+ </Text>
+ <Text style={[styles.tableCell, styles.expiryDateColumn]} numberOfLines={1}>
+ {item.EXPIRY_DATE || '-'}
+ </Text>
  <Text style={[styles.tableCell, styles.remarksColumn]} numberOfLines={2}>
  {item.REMARKS || '-'}
  </Text>
@@ -932,7 +934,14 @@ const StockReportScreen: React.FC = () => {
  </View>
 
  {/* Loading indicator */}
- {isLoading && stockData.length === 0 && (
+ {isLoading && (
+ <View style={styles.loadingContainer}>
+   <ActivityIndicator size="large" color="#E87830" />
+ </View>
+ )}
+
+ {/* Scrolling indicator - only shown when data is loading and we need to scroll */}
+ {isLoading && stockData.length === 0 && isScrollingToResults && (
  <View style={styles.scrollIndicatorContainer}>
  <Text style={styles.scrollIndicatorText}>Loading results...</Text>
  <Text style={styles.scrollIndicatorArrow}>↓</Text>
@@ -940,7 +949,7 @@ const StockReportScreen: React.FC = () => {
  )}
 
  {/* Table format results */}
- {stockData.length > 0 && (
+ {!isLoading && stockData.length > 0 && (
  <View style={styles.tableContainer}>
  <ScrollView
  horizontal={true}
@@ -956,14 +965,7 @@ const StockReportScreen: React.FC = () => {
  />
  </View>
  </ScrollView>
- {isZeroStock && renderPagination()}
- </View>
- )}
-
- {/* Loading indicator */}
- {isLoading && (
- <View style={styles.loadingContainer}>
- <ActivityIndicator size="large" color="#E87830" />
+ {allStockData.length > pagination.itemsPerPage && renderPagination()}
  </View>
  )}
 
@@ -974,7 +976,7 @@ const StockReportScreen: React.FC = () => {
  </View>
  )}
 
- {/* Empty state message */}
+ {/* Empty state message - only shown when not loading and no data */}
  {!isLoading && stockData.length === 0 && !errorMessage && (
  <View style={styles.noDataContainer}>
  <Text style={styles.noDataText}>
@@ -1375,14 +1377,17 @@ const styles = StyleSheet.create({
  },
 
  // Column widths
- itemNameColumn: {width: 150},
+ itemDescColumn: {width: 140},
+ itemMarksColumn: {width: 130},
  lotColumn: {width: 60},
  balanceColumn: {width: 70},
- availableColumn: {width: 70},
+ netQtyColumn: {width: 90},
  unitColumn: {width: 70},
- statusColumn: {width: 70},
+ vakalNoColumn: {width: 100},
+ expiryDateColumn: {width: 110},
  categoryColumn: {width: 100},
  remarksColumn: {width: 120},
+ inwardDateColumn: {width: 100},
 
  // Status indicators
  loadingContainer: {

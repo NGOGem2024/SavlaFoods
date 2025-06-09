@@ -32,6 +32,7 @@ export const API_ENDPOINTS = {
   GET_PENDING_ORDERS: `${API_BASE_URL}/order/getPendingOrders`,
   UPDATE_PENDING_ORDER: `${API_BASE_URL}/order/updatePendingOrder`,
   GET_CANCEL_ORDER: `${API_BASE_URL}/order/cancelOrder`,
+  DELETE_ORDER: `${API_BASE_URL}/order/deleteOrder`,
 
   //Inward/OutwardReport
   GET_INWARD_REPORT: `${API_BASE_URL}/reports/getInwardData`,
