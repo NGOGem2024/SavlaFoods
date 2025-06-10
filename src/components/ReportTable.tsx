@@ -40,6 +40,24 @@ const ReportTable = ({
   // Helper function for theme colors
   const getThemeColor = () => (isInward ? '#F48221' : '#4682B4');
 
+  // Helper function to format date to dd/mm/yy
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '-';
+
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = String(date.getFullYear()).slice(-2);
+
+      return `${day}/${month}/${year}`;
+    } catch (error) {
+      return '-';
+    }
+  };
+
   return (
     <View style={styles.tableContainer}>
       <ScrollView
@@ -164,12 +182,8 @@ const ReportTable = ({
                 </Text>
                 <Text style={[styles.tableCell, {width: columnWidths.date}]}>
                   {isInward
-                    ? item.GRN_DATE
-                      ? new Date(item.GRN_DATE).toLocaleDateString()
-                      : '-'
-                    : item.OUTWARD_DATE
-                    ? new Date(item.OUTWARD_DATE).toLocaleDateString()
-                    : '-'}
+                    ? formatDate(item.GRN_DATE)
+                    : formatDate(item.OUTWARD_DATE)}
                 </Text>
 
                 {isInward ? (
@@ -198,30 +212,13 @@ const ReportTable = ({
                     </Text>
                   </TouchableOpacity>
                 ) : (
-                  <TouchableOpacity
+                  <Text
                     style={[
-                      styles.tableCellContainer,
+                      styles.tableCell,
                       {width: columnWidths.inwardOutwardNo},
-                    ]}
-                    onPress={() =>
-                      onInwardOutwardNoPress && onInwardOutwardNoPress(item)
-                    }
-                    disabled={!(onInwardOutwardNoPress && item.OUTWARD_NO)}>
-                    <Text
-                      style={[
-                        styles.tableCell,
-                        styles.clickableCell,
-                        {
-                          color:
-                            onInwardOutwardNoPress && item.OUTWARD_NO
-                              ? getThemeColor()
-                              : '#334155',
-                          width: '100%',
-                        },
-                      ]}>
-                      {item.OUTWARD_NO || '-'}
-                    </Text>
-                  </TouchableOpacity>
+                    ]}>
+                    {item.OUTWARD_NO || '-'}
+                  </Text>
                 )}
 
                 <Text style={[styles.tableCell, {width: columnWidths.lotNo}]}>
@@ -313,7 +310,6 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
     fontWeight: '500',
   },
-
 });
 
 export default ReportTable;

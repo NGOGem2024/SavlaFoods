@@ -2481,6 +2481,11 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
       hasError = true;
     }
 
+    if (!orderBy.trim()) {
+      errorMessage += '\nOrder Creator name is required';
+      hasError = true;
+    }
+
     // Date validation
     if (!isValidDateFormat(orderDetails.deliveryDate)) {
       errorMessage += '\nDelivery date must be in YYYY-MM-DD format';
@@ -2650,23 +2655,30 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
           keyboardShouldPersistTaps="always"
           keyboardDismissMode="none">
           <View style={styles.cardContainer}>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="person-pin" size={24} color="#2C3E50" />
+              <Text style={styles.sectionTitle}>Order By</Text>
+              <Text style={{color: 'red'}}> *</Text>
+            </View>
             <View style={styles.field}>
-              <Text style={styles.fieldLabel}>
-                Order By
-                <Text style={{color: 'red'}}> *</Text>
-              </Text>
+              {/* <Text style={styles.fieldLabel}>Order By</Text> */}
               <View style={styles.inputContainer}>
                 <MaterialIcons
-                  name="person-pin"
+                  name="person"
                   size={20}
                   color="#718096"
                   style={styles.inputIcon}
                 />
                 <TextInput
-                  style={[styles.fieldInput, styles.inputWithIcon]}
+                  style={[
+                    styles.fieldInput,
+                    styles.inputWithIcon,
+                    {fontSize: orderBy ? 16 : 13},
+                  ]}
                   value={orderBy}
                   onChangeText={setOrderBy}
                   placeholder="Enter order creator name"
+                  placeholderTextColor={'grey'}
                 />
               </View>
             </View>
@@ -2684,7 +2696,7 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
               </Text>
               <View style={styles.inputContainer}>
                 <Ionicons
-                  name="person-outline"
+                  name="person"
                   size={20}
                   color="#718096"
                   style={styles.inputIcon}
