@@ -39,12 +39,12 @@ const ReportsScreen = ({navigation}: {navigation: any}) => {
       screen: 'ReportSummary',
       description: 'View summary reports and analytics',
     },
-    {
-      title: 'Zero Stock',
-      icon: 'remove-circle-outline', // Direct numeric zero symbol
-      screen: 'ZeroStockReportScreen',
-      description: 'Items with zero available quantity in inventory',
-    },
+    // {
+    //   title: 'Zero Stock',
+    //   icon: 'remove-circle-outline', // Direct numeric zero symbol
+    //   screen: 'ZeroStockReportScreen',
+    //   description: 'Items with zero available quantity in inventory',
+    // },
   ];
 
   return (
