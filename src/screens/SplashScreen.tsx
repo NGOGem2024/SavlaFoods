@@ -4,6 +4,7 @@ import {useNavigation, NavigationProp} from '@react-navigation/native';
 import {RootStackParamList} from '../type/type';
 import {migrateAllSecureKeys} from '../utils/migrationHelper';
 import {getSecureItem} from '../utils/secureStorage';
+import axios from 'axios';
 
 const SplashScreen: React.FC = () => {
   const navigation =
@@ -20,6 +21,12 @@ const SplashScreen: React.FC = () => {
 
         // Check if user is already logged in
         const token = await getSecureItem('userToken');
+        
+        // Set the token in axios defaults if it exists
+        if (token) {
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          console.log('Token set in axios defaults on app startup');
+        }
         
         // Navigate to appropriate screen after a short delay
         setTimeout(() => {

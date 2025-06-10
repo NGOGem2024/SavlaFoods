@@ -23,7 +23,7 @@ import {
 import {NavigationProp} from '@react-navigation/native';
 import {getSecureItem, setSecureItem} from '../utils/secureStorage';
 import {getSecureOrAsyncItem} from '../utils/migrationHelper';
-import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {MainStackParamList, RootStackParamList} from '../type/type';
 import {API_ENDPOINTS, BASE_IMAGE_PATH} from '../config/api.config';
@@ -194,20 +194,24 @@ const HomeScreen: React.FC = () => {
         setCustomerID(storedId);
         fetchCategories(storedId);
       } else {
-        const response = await axios.get(API_ENDPOINTS.GET_CUSTOMER_ID);
-        const newId = response.data.customerID;
+        interface CustomerResponse {
+          customerID: string;
+          displayName?: string;
+        }
+        const response = await apiClient.get<CustomerResponse>(API_ENDPOINTS.GET_CUSTOMER_ID);
+        const newId = response.customerID;
         if (newId) {
           await setSecureItem('customerID', newId);
           setCustomerID(newId);
           fetchCategories(newId);
 
           // If there's a display name in the response, save and set it
-          if (response.data.displayName) {
+          if (response.displayName) {
             await setSecureItem(
               'displayName',
-              response.data.displayName,
+              response.displayName,
             );
-            setDisplayName(response.data.displayName);
+            setDisplayName(response.displayName);
           }
         }
       }
@@ -223,8 +227,11 @@ const HomeScreen: React.FC = () => {
       if (name) {
         setDisplayName(name);
       } else {
-        const response = await axios.get(API_ENDPOINTS.GET_CUSTOMER_INFO);
-        name = response.data.Disp_name;
+        interface CustomerInfoResponse {
+          Disp_name: string;
+        }
+        const response = await apiClient.get<CustomerInfoResponse>(API_ENDPOINTS.GET_CUSTOMER_INFO);
+        name = response.Disp_name;
         setDisplayName(name);
         await setSecureItem('Disp_name', name || '');
       }
@@ -239,14 +246,18 @@ const HomeScreen: React.FC = () => {
 
   const fetchCategories = useCallback(async (customerId: string) => {
     try {
-      const response = await axios.post(
+      interface CategoryResponse {
+        output: CategoryItem[];
+      }
+      
+      const response = await apiClient.post<CategoryResponse>(
         API_ENDPOINTS.ITEM_CATEGORIES,
         {CustomerID: customerId},
         {timeout: 10000},
       );
 
-      if (response.data?.output) {
-        const uniqueCategories = response.data.output.reduce(
+      if (response?.output) {
+        const uniqueCategories = response.output.reduce(
           (acc: CategoryItem[], current: CategoryItem) => {
             const exists = acc.find(item => item.CATID === current.CATID);
             if (!exists) {
@@ -288,7 +299,12 @@ const HomeScreen: React.FC = () => {
 
       setIsSearching(true);
       try {
-        const response = await axios.post(
+        interface SearchResponse {
+          success: boolean;
+          data: SearchResultItem[];
+        }
+        
+        const response = await apiClient.post<SearchResponse>(
           API_ENDPOINTS.SEARCH_ITEMS,
           {
             searchTerm: searchTerm,
@@ -298,9 +314,9 @@ const HomeScreen: React.FC = () => {
           {timeout: 10000},
         );
 
-        if (response.data?.success && response.data?.data) {
+        if (response?.success && response?.data) {
           // Map results and add image URLs
-          const resultsWithImages = response.data.data.map(
+          const resultsWithImages = response.data.map(
             (item: SearchResultItem) => ({
               ...item,
               imageUrl: getCategoryImage(item.ITEM_CATEG_ID),
