@@ -752,20 +752,21 @@ const OrderDetailsScreen = ({
           visible={deleteModalVisible}
           onRequestClose={() => setDeleteModalVisible(false)}>
           <View style={styles.modalOverlay}>
-            <View style={styles.deleteModalContent}>
-              <View style={styles.deleteModalHeader}>
-                <Text style={styles.warningIcon}>⚠️</Text>
-                <Text style={styles.deleteModalTitle}>Delete Item?</Text>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <MaterialIcons name="error-outline" size={28} color="#ef4444" />
+                <Text style={styles.modalTitle}>Delete Item</Text>
               </View>
 
-              <View style={styles.deleteModalBody}>
-                <Text style={styles.deleteModalMessage}>
-                  Are you sure you want to delete:
+              <View style={styles.modalBody}>
+                <Text style={styles.modalMessage}>
+                  Are you sure you want to delete this item?
                 </Text>
+                
                 {itemToDelete && (
-                  <Text style={styles.deleteItemName}>
-                    "{itemToDelete.itemName}"
-                  </Text>
+                  <View style={styles.selectedItemContainer}>
+                    <Text style={styles.deleteItemName}>{itemToDelete.itemName}</Text>
+                  </View>
                 )}
               </View>
 
@@ -773,7 +774,7 @@ const OrderDetailsScreen = ({
                 <TouchableOpacity
                   style={styles.keepItemButton}
                   onPress={() => setDeleteModalVisible(false)}>
-                  <Text style={styles.keepItemText}>KEEP ITEM</Text>
+                  <Text style={styles.keepItemText}>Keep Item</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -785,6 +786,7 @@ const OrderDetailsScreen = ({
                     }
                   }}
                   disabled={isLoading}>
+                  <MaterialIcons name="delete-outline" size={20} color="#fff" />
                   <Text style={styles.confirmDeleteText}>
                     {isLoading ? 'DELETING...' : 'YES, DELETE'}
                   </Text>
@@ -1474,66 +1476,82 @@ const styles = StyleSheet.create({
     color: '#ef4444',
   },
   deleteModalContent: {
-    backgroundColor: '#4b5563', // Dark gray background
-    borderRadius: 8,
+    backgroundColor: 'white',
+    borderRadius: 16,
     width: '90%',
     maxWidth: 400,
-    padding: 20,
+    padding: 0,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
     elevation: 5,
   },
   deleteModalHeader: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    padding: 12,
+    paddingTop: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   deleteModalTitle: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: '600',
-    color: '#ffffff', // White text
+    color: '#111827',
+    marginTop: 6,
   },
   deleteModalBody: {
-    marginBottom: 20,
+    padding: 16,
+    paddingTop: 5,
   },
   deleteModalMessage: {
-    fontSize: 18,
-    color: '#ffffff', // White text
-    marginBottom: 12,
+    fontSize: 15,
+    color: '#4B5563',
+    marginBottom: 16,
+    textAlign: 'center',
+    fontWeight: '500',
   },
   deleteItemName: {
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#ffffff', // White text
-    marginBottom: 20,
+    color: '#111827',
+    textAlign: 'center',
   },
   deleteModalActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
   },
   keepItemButton: {
     flex: 1,
     padding: 14,
     alignItems: 'center',
-    marginRight: 10,
+    borderRightWidth: 0.5,
+    borderRightColor: '#e5e7eb',
   },
   keepItemText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#4ade80', // Green text
+    color: '#6B7280',
   },
   confirmDeleteButton: {
     flex: 1,
     padding: 14,
+    backgroundColor: '#ff3b30',
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   confirmDeleteText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#4ade80', // Green text for "YES, DELETE"
-  },
-  warningIcon: {
-    fontSize: 28,
-    marginRight: 8,
+    color: 'white',
+    marginLeft: 5,
   },
 });
 
