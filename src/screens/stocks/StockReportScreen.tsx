@@ -757,8 +757,15 @@ const StockReportScreen: React.FC = () => {
    }
 
    try {
+     // Set loading state immediately to show overlay
+     setIsPdfDownloading(true);
+     setPdfProgress(5);
+     setPdfStatusMessage('Preparing download...');
+     
      // Request storage permission for Android
      if (Platform.OS === 'android') {
+       setPdfProgress(10);
+       setPdfStatusMessage('Checking permissions...');
        const hasPermission = await requestStoragePermission();
        if (!hasPermission) {
          Alert.alert(
@@ -766,12 +773,12 @@ const StockReportScreen: React.FC = () => {
            'Storage permission is required to download PDF reports.',
            [{ text: 'OK' }]
          );
+         setIsPdfDownloading(false);
          return;
        }
      }
      
-     setIsPdfDownloading(true);
-     setPdfProgress(10);
+     setPdfProgress(20);
      setPdfStatusMessage('Preparing PDF request...');
 
      // Get the appropriate API endpoint based on toggle state
@@ -872,7 +879,7 @@ const StockReportScreen: React.FC = () => {
      
      console.log('File will be saved to:', filePath);
      
-     setPdfProgress(50);
+     setPdfProgress(45);
      setPdfStatusMessage('Downloading PDF...');
 
      // Use a direct Axios approach for all platforms
@@ -886,6 +893,9 @@ const StockReportScreen: React.FC = () => {
          'Accept': 'application/pdf',
        },
      });
+
+     setPdfProgress(60);
+     setPdfStatusMessage('Processing PDF data...');
 
      // Check if we got a valid PDF response by looking at the first few bytes
      // PDF files start with "%PDF-"
@@ -903,7 +913,7 @@ const StockReportScreen: React.FC = () => {
        throw new Error(`Server returned non-PDF data: ${textData.substring(0, 100)}...`);
      }
 
-     setPdfProgress(75);
+     setPdfProgress(70);
      setPdfStatusMessage('Saving PDF file...');
 
      // Convert response to base64 string
@@ -925,6 +935,9 @@ const StockReportScreen: React.FC = () => {
        console.log('File already exists, using unique filename:', newFileName);
      }
      
+     setPdfProgress(80);
+     setPdfStatusMessage('Writing file to storage...');
+     
      // Write the file using RNBlobUtil
      await RNBlobUtil.fs.writeFile(finalFilePath, pdfData, 'base64');
      
@@ -933,6 +946,9 @@ const StockReportScreen: React.FC = () => {
      if (!savedFileExists) {
        throw new Error(`File could not be saved to ${finalFilePath}`);
      }
+     
+     setPdfProgress(90);
+     setPdfStatusMessage('Finalizing download...');
      
      // For Android, ensure the file is visible in the media store
      if (Platform.OS === 'android') {
@@ -1022,49 +1038,52 @@ const StockReportScreen: React.FC = () => {
 
      setPdfProgress(100);
      setPdfStatusMessage('Download complete!');
+     
+     // Short delay to show 100% completion before hiding the overlay
+     setTimeout(() => {
+       setIsPdfDownloading(false);
+       
+       // Show success message and offer to open the file
+       const isPublicStorage = !finalFilePath.includes('Android/data');
+       Alert.alert(
+         'PDF Downloaded',
+         isPublicStorage
+           ? 'The report has been downloaded successfully to Downloads folder!'
+           : 'The report has been saved to app storage.',
+         [
+           {
+             text: 'View PDF',
+             onPress: () => {
+               try {
+                 // Make sure the path format is correct for the platform
+                 const formattedPath =
+                   Platform.OS === 'android' &&
+                   !finalFilePath.startsWith('file://')
+                     ? `file://${finalFilePath}`
+                     : finalFilePath;
 
-     // Show success message and offer to open the file
-     const isPublicStorage = !finalFilePath.includes('Android/data');
-     Alert.alert(
-       'PDF Downloaded',
-       isPublicStorage
-         ? 'The report has been downloaded successfully to Downloads folder!'
-         : 'The report has been saved to app storage.',
-       [
-         {
-           text: 'View PDF',
-           onPress: () => {
-             try {
-               // Make sure the path format is correct for the platform
-               const formattedPath =
-                 Platform.OS === 'android' &&
-                 !finalFilePath.startsWith('file://')
-                   ? `file://${finalFilePath}`
-                   : finalFilePath;
-
-               // Open the PDF with a slight delay to ensure it's fully written
-               setTimeout(() => {
-                 if (Platform.OS === 'ios') {
-                   RNBlobUtil.ios.openDocument(finalFilePath);
-                 } else {
-                   // For Android
-                   RNBlobUtil.android.actionViewIntent(finalFilePath, 'application/pdf');
-                 }
-               }, 300);
-             } catch (viewError) {
-               console.error('Error opening PDF:', viewError);
-               Alert.alert(
-                 'Error',
-                 'Could not open the PDF file. The file was saved successfully, but there was an error opening it.',
-               );
-             }
+                 // Open the PDF with a slight delay to ensure it's fully written
+                 setTimeout(() => {
+                   if (Platform.OS === 'ios') {
+                     RNBlobUtil.ios.openDocument(finalFilePath);
+                   } else {
+                     // For Android
+                     RNBlobUtil.android.actionViewIntent(finalFilePath, 'application/pdf');
+                   }
+                 }, 300);
+               } catch (viewError) {
+                 console.error('Error opening PDF:', viewError);
+                 Alert.alert(
+                   'Error',
+                   'Could not open the PDF file. The file was saved successfully, but there was an error opening it.',
+                 );
+               }
+             },
            },
-         },
-         { text: 'OK', style: 'cancel' },
-       ]
-     );
-
-     setIsPdfDownloading(false);
+           { text: 'OK', style: 'cancel' },
+         ]
+       );
+     }, 500);
    } catch (error) {
      console.error('Error downloading PDF:', error);
      
