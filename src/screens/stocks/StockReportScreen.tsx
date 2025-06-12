@@ -14,6 +14,8 @@ import {
  TouchableWithoutFeedback,
  Switch,
  Alert,
+ ToastAndroid,
+ PermissionsAndroid,
 } from 'react-native';
 import axios, {AxiosError} from 'axios';
 import {API_ENDPOINTS, DEFAULT_HEADERS, getAuthHeaders} from '../../config/api.config';
@@ -27,6 +29,11 @@ import MultiSelect from '../../components/Multiselect';
 import {LayoutWrapper} from '../../components/AppLayout';
 import {useRoute} from '@react-navigation/core';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import RNBlobUtil from 'react-native-blob-util';
+// For handling binary data
+import {Buffer} from 'buffer';
+// @ts-ignore
+import PushNotification from 'react-native-push-notification';
 
 interface DropdownOption {
  label: string;
@@ -155,6 +162,63 @@ interface ErrorResponse {
  details?: string;
 }
 
+// Function to request storage permissions on Android
+const requestStoragePermission = async () => {
+ if (Platform.OS !== 'android') return true;
+ 
+ try {
+   // For Android 13+ (API level 33+)
+   if ((Platform.Version as number) >= 33) {
+     // For Android 13+, we need to request specific permissions
+     const permissions = [
+       PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
+       PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO,
+       PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO,
+     ];
+     
+     const granted = await PermissionsAndroid.requestMultiple(permissions);
+     
+     // Check if all permissions are granted
+     const allGranted = Object.values(granted).every(
+       status => status === PermissionsAndroid.RESULTS.GRANTED
+     );
+     
+     return allGranted;
+   }
+   // For Android 10-12 (API level 29-32)
+   else if ((Platform.Version as number) >= 29) {
+     // For Android 10+, we need WRITE_EXTERNAL_STORAGE permission
+     const granted = await PermissionsAndroid.request(
+       PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+       {
+         title: 'Storage Permission',
+         message: 'App needs access to storage to download PDF reports.',
+         buttonNeutral: 'Ask Me Later',
+         buttonNegative: 'Cancel',
+         buttonPositive: 'OK',
+       },
+     );
+     
+     return granted === PermissionsAndroid.RESULTS.GRANTED;
+   } 
+   // For Android 9 and below (API level 28 and below)
+   else {
+     const granted = await PermissionsAndroid.requestMultiple([
+       PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+       PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+     ]);
+     
+     return (
+       granted[PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE] === PermissionsAndroid.RESULTS.GRANTED &&
+       granted[PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE] === PermissionsAndroid.RESULTS.GRANTED
+     );
+   }
+ } catch (err) {
+   console.error('Error requesting storage permission:', err);
+   return false;
+ }
+};
+
 const StockReportScreen: React.FC = () => {
  const route = useRoute();
  const [customerName, setCustomerName] = useState('');
@@ -198,6 +262,8 @@ const StockReportScreen: React.FC = () => {
 
  // State for PDF download
  const [isPdfDownloading, setIsPdfDownloading] = useState(false);
+ const [pdfProgress, setPdfProgress] = useState(0);
+ const [pdfStatusMessage, setPdfStatusMessage] = useState('');
 
  // State for subcategories
  const [subCategories, setSubCategories] = useState<SubCategoryItem[]>([]);
@@ -684,25 +750,333 @@ const StockReportScreen: React.FC = () => {
  };
 
  // Handle PDF download
- const handlePdfDownload = () => {
+ const handlePdfDownload = async () => {
    if (stockData.length === 0) {
      Alert.alert('No Data', 'There is no data to download.');
      return;
    }
 
-   setIsPdfDownloading(true);
-   
-   // Show a temporary alert to indicate PDF functionality
-   setTimeout(() => {
-     setIsPdfDownloading(false);
+   try {
+     // Request storage permission for Android
+     if (Platform.OS === 'android') {
+       const hasPermission = await requestStoragePermission();
+       if (!hasPermission) {
+         Alert.alert(
+           'Permission Denied',
+           'Storage permission is required to download PDF reports.',
+           [{ text: 'OK' }]
+         );
+         return;
+       }
+     }
+     
+     setIsPdfDownloading(true);
+     setPdfProgress(10);
+     setPdfStatusMessage('Preparing PDF request...');
+
+     // Get the appropriate API endpoint based on toggle state
+     const pdfApiEndpoint = isZeroStock 
+       ? API_ENDPOINTS.GET_ZERO_STOCK_PDF_REPORT 
+       : API_ENDPOINTS.GET_STOCK_PDF_REPORT;
+
+     // Prepare the request payload - same as used for search
+     const payload = {
+       customerName: customerName || null,
+       lotNo: lotNo ? Number(lotNo) : null,
+       vakalNo: vakalNo || null,
+       itemSubCategory: itemSubCategory.length > 0 ? itemSubCategory : null,
+       itemMarks: itemMarks || null,
+       unit: unit.length > 0 ? unit[0] : null,
+       fromDate: fromDate ? formatApiDate(fromDate) : null,
+       toDate: toDate ? formatApiDate(toDate) : null,
+       qtyLessThan: qtyLessThan ? Number(qtyLessThan) : null
+     };
+
+     console.log(`Using PDF API endpoint: ${pdfApiEndpoint}`);
+     console.log('PDF Request payload:', JSON.stringify(payload, null, 2));
+     
+     setPdfProgress(30);
+     setPdfStatusMessage('Requesting PDF from server...');
+
+     // Create filename with date for uniqueness
+     const currentDate = new Date();
+     const dateString = format(currentDate, 'yyyyMMdd_HHmmss');
+     const reportType = isZeroStock ? 'ZeroStock' : 'Stock';
+     const fileName = `${reportType}_Report_${dateString}.pdf`;
+
+     // Determine directory path based on platform
+     let dirPath: string;
+     let filePath: string;
+
+     if (Platform.OS === 'ios') {
+       // For iOS, use the Documents directory
+       dirPath = RNBlobUtil.fs.dirs.DocumentDir;
+       filePath = `${dirPath}/${fileName}`;
+     } else {
+       // For Android, use the public Download directory
+       dirPath = RNBlobUtil.fs.dirs.DownloadDir;
+       
+       // For Android 10+ (API level 29+), we need to use the app's specific directory
+       if ((Platform.Version as number) >= 29) {
+         console.log('Using app download directory for Android 10+:', dirPath);
+         
+         // For Android 10+, try to use the public Downloads directory
+         if (dirPath.includes('Android/data')) {
+           // If we got the app's private directory, try to get public directory
+           const directPath = '/storage/emulated/0/Download';
+           try {
+             const directPathExists = await RNBlobUtil.fs.exists(directPath);
+             if (directPathExists) {
+               // Test if writable
+               const testFile = `${directPath}/test-write-access.txt`;
+               try {
+                 await RNBlobUtil.fs.writeFile(testFile, 'test', 'utf8');
+                 await RNBlobUtil.fs.unlink(testFile);
+                 dirPath = directPath;
+                 console.log('Successfully using external download directory:', dirPath);
+               } catch (writeError) {
+                 console.log('External directory not writable:', writeError);
+               }
+             }
+           } catch (error) {
+             console.log('Using app-specific directory due to error:', error);
+           }
+         }
+       } else {
+         // For older Android versions, try to use the main storage Download directory
+         try {
+           const directPath = '/storage/emulated/0/Download';
+           const exists = await RNBlobUtil.fs.exists(directPath);
+           
+           if (exists) {
+             // Test if writable by creating a test file
+             const testFile = `${directPath}/test-write-access.txt`;
+             try {
+               await RNBlobUtil.fs.writeFile(testFile, 'test', 'utf8');
+               await RNBlobUtil.fs.unlink(testFile);
+               dirPath = directPath;
+               console.log('Using external download directory:', dirPath);
+             } catch (writeError) {
+               console.log('External directory not writable:', writeError);
+             }
+           } else {
+             console.log('Using app download directory:', dirPath);
+           }
+         } catch (error) {
+           console.log('Error checking external directory:', error);
+         }
+       }
+       
+       filePath = `${dirPath}/${fileName}`;
+     }
+     
+     console.log('File will be saved to:', filePath);
+     
+     setPdfProgress(50);
+     setPdfStatusMessage('Downloading PDF...');
+
+     // Use a direct Axios approach for all platforms
+     const response = await axios({
+       url: `${pdfApiEndpoint}?customerId=${customerId}`,
+       method: 'POST',
+       data: payload,
+       responseType: 'arraybuffer',
+       headers: {
+         ...DEFAULT_HEADERS,
+         'Accept': 'application/pdf',
+       },
+     });
+
+     // Check if we got a valid PDF response by looking at the first few bytes
+     // PDF files start with "%PDF-"
+     const data = new Uint8Array(response.data);
+     const isPdf = data.length > 4 && 
+                 data[0] === 0x25 && // %
+                 data[1] === 0x50 && // P
+                 data[2] === 0x44 && // D
+                 data[3] === 0x46;   // F
+
+     if (!isPdf) {
+       // Try to parse the response as text if it's not a PDF
+       const textData = Buffer.from(response.data).toString('utf8');
+       console.error('Received non-PDF response:', textData);
+       throw new Error(`Server returned non-PDF data: ${textData.substring(0, 100)}...`);
+     }
+
+     setPdfProgress(75);
+     setPdfStatusMessage('Saving PDF file...');
+
+     // Convert response to base64 string
+     const pdfData = Buffer.from(response.data).toString('base64');
+     
+     // Create directory if needed
+     const dirExists = await RNBlobUtil.fs.exists(dirPath);
+     if (!dirExists) {
+       await RNBlobUtil.fs.mkdir(dirPath);
+     }
+     
+     // Check if file already exists and get unique name if needed
+     let finalFilePath = filePath;
+     const fileExists = await RNBlobUtil.fs.exists(filePath);
+     if (fileExists) {
+       const timestamp = new Date().getTime();
+       const newFileName = `${reportType}_Report_${dateString}_${timestamp}.pdf`;
+       finalFilePath = `${dirPath}/${newFileName}`;
+       console.log('File already exists, using unique filename:', newFileName);
+     }
+     
+     // Write the file using RNBlobUtil
+     await RNBlobUtil.fs.writeFile(finalFilePath, pdfData, 'base64');
+     
+     // Verify the file exists
+     const savedFileExists = await RNBlobUtil.fs.exists(finalFilePath);
+     if (!savedFileExists) {
+       throw new Error(`File could not be saved to ${finalFilePath}`);
+     }
+     
+     // For Android, ensure the file is visible in the media store
+     if (Platform.OS === 'android') {
+       try {
+         // Make the file visible in the media store
+         await RNBlobUtil.fs.scanFile([
+           { path: finalFilePath, mime: 'application/pdf' }
+         ]);
+         console.log('File scanned successfully');
+         
+         // Show notification like in ReportPdfUtils
+         console.log('Showing notification for downloaded PDF:', finalFilePath);
+         
+         // Configure the notification channel
+         const channelId = 'pdf-downloads-stock';
+         
+         // Create the notification channel
+         PushNotification.createChannel(
+           {
+             channelId,
+             channelName: 'Stock PDF Downloads',
+             channelDescription: 'Notifications for Stock PDF downloads',
+             importance: 5, // Max importance for visibility
+             vibrate: true,
+             lightColor: '#F48221',
+             playSound: true,
+             soundName: 'default',
+           },
+           (created: boolean) => {
+             console.log(
+               `Notification channel created status: ${created ? 'success' : 'failed'}`
+             );
+             if (!created) {
+               console.log(
+                 'Failed to create notification channel, using Toast as fallback'
+               );
+               ToastAndroid.show(
+                 'PDF downloaded to Downloads folder',
+                 ToastAndroid.LONG
+               );
+             }
+           }
+         );
+
+         // Ensure the file path is properly formatted for notification click handling
+         const formattedFilePath = !finalFilePath.startsWith('file://')
+           ? `file://${finalFilePath}`
+           : finalFilePath;
+
+         // Show the notification
+         try {
+           PushNotification.localNotification({
+             channelId: channelId,
+             title: `${reportType} Report Downloaded`,
+             message: `PDF saved to Downloads folder`,
+             playSound: true,
+             soundName: 'default',
+             color: '#F48221',
+             importance: 'high',
+             priority: 'high',
+             visibility: 'public',
+             vibrate: true,
+             actions: ['View'],
+             userInfo: { filePath: formattedFilePath },
+             id: String(Date.now()),
+           });
+           console.log('Notification sent successfully');
+         } catch (notifError) {
+           console.error('Error showing notification:', notifError);
+           // Fallback to Toast
+           ToastAndroid.showWithGravity(
+             'PDF downloaded to Downloads folder',
+             ToastAndroid.LONG,
+             ToastAndroid.BOTTOM
+           );
+         }
+       } catch (scanError) {
+         console.error('Error making file visible:', scanError);
+         // Continue even if scanning fails
+         ToastAndroid.showWithGravity(
+           'PDF saved but may not be visible in Downloads',
+           ToastAndroid.LONG,
+           ToastAndroid.BOTTOM
+         );
+       }
+     }
+
+     setPdfProgress(100);
+     setPdfStatusMessage('Download complete!');
+
+     // Show success message and offer to open the file
+     const isPublicStorage = !finalFilePath.includes('Android/data');
      Alert.alert(
-       'PDF Download',
-       'PDF download functionality will be implemented in the next update.',
-       [{ text: 'OK' }]
+       'PDF Downloaded',
+       isPublicStorage
+         ? 'The report has been downloaded successfully to Downloads folder!'
+         : 'The report has been saved to app storage.',
+       [
+         {
+           text: 'View PDF',
+           onPress: () => {
+             try {
+               // Make sure the path format is correct for the platform
+               const formattedPath =
+                 Platform.OS === 'android' &&
+                 !finalFilePath.startsWith('file://')
+                   ? `file://${finalFilePath}`
+                   : finalFilePath;
+
+               // Open the PDF with a slight delay to ensure it's fully written
+               setTimeout(() => {
+                 if (Platform.OS === 'ios') {
+                   RNBlobUtil.ios.openDocument(finalFilePath);
+                 } else {
+                   // For Android
+                   RNBlobUtil.android.actionViewIntent(finalFilePath, 'application/pdf');
+                 }
+               }, 300);
+             } catch (viewError) {
+               console.error('Error opening PDF:', viewError);
+               Alert.alert(
+                 'Error',
+                 'Could not open the PDF file. The file was saved successfully, but there was an error opening it.',
+               );
+             }
+           },
+         },
+         { text: 'OK', style: 'cancel' },
+       ]
      );
-   }, 1000);
-   
-   // TODO: Implement actual PDF generation and download functionality
+
+     setIsPdfDownloading(false);
+   } catch (error) {
+     console.error('Error downloading PDF:', error);
+     
+     // Show more specific error message
+     let errorMessage = 'Failed to download the PDF report.';
+     if (error instanceof Error) {
+       errorMessage += ` Error: ${error.message}`;
+     }
+     
+     Alert.alert('Download Error', errorMessage);
+     setIsPdfDownloading(false);
+   }
  };
 
  // Handle date change for From Date
@@ -1060,6 +1434,27 @@ const StockReportScreen: React.FC = () => {
  </Text>
  </View>
  )}
+
+ {/* PDF Loading Overlay */}
+ {isPdfDownloading && (
+   <View style={styles.pdfLoadingOverlay}>
+     <View style={styles.pdfLoadingCard}>
+       <Text style={styles.pdfLoadingText}>Generating PDF</Text>
+       <View style={styles.progressBarContainer}>
+         <View
+           style={[
+             styles.progressBar,
+             {
+               width: `${pdfProgress}%`,
+               backgroundColor: '#F48221',
+             },
+           ]}
+         />
+       </View>
+       <Text style={styles.progressText}>{pdfStatusMessage}</Text>
+     </View>
+   </View>
+ )}
  </ScrollView>
  </TouchableWithoutFeedback>
 
@@ -1311,7 +1706,7 @@ const styles = StyleSheet.create({
  borderBottomColor: '#eee',
  },
  selectedOption: {
- backgroundColor: '#f5f5f5',
+ backgroundColor: '#f5f5f9',
  },
  optionText: {
  color: '#333',
@@ -1520,6 +1915,51 @@ const styles = StyleSheet.create({
  color: '#6c757d',
  fontSize: 16,
  textAlign: 'center',
+ },
+
+ // PDF Loading Overlay
+ pdfLoadingOverlay: {
+   position: 'absolute',
+   top: 0,
+   left: 0,
+   right: 0,
+   bottom: 0,
+   justifyContent: 'center',
+   alignItems: 'center',
+   backgroundColor: 'rgba(0, 0, 0, 0.5)',
+   zIndex: 1000,
+ },
+ pdfLoadingCard: {
+   backgroundColor: 'white',
+   padding: 20,
+   borderRadius: 10,
+   alignItems: 'center',
+   width: '80%',
+   maxWidth: 300,
+ },
+ pdfLoadingText: {
+   fontSize: 18,
+   fontWeight: 'bold',
+   marginBottom: 20,
+   color: '#333',
+ },
+ progressBarContainer: {
+   width: '100%',
+   height: 20,
+   backgroundColor: '#f0f0f0',
+   borderRadius: 10,
+   overflow: 'hidden',
+   marginBottom: 10,
+ },
+ progressBar: {
+   height: '100%',
+   backgroundColor: '#E87830',
+ },
+ progressText: {
+   color: '#333',
+   fontSize: 14,
+   fontWeight: 'bold',
+   textAlign: 'center',
  },
 });
 
