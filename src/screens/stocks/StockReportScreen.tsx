@@ -13,6 +13,7 @@ import {
  Keyboard,
  TouchableWithoutFeedback,
  Switch,
+ Alert,
 } from 'react-native';
 import axios, {AxiosError} from 'axios';
 import {API_ENDPOINTS, DEFAULT_HEADERS, getAuthHeaders} from '../../config/api.config';
@@ -25,6 +26,7 @@ import {format} from 'date-fns';
 import MultiSelect from '../../components/Multiselect';
 import {LayoutWrapper} from '../../components/AppLayout';
 import {useRoute} from '@react-navigation/core';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 interface DropdownOption {
  label: string;
@@ -193,6 +195,9 @@ const StockReportScreen: React.FC = () => {
  const [allStockData, setAllStockData] = useState<StockReportItem[]>([]);
  const [errorMessage, setErrorMessage] = useState<string | null>(null);
  const [totalRecords, setTotalRecords] = useState<number>(0);
+
+ // State for PDF download
+ const [isPdfDownloading, setIsPdfDownloading] = useState(false);
 
  // State for subcategories
  const [subCategories, setSubCategories] = useState<SubCategoryItem[]>([]);
@@ -370,8 +375,16 @@ const StockReportScreen: React.FC = () => {
 
  // Toggle Zero Stock checkbox
  const toggleZeroStock = () => {
-   setIsZeroStock(previousState => !previousState);
-   console.log('Zero Stock toggled:', !isZeroStock);
+   setIsZeroStock(previousState => {
+     const newState = !previousState;
+     console.log('Zero Stock toggled:', newState);
+     
+     // Clear previous results when toggling
+     setStockData([]);
+     setAllStockData([]);
+     
+     return newState;
+   });
  };
 
  // Update current page data for pagination
@@ -491,25 +504,30 @@ const StockReportScreen: React.FC = () => {
        throw new Error('Customer ID not found. Please login again.');
      }
 
+     // Use the current state of isZeroStock to determine which API to call
+     let fetchedData: StockReportItem[] = [];
      if (isZeroStock) {
        // Call Zero Stock API
-       await fetchZeroStockItems();
-       
-       // Update pagination for zero stock data
-       if (allStockData.length > 0) {
-         const totalPages = Math.ceil(allStockData.length / pagination.itemsPerPage);
-         setPagination({
-           ...pagination,
-           totalItems: allStockData.length,
-           totalPages: totalPages || 1,
-         });
-         
-         // Set current page data for zero stock
-         updateCurrentPageData(allStockData, 1, pagination.itemsPerPage);
-       }
+       fetchedData = await fetchZeroStockItems() || [];
      } else {
        // Call Regular Stock Report API
-       await fetchStockReportItems();
+       fetchedData = await fetchStockReportItems() || [];
+     }
+     
+     // Update pagination for the fetched data
+     if (fetchedData.length > 0) {
+       const totalPages = Math.ceil(fetchedData.length / pagination.itemsPerPage);
+       setPagination(prev => ({
+         ...prev,
+         totalItems: fetchedData.length,
+         totalPages: totalPages || 1,
+       }));
+       
+       // Set current page data - ensure we're using the latest data
+       const startIndex = 0; // First page
+       const endIndex = pagination.itemsPerPage;
+       const paginatedData = fetchedData.slice(startIndex, endIndex);
+       setStockData(paginatedData);
      }
    } catch (error) {
      console.error('Error fetching stock data:', error);
@@ -568,19 +586,21 @@ const StockReportScreen: React.FC = () => {
    const result = response.data;
 
    if (result.status === 'success') {
-     setAllStockData(result.data || []);
-     setStockData(result.data || []);
+     const data = result.data || [];
+     setAllStockData(data);
      setTotalRecords(result.count || 0);
      console.log('Stock data records:', result.count);
 
-     if (result.data && result.data.length > 0) {
+     if (data.length > 0) {
        console.log(
          'First record sample:',
-         JSON.stringify(result.data[0], null, 2),
+         JSON.stringify(data[0], null, 2),
        );
      } else {
        console.log('No records found');
      }
+     
+     return data; // Return the data so we can use it immediately
    } else {
      throw new Error(result.message || 'Failed to fetch stock report data');
    }
@@ -616,19 +636,21 @@ const StockReportScreen: React.FC = () => {
    const result = response.data;
 
    if (result.status === 'success') {
-     setAllStockData(result.data || []);
-     setStockData(result.data || []);
+     const data = result.data || [];
+     setAllStockData(data);
      setTotalRecords(result.count || 0);
      console.log('Zero Stock data records:', result.count);
 
-     if (result.data && result.data.length > 0) {
+     if (data.length > 0) {
        console.log(
          'First zero stock record sample:',
-         JSON.stringify(result.data[0], null, 2),
+         JSON.stringify(data[0], null, 2),
        );
      } else {
        console.log('No zero stock records found');
      }
+     
+     return data; // Return the data so we can use it immediately
    } else {
      throw new Error(result.message || 'Failed to fetch zero stock data');
    }
@@ -659,6 +681,28 @@ const StockReportScreen: React.FC = () => {
      totalItems: 0,
      totalPages: 1,
    });
+ };
+
+ // Handle PDF download
+ const handlePdfDownload = () => {
+   if (stockData.length === 0) {
+     Alert.alert('No Data', 'There is no data to download.');
+     return;
+   }
+
+   setIsPdfDownloading(true);
+   
+   // Show a temporary alert to indicate PDF functionality
+   setTimeout(() => {
+     setIsPdfDownloading(false);
+     Alert.alert(
+       'PDF Download',
+       'PDF download functionality will be implemented in the next update.',
+       [{ text: 'OK' }]
+     );
+   }, 1000);
+   
+   // TODO: Implement actual PDF generation and download functionality
  };
 
  // Handle date change for From Date
@@ -720,6 +764,7 @@ const StockReportScreen: React.FC = () => {
  // Render table header
  const renderTableHeader = () => (
  <View style={styles.tableHeader}>
+ <Text style={[styles.tableHeaderCell, styles.srNoColumn]}>Sr.No</Text>
  <Text style={[styles.tableHeaderCell, styles.unitColumn]}>Unit</Text>
  <Text style={[styles.tableHeaderCell, styles.inwardDateColumn]}>Inward Date</Text>
  <Text style={[styles.tableHeaderCell, styles.lotColumn]}>Lot No</Text>
@@ -745,6 +790,11 @@ const StockReportScreen: React.FC = () => {
  styles.tableRow,
  index % 2 === 0 ? styles.evenRow : styles.oddRow,
  ]}>
+ <Text style={[styles.tableCell, styles.srNoColumn]}>
+   {pagination.currentPage > 1 
+     ? (pagination.currentPage - 1) * pagination.itemsPerPage + index + 1 
+     : index + 1}
+ </Text>
  <Text style={[styles.tableCell, styles.unitColumn]} numberOfLines={1}>
  {Array.isArray(item.UNIT_NAME)
  ? item.UNIT_NAME.join(', ')
@@ -951,9 +1001,35 @@ const StockReportScreen: React.FC = () => {
  {/* Table format results */}
  {!isLoading && stockData.length > 0 && (
  <View style={styles.tableContainer}>
+ <View style={styles.reportHeaderRight}>
+   <TouchableOpacity
+     style={[
+       styles.pdfButton,
+       {
+         backgroundColor: stockData.length === 0 ? '#CBD5E1' : '#F48221',
+       },
+       isPdfDownloading && styles.disabledButton,
+     ]}
+     onPress={handlePdfDownload}
+     disabled={isPdfDownloading || stockData.length === 0}>
+     {isPdfDownloading ? (
+       <ActivityIndicator size="small" color="#FFFFFF" />
+     ) : (
+       <>
+         <MaterialIcons
+           name="file-download"
+           size={20}
+           color="#FFFFFF"
+         />
+         <Text style={styles.pdfButtonText}>PDF</Text>
+       </>
+     )}
+   </TouchableOpacity>
+ </View>
  <ScrollView
  horizontal={true}
- showsHorizontalScrollIndicator={true}>
+ showsHorizontalScrollIndicator={true}
+ style={styles.tableScrollView}>
  <View>
  {renderTableHeader()}
  <FlatList
@@ -1343,6 +1419,11 @@ const styles = StyleSheet.create({
  marginBottom: 20,
  backgroundColor: 'white',
  overflow: 'hidden',
+ position: 'relative',
+ paddingTop: 50, // Add padding to make room for the PDF button
+ },
+ tableScrollView: {
+   width: '100%',
  },
  tableHeader: {
  flexDirection: 'row',
@@ -1388,6 +1469,31 @@ const styles = StyleSheet.create({
  categoryColumn: {width: 100},
  remarksColumn: {width: 120},
  inwardDateColumn: {width: 100},
+ srNoColumn: {width: 55},
+
+ // PDF button styles
+ reportHeaderRight: {
+   alignItems: 'flex-end',
+   marginBottom: 0,
+   marginRight: 0,
+   position: 'absolute',
+   right: 10,
+   top: 10,
+   zIndex: 1,
+ },
+ pdfButton: {
+   flexDirection: 'row',
+   alignItems: 'center',
+   paddingVertical: 7,
+   paddingHorizontal: 15,
+   borderRadius: 4,
+ },
+ pdfButtonText: {
+   color: '#FFFFFF',
+   fontWeight: 'bold',
+   fontSize: 14,
+   marginLeft: 4,
+ },
 
  // Status indicators
  loadingContainer: {
