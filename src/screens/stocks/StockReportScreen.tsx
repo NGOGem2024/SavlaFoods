@@ -1161,10 +1161,10 @@ const StockReportScreen: React.FC = () => {
  <Text style={[styles.tableHeaderCell, styles.unitColumn]}>Unit</Text>
  <Text style={[styles.tableHeaderCell, styles.inwardDateColumn]}>Inward Date</Text>
  <Text style={[styles.tableHeaderCell, styles.lotColumn]}>Lot No</Text>
- <Text style={[styles.tableHeaderCell, styles.itemDescColumn]}>Description</Text>
+ <Text style={[styles.tableHeaderCell, styles.itemDescColumn]}>Item Name</Text>
  <Text style={[styles.tableHeaderCell, styles.vakalNoColumn]}>Vakal No</Text>
  <Text style={[styles.tableHeaderCell, styles.itemMarksColumn]}>Item Marks</Text>
- <Text style={[styles.tableHeaderCell, styles.netQtyColumn]}>Available Qty</Text>
+ <Text style={[styles.tableHeaderCell, styles.netQtyColumn]}>Net Qty</Text>
  <Text style={[styles.tableHeaderCell, styles.expiryDateColumn]}>Expiry Date</Text>
  <Text style={[styles.tableHeaderCell, styles.remarksColumn]}>Remarks</Text>
  </View>
