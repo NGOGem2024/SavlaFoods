@@ -304,7 +304,7 @@ const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({route}) => {
                   <View style={styles.tableHeaderCell110}>
                     <Text style={styles.tableRowText}>{item.ITEM_MARKS}</Text>
                   </View>
-                  <View style={styles.tableHeaderCell140}>
+                  <View style={styles.tableHeaderCell120}>
                     <Text style={styles.tableRowText}>
                       {item.VAKAL_NO || '-'}
                     </Text>
@@ -345,7 +345,7 @@ const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({route}) => {
                 <View style={styles.tableHeaderCell150}>
                   <Text style={styles.tableRowText}></Text>
                 </View>
-                <View style={styles.tableHeaderCell100}>
+                <View style={styles.tableHeaderCell90}>
                   <Text style={styles.totalText}>Total </Text>
                 </View>
                 <View style={styles.tableHeaderCell60}>
@@ -446,6 +446,7 @@ const styles = StyleSheet.create({
   tableRowText: {
     fontSize: 13,
     lineHeight: 18, // Ensure consistent row heights
+    textAlign: 'center',
   },
   tableHeaderRow: {
     flexDirection: 'row',
@@ -484,55 +485,72 @@ const styles = StyleSheet.create({
     width: 60,
     paddingHorizontal: 6,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   tableHeaderCell80: {
     width: 80,
     paddingHorizontal: 6,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tableHeaderCell90: {
+    width: 90,
+    paddingHorizontal: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   tableHeaderCell100: {
     width: 100,
     paddingHorizontal: 6,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   tableHeaderCell110: {
     width: 110,
     paddingHorizontal: 6,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   tableHeaderCell120: {
     width: 120,
     paddingHorizontal: 6,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   tableHeaderCell140: {
     width: 140,
     paddingHorizontal: 6,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   tableHeaderCell150: {
     width: 150,
     paddingHorizontal: 6,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   tableHeaderCell180: {
     width: 180,
     paddingHorizontal: 6,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   tableHeaderCell200: {
     width: 200,
     paddingHorizontal: 6,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   tableHeaderText: {
     fontWeight: 'bold',
     fontSize: 13,
+    textAlign: 'center',
   },
 
   totalText: {
     fontWeight: 'bold',
     fontSize: 13,
+    textAlign: 'center',
   },
   loadingContainer: {
     flex: 1,
