@@ -1,17 +1,35 @@
-import React from 'react';
+import React, {useRef, useCallback} from 'react';
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 
+interface ReportItem {
+  UNIT_NAME?: string;
+  GRN_DATE?: string;
+  OUTWARD_DATE?: string;
+  GRN_NO?: string;
+  OUTWARD_NO?: string;
+  LOT_NO?: string;
+  ITEM_NAME?: string;
+  VAKKAL_NO?: string;
+  ITEM_MARK?: string;
+  QTY?: string | number;
+  REMARK?: string;
+  VEHICLE_NO?: string;
+  DELIVERED_TO?: string;
+}
+
 interface ReportTableProps {
-  reportData: any[];
+  reportData: ReportItem[];
   isInward: boolean;
   tableRef: React.RefObject<ScrollView>;
-  onInwardOutwardNoPress?: (item: any) => void;
+  onInwardOutwardNoPress?: (item: ReportItem) => void;
 }
 
 const ReportTable = ({
@@ -26,14 +44,13 @@ const ReportTable = ({
     unit: 70,
     date: 100,
     inwardOutwardNo: 100,
-    customer: 150,
-    vehicle: 100,
     lotNo: 80,
     itemName: 150,
-    remark: 100,
-    itemMark: 120,
     vakkalNo: 110,
+    itemMark: 120,
     qty: 60,
+    remark: 100,
+    vehicle: 100,
     deliveredTo: 120,
   };
 
@@ -41,7 +58,7 @@ const ReportTable = ({
   const getThemeColor = () => (isInward ? '#F48221' : '#4682B4');
 
   // Helper function to format date to dd/mm/yy
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
     if (!dateString) return '-';
 
     try {
@@ -58,12 +75,48 @@ const ReportTable = ({
     }
   };
 
+  // Refs for scroll synchronization
+  const headerScrollRef = useRef<ScrollView>(null);
+  const contentScrollRef = useRef<ScrollView>(null);
+  const isScrolling = useRef<string | null>(null);
+
+  // Debounced scroll handler to prevent "running ants" effect
+  const handleHorizontalScroll = useCallback(
+    (
+      event: NativeSyntheticEvent<NativeScrollEvent>,
+      source: 'header' | 'content',
+    ) => {
+      if (isScrolling.current && isScrolling.current !== source) {
+        return; // Prevent recursive scroll updates
+      }
+
+      isScrolling.current = source;
+      const offsetX = event.nativeEvent.contentOffset.x;
+
+      if (source === 'header' && contentScrollRef.current) {
+        contentScrollRef.current.scrollTo({x: offsetX, animated: false});
+      } else if (source === 'content' && headerScrollRef.current) {
+        headerScrollRef.current.scrollTo({x: offsetX, animated: false});
+      }
+
+      // Reset isScrolling after a short delay to allow new scroll events
+      setTimeout(() => {
+        isScrolling.current = null;
+      }, 50);
+    },
+    [],
+  );
+
   return (
     <View style={styles.tableContainer}>
+      {/* Header ScrollView */}
       <ScrollView
-        horizontal={true}
+        ref={headerScrollRef}
+        horizontal
         showsHorizontalScrollIndicator={false}
-        style={styles.headerScrollView}>
+        style={styles.headerScrollView}
+        onScroll={event => handleHorizontalScroll(event, 'header')}
+        scrollEventThrottle={16}>
         <View style={[styles.tableHeader, {backgroundColor: '#f8f8f8'}]}>
           <Text
             style={[
@@ -142,7 +195,6 @@ const ReportTable = ({
             ]}>
             Vehicle
           </Text>
-          {/* Show Delivered To column only for Outward */}
           {!isInward && (
             <Text
               style={[
@@ -155,17 +207,19 @@ const ReportTable = ({
         </View>
       </ScrollView>
 
-      {/* Scrollable Content */}
+      {/* Content ScrollView */}
       <ScrollView
-        ref={tableRef}
-        horizontal={true}
+        ref={contentScrollRef}
+        horizontal
         showsHorizontalScrollIndicator={true}
-        style={styles.contentScrollView}>
+        style={styles.contentScrollView}
+        onScroll={event => handleHorizontalScroll(event, 'content')}
+        scrollEventThrottle={16}>
         <ScrollView
+          ref={tableRef}
           nestedScrollEnabled={true}
           showsVerticalScrollIndicator={true}>
           <View style={styles.tableWrapper}>
-            {/* Table Rows */}
             {reportData.map((item, index) => (
               <View
                 key={`row-${index}`}
@@ -191,7 +245,6 @@ const ReportTable = ({
                     ? formatDate(item.GRN_DATE)
                     : formatDate(item.OUTWARD_DATE)}
                 </Text>
-
                 {isInward ? (
                   <TouchableOpacity
                     style={[
@@ -218,15 +271,31 @@ const ReportTable = ({
                     </Text>
                   </TouchableOpacity>
                 ) : (
-                  <Text
+                  <TouchableOpacity
                     style={[
-                      styles.tableCell,
+                      styles.tableCellContainer,
                       {width: columnWidths.inwardOutwardNo},
-                    ]}>
-                    {item.OUTWARD_NO || '-'}
-                  </Text>
+                    ]}
+                    onPress={() =>
+                      onInwardOutwardNoPress && onInwardOutwardNoPress(item)
+                    }
+                    disabled={!(onInwardOutwardNoPress && item.OUTWARD_NO)}>
+                    <Text
+                      style={[
+                        styles.tableCell,
+                        styles.clickableCell,
+                        {
+                          color:
+                            onInwardOutwardNoPress && item.OUTWARD_NO
+                              ? getThemeColor()
+                              : '#334155',
+                          width: '100%',
+                        },
+                      ]}>
+                      {item.OUTWARD_NO || '-'}
+                    </Text>
+                  </TouchableOpacity>
                 )}
-
                 <Text style={[styles.tableCell, {width: columnWidths.lotNo}]}>
                   {item.LOT_NO || '-'}
                 </Text>
@@ -251,7 +320,6 @@ const ReportTable = ({
                 <Text style={[styles.tableCell, {width: columnWidths.vehicle}]}>
                   {item.VEHICLE_NO || '-'}
                 </Text>
-                {/* Show Delivered To column only for Outward */}
                 {!isInward && (
                   <Text
                     style={[
