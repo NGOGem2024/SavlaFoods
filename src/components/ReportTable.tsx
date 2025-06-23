@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Platform,
 } from 'react-native';
 
 interface ReportItem {
@@ -267,7 +268,9 @@ const ReportTable = ({
                           width: '100%',
                         },
                       ]}>
+                      {Platform.OS === 'ios' && onInwardOutwardNoPress && item.GRN_NO ? '👉 ' : ''}
                       {item.GRN_NO || '-'}
+                      {Platform.OS === 'ios' && onInwardOutwardNoPress && item.GRN_NO ? ' 📄' : ''}
                     </Text>
                   </TouchableOpacity>
                 ) : (
@@ -292,7 +295,9 @@ const ReportTable = ({
                           width: '100%',
                         },
                       ]}>
+                      {Platform.OS === 'ios' && onInwardOutwardNoPress && item.OUTWARD_NO ? '👉 ' : ''}
                       {item.OUTWARD_NO || '-'}
+                      {Platform.OS === 'ios' && onInwardOutwardNoPress && item.OUTWARD_NO ? ' 📄' : ''}
                     </Text>
                   </TouchableOpacity>
                 )}

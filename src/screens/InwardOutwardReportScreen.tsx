@@ -115,24 +115,39 @@ const InwardOutwardReportScreen = () => {
 
   // Handler for Inward/Outward No cell press
   const handleInwardOutwardNoPress = (item: any) => {
+    console.log(`[handleInwardOutwardNoPress] Called with item:`, JSON.stringify(item));
+    console.log(`[handleInwardOutwardNoPress] Platform:`, Platform.OS);
+    
     if (isInward && item.GRN_NO) {
       // For inward items, navigate to GrnDetailsScreen with the GRN_NO
-      console.log('Navigating to GrnDetailsScreen with GRN_NO:', item.GRN_NO);
-      // Pass all the item data to the detail screen
-      navigation.navigate('GrnDetailsScreen', {
-        grnNo: item.GRN_NO,
-        item: item,
-        customerId: item.CUSTOMER_ID,
-      });
+      console.log('[handleInwardOutwardNoPress] Navigating to GrnDetailsScreen with GRN_NO:', item.GRN_NO);
+      try {
+        // Pass all the item data to the detail screen
+        navigation.navigate('GrnDetailsScreen', {
+          grnNo: item.GRN_NO,
+          item: item,
+          customerId: item.CUSTOMER_ID,
+        });
+        console.log('[handleInwardOutwardNoPress] Successfully navigated to GrnDetailsScreen');
+      } catch (error) {
+        console.error('[handleInwardOutwardNoPress] Navigation error:', error);
+      }
     } else if (!isInward && item.OUTWARD_NO) {
       // For outward items, navigate to OutwardDetailsScreen with the OUTWARD_NO
-      console.log('Navigating to OutwardDetailsScreen with OUTWARD_NO:', item.OUTWARD_NO);
-      // Pass all the item data to the detail screen
-      navigation.navigate('OutwardDetailsScreen', {
-        outwardNo: item.OUTWARD_NO,
-        item: item,
-        customerId: item.CUSTOMER_ID,
-      });
+      console.log('[handleInwardOutwardNoPress] Navigating to OutwardDetailsScreen with OUTWARD_NO:', item.OUTWARD_NO);
+      try {
+        // Pass all the item data to the detail screen
+        navigation.navigate('OutwardDetailsScreen', {
+          outwardNo: item.OUTWARD_NO,
+          item: item,
+          customerId: item.CUSTOMER_ID,
+        });
+        console.log('[handleInwardOutwardNoPress] Successfully navigated to OutwardDetailsScreen');
+      } catch (error) {
+        console.error('[handleInwardOutwardNoPress] Navigation error:', error);
+      }
+    } else {
+      console.warn('[handleInwardOutwardNoPress] No valid GRN_NO or OUTWARD_NO found in item');
     }
   };
 
