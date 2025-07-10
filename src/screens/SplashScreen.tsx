@@ -4,6 +4,7 @@ import {useNavigation, NavigationProp} from '@react-navigation/native';
 import {RootStackParamList} from '../type/type';
 import {migrateAllSecureKeys} from '../utils/migrationHelper';
 import {getSecureItem} from '../utils/secureStorage';
+import axios from 'axios';
 
 const SplashScreen: React.FC = () => {
   const navigation =
@@ -18,30 +19,31 @@ const SplashScreen: React.FC = () => {
         console.log('Migration results:', results);
         setMigrationComplete(true);
 
-        // Check if user is already logged in
+        // Check if user token exists (for future use when they login)
         const token = await getSecureItem('userToken');
-        
-        // Navigate to appropriate screen after a short delay
+
+        // Set the token in axios defaults if it exists
+        if (token) {
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          console.log('Token set in axios defaults on app startup');
+        }
+
+        // Always navigate to WelcomeScreen first for app review
+        // This allows reviewers to see the app without forced login
         setTimeout(() => {
-          if (token) {
-            navigation.reset({
-              index: 0,
-              routes: [{name: 'Main'}],
-            });
-          } else {
-            navigation.reset({
-              index: 0,
-              routes: [{name: 'OtpVerificationScreen'}],
-            });
-          }
+          console.log('Navigating to WelcomeScreen for app review flow');
+          navigation.reset({
+            index: 0,
+            routes: [{name: 'WelcomeScreen'}],
+          });
         }, 1000);
       } catch (error) {
         console.error('Initialization error:', error);
-        // Navigate to login screen on error
+        // Navigate to WelcomeScreen on error as well
         setTimeout(() => {
           navigation.reset({
             index: 0,
-            routes: [{name: 'OtpVerificationScreen'}],
+            routes: [{name: 'WelcomeScreen'}],
           });
         }, 1000);
       }

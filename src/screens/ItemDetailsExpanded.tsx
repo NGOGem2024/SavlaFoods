@@ -31,6 +31,7 @@ interface ItemDetails {
 }
 
 interface StockDetails {
+  QUANTITY: number;
   LOT_NO: string | null;
   ITEM_MARKS: string | null;
   VAKAL_NO: string | null;
@@ -124,6 +125,7 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
     lot_no: string;
     available_qty: number;
     box_quantity: number;
+    quantity: number;
     unit_name: string;
     vakal_no: string;
     customerID?: number | string;
@@ -176,6 +178,7 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
       lot_no: lotNo,
       available_qty: selectedStock.AVAILABLE_QTY || 0,
       box_quantity: selectedStock.BOX_QUANTITY || 0,
+      quantity: selectedStock.QUANTITY || 0,
       unit_name: selectedStock.UNIT_NAME || '',
       customerID: customerID,
       vakal_no: selectedStock.VAKAL_NO || '',
@@ -355,6 +358,8 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
         false) ||
       (stock.BOX_QUANTITY?.toString().toLowerCase().includes(searchLower) ??
         false) ||
+      (stock.QUANTITY?.toString().toLowerCase().includes(searchLower) ??
+        false) ||
       (stock.EXPIRY_DATE?.toString().toLowerCase().includes(searchLower) ??
         false) ||
       (stock.STATUS?.toString().toLowerCase().includes(searchLower) ?? false) ||
@@ -456,20 +461,32 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
                       {stock.ITEM_MARKS || ''}
                     </Text>
                   </View>
-                  <View style={styles.detailItem}>
+                  {/* <View style={styles.detailItem}>
                     <Text style={styles.detailLabel}>Batch No:</Text>
                     <Text style={styles.detailValue}>
                       {stock.BATCH_NO || ''}
                     </Text>
+                  </View> */}
+                  {/* <View style={styles.detailItem}>
+                    <Text style={styles.detailLabel}>Box Quantity:</Text>
+                    <Text style={styles.detailValue}>
+                      {formatQuantity(stock.BOX_QUANTITY)}
+                    </Text>
+                  </View> */}
+                  <View style={styles.detailItem}>
+                    <Text style={styles.detailLabel}>Quantity:</Text>
+                    <Text style={styles.detailValue}>
+                      {formatQuantity(stock.QUANTITY)}
+                    </Text>
                   </View>
                 </View>
                 <View style={styles.detailRow}>
-                  <View style={styles.detailItem}>
+                  {/* <View style={styles.detailItem}>
                     <Text style={styles.detailLabel}>Available Quantity:</Text>
                     <Text style={styles.detailValue}>
                       {formatQuantity(stock.AVAILABLE_QTY)}
                     </Text>
-                  </View>
+                  </View> */}
                   <View style={styles.detailItem}>
                     <Text style={styles.detailLabel}>Remarks:</Text>
                     <Text style={styles.detailValue}>
@@ -514,7 +531,7 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
                 Batch No
               </Text>
               <Text style={[styles.tableHeaderCell, {width: 150}]}>
-                Available Qty
+                Quantity
               </Text>
               <Text style={[styles.tableHeaderCell, {width: 100}]}>
                 Remarks
@@ -570,8 +587,11 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
                       </Text>
                     </View>
                     <View style={[styles.tableCellContainer, {width: 150}]}>
-                      <Text style={styles.tableCell}>
+                      {/* <Text style={styles.tableCell}>
                         {formatQuantity(stock.AVAILABLE_QTY)}
+                      </Text> */}
+                      <Text style={styles.tableCell}>
+                        {formatQuantity(stock.QUANTITY)}
                       </Text>
                     </View>
                     <View style={[styles.tableCellContainer, {width: 100}]}>

@@ -23,7 +23,7 @@ import {
 import {NavigationProp} from '@react-navigation/native';
 import {getSecureItem, setSecureItem} from '../utils/secureStorage';
 import {getSecureOrAsyncItem} from '../utils/migrationHelper';
-import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {MainStackParamList, RootStackParamList} from '../type/type';
 import {API_ENDPOINTS, BASE_IMAGE_PATH} from '../config/api.config';
@@ -64,7 +64,8 @@ type SearchResultItem = {
   VAKAL_NO: string;
   BATCH_NO: string;
   AVAILABLE_QTY: number;
-  BOX_QUANTITY?: number;
+  Quantity: number;
+  BOX_QUANTITY: number;
   EXPIRY_DATE?: string;
   REMARKS?: string;
   STATUS?: string;
@@ -114,6 +115,7 @@ const HomeScreen: React.FC = () => {
     item_name: string;
     lot_no: string;
     available_qty: number;
+    quantity: number;
     box_quantity: number;
     unit_name: string;
     vakal_no: string;
@@ -194,20 +196,23 @@ const HomeScreen: React.FC = () => {
         setCustomerID(storedId);
         fetchCategories(storedId);
       } else {
-        const response = await axios.get(API_ENDPOINTS.GET_CUSTOMER_ID);
-        const newId = response.data.customerID;
+        interface CustomerResponse {
+          customerID: string;
+          displayName?: string;
+        }
+        const response = await apiClient.get<CustomerResponse>(
+          API_ENDPOINTS.GET_CUSTOMER_ID,
+        );
+        const newId = response.customerID;
         if (newId) {
           await setSecureItem('customerID', newId);
           setCustomerID(newId);
           fetchCategories(newId);
 
           // If there's a display name in the response, save and set it
-          if (response.data.displayName) {
-            await setSecureItem(
-              'displayName',
-              response.data.displayName,
-            );
-            setDisplayName(response.data.displayName);
+          if (response.displayName) {
+            await setSecureItem('displayName', response.displayName);
+            setDisplayName(response.displayName);
           }
         }
       }
@@ -223,8 +228,13 @@ const HomeScreen: React.FC = () => {
       if (name) {
         setDisplayName(name);
       } else {
-        const response = await axios.get(API_ENDPOINTS.GET_CUSTOMER_INFO);
-        name = response.data.Disp_name;
+        interface CustomerInfoResponse {
+          Disp_name: string;
+        }
+        const response = await apiClient.get<CustomerInfoResponse>(
+          API_ENDPOINTS.GET_CUSTOMER_INFO,
+        );
+        name = response.Disp_name;
         setDisplayName(name);
         await setSecureItem('Disp_name', name || '');
       }
@@ -239,14 +249,18 @@ const HomeScreen: React.FC = () => {
 
   const fetchCategories = useCallback(async (customerId: string) => {
     try {
-      const response = await axios.post(
+      interface CategoryResponse {
+        output: CategoryItem[];
+      }
+
+      const response = await apiClient.post<CategoryResponse>(
         API_ENDPOINTS.ITEM_CATEGORIES,
         {CustomerID: customerId},
         {timeout: 10000},
       );
 
-      if (response.data?.output) {
-        const uniqueCategories = response.data.output.reduce(
+      if (response?.output) {
+        const uniqueCategories = response.output.reduce(
           (acc: CategoryItem[], current: CategoryItem) => {
             const exists = acc.find(item => item.CATID === current.CATID);
             if (!exists) {
@@ -288,7 +302,12 @@ const HomeScreen: React.FC = () => {
 
       setIsSearching(true);
       try {
-        const response = await axios.post(
+        interface SearchResponse {
+          success: boolean;
+          data: SearchResultItem[];
+        }
+
+        const response = await apiClient.post<SearchResponse>(
           API_ENDPOINTS.SEARCH_ITEMS,
           {
             searchTerm: searchTerm,
@@ -298,14 +317,32 @@ const HomeScreen: React.FC = () => {
           {timeout: 10000},
         );
 
-        if (response.data?.success && response.data?.data) {
+        if (response?.success && response?.data) {
           // Map results and add image URLs
-          const resultsWithImages = response.data.data.map(
-            (item: SearchResultItem) => ({
-              ...item,
-              imageUrl: getCategoryImage(item.ITEM_CATEG_ID),
-            }),
-          );
+          // const resultsWithImages = response.data.map(
+          //   (item: SearchResultItem) => ({
+          //     ...item,
+          //     imageUrl: getCategoryImage(item.ITEM_CATEG_ID),
+          //   }),
+          // );
+
+          const resultsWithImages = response.data.map((item: any) => ({
+            ...item,
+            Quantity:
+              item.Quantity ??
+              item.QUANTITY ??
+              item.AVAILABLE_QTY ??
+              item.available_qty ??
+              0,
+            BOX_QUANTITY:
+              item.BOX_QUANTITY ?? item.box_quantity ?? item.Box_Quantity ?? 0,
+            AVAILABLE_QTY:
+              item.AVAILABLE_QTY ?? item.available_qty ?? item.Quantity ?? 0,
+
+            imageUrl: getCategoryImage(item.ITEM_CATEG_ID),
+          }));
+
+          console.log('Search API Raw Response:', response.data[0]);
 
           // Setup animations for cart buttons
           const animations: {[key: string]: Animated.Value} = {};
@@ -358,6 +395,7 @@ const HomeScreen: React.FC = () => {
       item_name: item.ITEM_NAME,
       lot_no: item.LOT_NO,
       available_qty: item.AVAILABLE_QTY || 0,
+      quantity: item.Quantity || 0,
       box_quantity: item.BOX_QUANTITY || 0,
       unit_name: item.UNIT_NAME || '',
       customerID: CustomerID || undefined,
@@ -368,9 +406,15 @@ const HomeScreen: React.FC = () => {
     setModalVisible(true);
   };
 
-  const formatQuantity = (quantity: number | null | undefined) => {
-    if (quantity === null || quantity === undefined) return 'N/A';
-    return quantity.toLocaleString();
+  // const formatQuantity = (quantity: number | null | undefined) => {
+  //   if (quantity === null || quantity === undefined) return 'N/A';
+  //   return quantity.toLocaleString();
+  // };
+
+  const formatQuantity = (quantity: any) => {
+    const num = Number(quantity);
+    if (isNaN(num) || quantity === null || quantity === undefined) return 'N/A';
+    return num.toLocaleString();
   };
 
   const renderCardItem = useCallback(
@@ -440,31 +484,31 @@ const HomeScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
 
-                            <Animated.View
-                  style={[
-                    styles.addToCartContainer,
+            <Animated.View
+              style={[
+                styles.addToCartContainer,
+                {
+                  transform: [
                     {
-                      transform: [
-                        {
-                          scale:
-                            cartAnimations[item.LOT_NO]?.interpolate({
-                              inputRange: [0, 0.5, 1],
-                              outputRange: [1, 1.2, 1],
-                            }) || 1,
-                        },
-                      ],
+                      scale:
+                        cartAnimations[item.LOT_NO]?.interpolate({
+                          inputRange: [0, 0.5, 1],
+                          outputRange: [1, 1.2, 1],
+                        }) || 1,
                     },
-                  ]}>
-                  <TouchableOpacity
-                    style={styles.addToCartButton}
-                    onPress={() => handleAddToCart(item)}>
-                    <Image
-                      source={require('../assets/images/cart.png')}
-                      style={{width: 32, height: 32, alignSelf: 'center'}}
-                      resizeMode="contain"
-                    />
-                  </TouchableOpacity>
-                </Animated.View>
+                  ],
+                },
+              ]}>
+              <TouchableOpacity
+                style={styles.addToCartButton}
+                onPress={() => handleAddToCart(item)}>
+                <Image
+                  source={require('../assets/images/cart.png')}
+                  style={{width: 32, height: 32, alignSelf: 'center'}}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+            </Animated.View>
           </View>
 
           <View style={styles.itemNameContainer}>
@@ -490,18 +534,36 @@ const HomeScreen: React.FC = () => {
                 <Text style={styles.detailLabel}>Item Marks</Text>
                 <Text style={styles.detailValue}>{item.ITEM_MARKS || ''}</Text>
               </View>
-              <View style={styles.detailItem}>
+              {/* <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Batch No</Text>
                 <Text style={styles.detailValue}>{item.BATCH_NO || ''}</Text>
-              </View>
+              </View> */}
+              {/* <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Box Quantity:</Text>
+                <Text style={styles.detailValue}>
+                  {formatQuantity(item.BOX_QUANTITY)}
+                </Text>
+              </View> */}
+              {/* <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Box Quantity:</Text>
+                <Text style={styles.detailValue}>
+                  {formatQuantity(item.BOX_QUANTITY)}
+                </Text>
+              </View> */}
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Quantity</Text>
+                <Text style={styles.detailValue}>
+                  {formatQuantity(item.Quantity)}
+                </Text>
+              </View>{' '}
             </View>
             <View style={styles.detailRow}>
-              <View style={styles.detailItem}>
+              {/* <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Available Quantity</Text>
                 <Text style={styles.detailValue}>
-                  {formatQuantity(item.AVAILABLE_QTY)}
+                  {formatQuantity(item.Quantity)}
                 </Text>
-              </View>
+              </View>{' '} */}
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Remarks</Text>
                 <Text style={styles.detailValue}>{item.REMARKS || ''}</Text>

@@ -32,6 +32,7 @@ interface DetailRowProps {
 }
 
 interface OrderItem {
+  REQUESTED_QUANTITY: number;
   ITEM_ID: number;
   ITEM_NAME: string;
   LOT_NO: string;
@@ -40,6 +41,7 @@ interface OrderItem {
   UNIT_NAME: string;
   AVAILABLE_QTY: number;
   NET_QUANTITY: number;
+  QUANTITY: number;
   ORDERED_QUANTITY: number;
   BatchNo?: string | null;
 }
@@ -99,6 +101,7 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
           VAKAL_NO: cartItem.vakal_no || '',
           ITEM_MARKS: cartItem.item_marks || '',
           UNIT_NAME: cartItem.unit_name || '',
+          QUANTITY: cartItem.available_qty, // Added quantity field
           AVAILABLE_QTY: cartItem.available_qty,
           NET_QUANTITY: Math.max(0, cartItem.available_qty - cartItem.quantity),
           UPDATED_QTY: [cartItem.quantity],
@@ -144,10 +147,13 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
 
           newQuantity = Math.min(newQuantity, item.AVAILABLE_QTY);
 
+          // Calculate net quantity as QUANTITY - REQUESTED_QUANTITY
+          const netQuantity = Math.max(0, item.QUANTITY - newQuantity);
+
           group[itemIndex] = {
             ...item,
             ORDERED_QUANTITY: newQuantity,
-            NET_QUANTITY: Math.max(0, item.AVAILABLE_QTY - newQuantity),
+            NET_QUANTITY: netQuantity,
           };
           newGroups[itemName] = group;
         }
@@ -319,8 +325,8 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
           <DetailRow label="Vakal No" value={item.VAKAL_NO} />
           <DetailRow label="Item Marks" value={item.ITEM_MARKS} />
           <DetailRow
-            label="Available Quantity"
-            value={`${item.AVAILABLE_QTY}`}
+            label="Quantity" // Changed from "Available Quantity"
+            value={`${item.QUANTITY}`} // Using QUANTITY field
           />
         </View>
         <View style={styles.detailColumn}>
@@ -331,7 +337,8 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
             highlighted
           />
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Ordered Quantity</Text>
+            <Text style={styles.detailLabel}>Requested Quantity</Text>{' '}
+            {/* Changed label */}
             <View style={styles.quantityContainer}>
               <TouchableOpacity
                 style={styles.quantityButton}

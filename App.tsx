@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, {useEffect} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
 import {
@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
 } from 'react-native-gesture-handler';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
-import { migrateAllSecureKeys } from './src/utils/migrationHelper';
+import {migrateAllSecureKeys} from './src/utils/migrationHelper';
 
 // Screens
 import SplashScreen from './src/screens/SplashScreen';
@@ -41,6 +41,8 @@ import PendingOrdersScreen from './src/screens/PendingOrdersScreen';
 import EditOrderScreen from './src/components/EditOrderScreen.tsx';
 import GrnDetailsScreen from './src/screens/GRNDetailsScreen.tsx';
 import OutwardDetailsScreen from './src/screens/OutwardDetailsScreen.tsx';
+import WelcomeScreen from './src/screens/WelcomeScreen.tsx';
+import DemoProductsScreen from './src/screens/DemoProductsScreen.tsx';
 // import ZeroStockReportScreen from './src/screens/stocks/ZeroStockReportScreen.tsx';
 
 const RootStack = createStackNavigator<RootStackParamList>();
@@ -84,6 +86,7 @@ const MainStackNavigator: React.FC = () => {
           component={GrnDetailsScreen}
           options={{headerShown: false}}
         />
+
 
         <MainStack.Screen
           name="OutwardDetailsScreen"
@@ -154,6 +157,11 @@ const MainStackNavigator: React.FC = () => {
           options={{headerShown: false}}
         />
         <RootStack.Screen
+          name="WelcomeScreen"
+          component={WelcomeScreen}
+          options={{headerShown: false}}
+        />
+        <RootStack.Screen
           name="HomeScreen"
           component={MainStackNavigator}
           options={{headerShown: false}}
@@ -182,51 +190,60 @@ function App(): JSX.Element {
         console.error('Error during migration:', error);
       }
     };
-    
+
     migrateData();
   }, []);
 
   return (
     <GestureHandlerRootView style={{flex: 1}}>
       <SafeAreaProvider>
-          <DisplayNameProvider>
-            <NotificationProvider>
-              <CartProvider>
-                <CustomerProvider>
-                  <NetworkProvider>
-                    <NavigationContainer>
-                      <RootStack.Navigator
-                        initialRouteName="SplashScreen"
-                        screenOptions={{
-                          headerShown: false,
-                          gestureEnabled: false,
-                        }}>
-                        <RootStack.Screen
-                          name="SplashScreen"
-                          component={SplashScreen}
-                        />
-                        <RootStack.Screen
-                          name="OtpVerificationScreen"
-                          component={OtpVerificationScreen}
-                          options={{headerShown: false, gestureEnabled: false}}
-                        />
-                        <RootStack.Screen
-                          name="Main"
-                          component={MainStackNavigator}
-                        />
-                        {/* <RootStack.Screen
+        <DisplayNameProvider>
+          <NotificationProvider>
+            <CartProvider>
+              <CustomerProvider>
+                <NetworkProvider>
+                  <NavigationContainer>
+                    <RootStack.Navigator
+                      initialRouteName="SplashScreen"
+                      screenOptions={{
+                        headerShown: false,
+                        gestureEnabled: false,
+                      }}>
+                      <RootStack.Screen
+                        name="SplashScreen"
+                        component={SplashScreen}
+                      />
+                      <RootStack.Screen
+                        name="OtpVerificationScreen"
+                        component={OtpVerificationScreen}
+                        options={{headerShown: false, gestureEnabled: false}}
+                      />
+                      <RootStack.Screen
+                        name="Main"
+                        component={MainStackNavigator}
+                      />
+                      <RootStack.Screen
+                        name="WelcomeScreen"
+                        component={WelcomeScreen}
+                      />
+                      <RootStack.Screen
+                        name="DemoProductsScreen"
+                        component={DemoProductsScreen}
+                      />
+
+                      {/* <RootStack.Screen
                           name="HomeScreen"
                           component={MainStackNavigator}
                           options={{headerShown: false}}
                         /> */}
-                      </RootStack.Navigator>
-                    </NavigationContainer>
-                    <OfflineNotice />
-                  </NetworkProvider>
-                </CustomerProvider>
-              </CartProvider>
-            </NotificationProvider>
-          </DisplayNameProvider>
+                    </RootStack.Navigator>
+                  </NavigationContainer>
+                  <OfflineNotice />
+                </NetworkProvider>
+              </CustomerProvider>
+            </CartProvider>
+          </NotificationProvider>
+        </DisplayNameProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

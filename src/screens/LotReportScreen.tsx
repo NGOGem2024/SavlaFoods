@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   StyleSheet,
   Text,
@@ -11,7 +11,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Modal,
-  Keyboard
+  Keyboard,
 } from 'react-native';
 import {useRoute, RouteProp, useNavigation} from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -106,6 +106,8 @@ const LotReportScreen = () => {
   const [selectedTab, setSelectedTab] = useState<'Inwards' | 'Outwards'>(
     'Inwards',
   );
+  // Add this ref for the horizontal ScrollView
+  const horizontalScrollRef = useRef(null);
   const [lotDetails, setLotDetails] = useState<LotDetails | null>(null);
   const [inwardTransactions, setInwardTransactions] = useState<
     InwardTransaction[]
@@ -150,16 +152,22 @@ const LotReportScreen = () => {
         setInwardTransactions(response.inward.data);
         setOutwardTransactions(response.outward.data);
         setSummary(response.summary);
-        
+
         // Log to check if CUSTOMER_ID is present in the response
         if (response.inward.data && response.inward.data.length > 0) {
           console.log('Sample inward transaction:', response.inward.data[0]);
-          console.log('Has CUSTOMER_ID?', 'CUSTOMER_ID' in response.inward.data[0]);
+          console.log(
+            'Has CUSTOMER_ID?',
+            'CUSTOMER_ID' in response.inward.data[0],
+          );
         }
-        
+
         if (response.outward.data && response.outward.data.length > 0) {
           console.log('Sample outward transaction:', response.outward.data[0]);
-          console.log('Has CUSTOMER_ID?', 'CUSTOMER_ID' in response.outward.data[0]);
+          console.log(
+            'Has CUSTOMER_ID?',
+            'CUSTOMER_ID' in response.outward.data[0],
+          );
         }
       } else {
         setError('Failed to load lot details');
@@ -179,11 +187,20 @@ const LotReportScreen = () => {
     selectedTab === 'Inwards' ? inwardTransactions : outwardTransactions;
 
   // Get theme color based on selected tab
-  const getThemeColor = () => (selectedTab === 'Inwards' ? '#F28C28' : '#4682B4');
+  const getThemeColor = () =>
+    selectedTab === 'Inwards' ? '#F28C28' : '#4682B4';
 
   const handleSearch = () => {
     Keyboard.dismiss();
     fetchLotReport(searchLotNo);
+  };
+
+  const handleTabChange = tab => {
+    setSelectedTab(tab);
+    // Reset horizontal scroll position to start
+    if (horizontalScrollRef.current) {
+      horizontalScrollRef.current.scrollTo({x: 0, animated: true});
+    }
   };
 
   const handleRefresh = () => {
@@ -198,18 +215,20 @@ const LotReportScreen = () => {
     setSummaryModalVisible(!summaryModalVisible);
   };
 
-  const handleDocumentNumberPress = (item: InwardTransaction | OutwardTransaction) => {
+  const handleDocumentNumberPress = (
+    item: InwardTransaction | OutwardTransaction,
+  ) => {
     if ('GRN_NO' in item) {
       // For inward items, navigate to GrnDetailsScreen with the GRN_NO
       console.log('Navigating to GrnDetailsScreen with GRN_NO:', item.GRN_NO);
-      
+
       // Ensure GRN_NO is a string
       const grnNo = String(item.GRN_NO);
-      
+
       // Use item.CUSTOMER_ID if available, otherwise fall back to routeCustomerId
       const customerId = (item as any).CUSTOMER_ID || routeCustomerId;
       console.log('Using customerId:', customerId);
-      
+
       try {
         navigation.navigate('GrnDetailsScreen', {
           grnNo: grnNo,
@@ -221,20 +240,20 @@ const LotReportScreen = () => {
         Alert.alert(
           'Navigation Error',
           `Error navigating to GRN Details: ${(error as Error).message}`,
-          [{ text: 'OK' }]
+          [{text: 'OK'}],
         );
       }
     } else if ('OUTWARD_NO' in item) {
       // For outward items
       console.log('Clicked on outward with OUTWARD_NO:', item.OUTWARD_NO);
-      
+
       // Ensure OUTWARD_NO is a string
       const outwardNo = String(item.OUTWARD_NO);
-      
+
       // Use item.CUSTOMER_ID if available, otherwise fall back to routeCustomerId
       const customerId = (item as any).CUSTOMER_ID || routeCustomerId;
       console.log('Using customerId:', customerId);
-      
+
       // Check if OutwardDetailsScreen exists in the navigation stack
       try {
         navigation.navigate('OutwardDetailsScreen', {
@@ -247,7 +266,7 @@ const LotReportScreen = () => {
         Alert.alert(
           'Feature Coming Soon',
           'Outward Details screen is under development.',
-          [{ text: 'OK' }]
+          [{text: 'OK'}],
         );
       }
     }
@@ -351,17 +370,18 @@ const LotReportScreen = () => {
             <Text style={styles.tableCell}>
               {new Date(inwardItem.GRN_DATE).toLocaleDateString() || '-'}
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.tableCellContainer}
               onPress={() => handleDocumentNumberPress(inwardItem)}
               disabled={!inwardItem.GRN_NO}>
-              <Text style={[
-                styles.tableCell,
-                styles.clickableCell,
-                {
-                  color: inwardItem.GRN_NO ? getThemeColor() : '#334155',
-                }
-              ]}>
+              <Text
+                style={[
+                  styles.tableCell,
+                  styles.clickableCell,
+                  {
+                    color: inwardItem.GRN_NO ? getThemeColor() : '#334155',
+                  },
+                ]}>
                 {inwardItem.GRN_NO || '-'}
               </Text>
             </TouchableOpacity>
@@ -385,23 +405,26 @@ const LotReportScreen = () => {
             <Text style={styles.tableCell}>
               {new Date(outwardItem.OUTWARD_DATE).toLocaleDateString() || '-'}
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.tableCellContainer, {width: 110}]}
               onPress={() => handleDocumentNumberPress(outwardItem)}
               disabled={!outwardItem.OUTWARD_NO}>
-              <Text style={[
-                styles.tableCell,
-                styles.clickableCell,
-                {
-                  color: outwardItem.OUTWARD_NO ? getThemeColor() : '#334155',
-                  width: '100%'
-                }
-              ]}>
+              <Text
+                style={[
+                  styles.tableCell,
+                  styles.clickableCell,
+                  {
+                    color: outwardItem.OUTWARD_NO ? getThemeColor() : '#334155',
+                    width: '100%',
+                  },
+                ]}>
                 {outwardItem.OUTWARD_NO || '-'}
               </Text>
             </TouchableOpacity>
             <Text style={styles.tableCell}>{outwardItem.VAKAL_NO || '-'}</Text>
-            <Text style={styles.tableCell}>{outwardItem.ITEM_MARKS || '-'}</Text>
+            <Text style={styles.tableCell}>
+              {outwardItem.ITEM_MARKS || '-'}
+            </Text>
             <Text style={styles.tableCell}>{outwardItem.DC_QTY || '-'}</Text>
             <Text style={styles.tableCell}>{outwardItem.REMARK || '-'}</Text>
             <Text style={styles.tableCell}>
@@ -557,7 +580,7 @@ const LotReportScreen = () => {
                     styles.inwardTabButton,
                     selectedTab === 'Inwards' && styles.activeInwardTab,
                   ]}
-                  onPress={() => setSelectedTab('Inwards')}>
+                  onPress={() => handleTabChange('Inwards')}>
                   <Text
                     style={[
                       styles.tabText,
@@ -571,7 +594,7 @@ const LotReportScreen = () => {
                     styles.outwardTabButton,
                     selectedTab === 'Outwards' && styles.activeOutwardTab,
                   ]}
-                  onPress={() => setSelectedTab('Outwards')}>
+                  onPress={() => handleTabChange('Outwards')}>
                   <Text
                     style={[
                       styles.tabText,
@@ -593,15 +616,16 @@ const LotReportScreen = () => {
                 </Text>
               </View>
 
-              <ScrollView horizontal showsHorizontalScrollIndicator={true}>
+              <ScrollView
+                ref={horizontalScrollRef}
+                horizontal
+                showsHorizontalScrollIndicator={true}>
                 <View style={styles.tableContainer}>
                   {selectedTab === 'Inwards' ? (
                     <>
                       <View style={styles.inwardTableHeader}>
                         <Text style={styles.headerCell}>Unit Name</Text>
-                        <Text style={styles.headerCell}>
-                          GRN Date
-                        </Text>
+                        <Text style={styles.headerCell}>GRN Date</Text>
                         <Text style={styles.headerCell}>GRN No</Text>
                         <Text style={styles.headerCell}>Vakal No</Text>
                         <Text style={styles.headerCell}>Item Marks</Text>
