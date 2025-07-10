@@ -414,13 +414,6 @@ const PendingOrdersScreen = () => {
             <View style={styles.emptyContainer}>
               <MaterialIcons name="history" size={64} color="#d1d5db" />
               <Text style={styles.emptyText}>No order history found</Text>
-              {customerID ? (
-                <Text style={styles.customerIdText}>
-                  Customer ID: {customerID}
-                </Text>
-              ) : (
-                <Text style={styles.errorText}>Customer ID not found</Text>
-              )}
             </View>
           }
         />

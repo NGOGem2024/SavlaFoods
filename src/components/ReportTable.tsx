@@ -108,6 +108,13 @@ const ReportTable = ({
     [],
   );
 
+  // Simple handler for item press
+  const handlePress = (item: ReportItem) => {
+    if (onInwardOutwardNoPress) {
+      onInwardOutwardNoPress(item);
+    }
+  };
+
   return (
     <View style={styles.tableContainer}>
       {/* Header ScrollView */}
@@ -250,12 +257,13 @@ const ReportTable = ({
                   <TouchableOpacity
                     style={[
                       styles.tableCellContainer,
+                      styles.clickableCellContainer,
                       {width: columnWidths.inwardOutwardNo},
                     ]}
-                    onPress={() =>
-                      onInwardOutwardNoPress && onInwardOutwardNoPress(item)
-                    }
-                    disabled={!(onInwardOutwardNoPress && item.GRN_NO)}>
+                    onPress={() => handlePress(item)}
+                    disabled={!(onInwardOutwardNoPress && item.GRN_NO)}
+                    hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+                    activeOpacity={0.7}>
                     <Text
                       style={[
                         styles.tableCell,
@@ -268,21 +276,20 @@ const ReportTable = ({
                           width: '100%',
                         },
                       ]}>
-                      {Platform.OS === 'ios' && onInwardOutwardNoPress && item.GRN_NO ? '👉 ' : ''}
                       {item.GRN_NO || '-'}
-                      {Platform.OS === 'ios' && onInwardOutwardNoPress && item.GRN_NO ? ' 📄' : ''}
                     </Text>
                   </TouchableOpacity>
                 ) : (
                   <TouchableOpacity
                     style={[
                       styles.tableCellContainer,
+                      styles.clickableCellContainer,
                       {width: columnWidths.inwardOutwardNo},
                     ]}
-                    onPress={() =>
-                      onInwardOutwardNoPress && onInwardOutwardNoPress(item)
-                    }
-                    disabled={!(onInwardOutwardNoPress && item.OUTWARD_NO)}>
+                    onPress={() => handlePress(item)}
+                    disabled={!(onInwardOutwardNoPress && item.OUTWARD_NO)}
+                    hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+                    activeOpacity={0.7}>
                     <Text
                       style={[
                         styles.tableCell,
@@ -295,9 +302,7 @@ const ReportTable = ({
                           width: '100%',
                         },
                       ]}>
-                      {Platform.OS === 'ios' && onInwardOutwardNoPress && item.OUTWARD_NO ? '👉 ' : ''}
                       {item.OUTWARD_NO || '-'}
-                      {Platform.OS === 'ios' && onInwardOutwardNoPress && item.OUTWARD_NO ? ' 📄' : ''}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -394,6 +399,9 @@ const styles = StyleSheet.create({
   clickableCell: {
     textDecorationLine: 'underline',
     fontWeight: '500',
+  },
+  clickableCellContainer: {
+    // Any additional specific properties for clickable containers
   },
 });
 
