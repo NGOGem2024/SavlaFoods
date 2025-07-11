@@ -2,7 +2,7 @@ import React, {createContext, useContext, useState} from 'react';
 import {StyleSheet, View, TouchableOpacity, Text} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createStackNavigator} from '@react-navigation/stack';
-import {useNavigation, CommonActions, useRoute} from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native'; 
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
@@ -22,9 +22,13 @@ import LotReportScreen from '../screens/LotReportScreen';
 import ReportSummaryScreen from '../screens/stocks/ReportSummaryScreen';
 import EditOrderScreen from './EditOrderScreen';
 import OrderDetailsScreen from '../screens/OrderDetailsScreen';
-import {LayoutWrapper} from './AppLayout';
+//  import {LayoutWrapper} from './AppLayout';
 import ReportsScreen from '../screens/stocks/ReportsScreen';
-// import ZeroStockReportScreen from '../screens/stocks/ZeroStockReportScreen';
+
+// Import new Finance/Billing screens
+import InvoiceScreen from '../screens/Invoice/InvoiceScreen';
+import InvoiceReportScreen from '../screens/Invoice/InvoiceReportScreen';
+import InvoiceDetailsScreen from '../screens/Invoice/InvoiceDetailsScreen';
 
 interface OrderItem {
   detailId?: number;
@@ -70,6 +74,11 @@ type OrdersStackParamList = {
   PendingOrders: undefined;
 };
 
+type FinanceStackParamList = {
+  InvoiceHome: undefined;
+  InvoiceDetailsScreen: {invoiceNo: string};
+};
+
 type TabParamList = {
   Home: undefined;
   Announcement: undefined;
@@ -83,7 +92,10 @@ type TabParamList = {
   };
   OrderHistory: undefined;
   PendingOrders: undefined;
-
+  Invoice: {
+    screen: keyof FinanceStackParamList;
+    params?: any;
+  };
   OrderDetails: {order: Order};
   EditOrderScreen: {order: Order};
 } & ParamListBase;
@@ -91,6 +103,7 @@ type TabParamList = {
 // Create Stack Navigator for Orders section
 const OrdersStack = createStackNavigator<TabParamList>();
 const ReportsStack = createStackNavigator<TabParamList>();
+const InvoiceStack = createStackNavigator<TabParamList>();
 
 const OrdersStackNavigator = () => {
   return (
@@ -133,6 +146,41 @@ const OrdersStackNavigator = () => {
   );
 };
 
+const FinanceStackNavigator = () => {
+  return (
+    <InvoiceStack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: '#fff',
+        },
+        headerTintColor: '#F48221',
+      }}>
+      <InvoiceStack.Screen
+        name="InvoiceHome"
+        component={InvoiceScreen}
+        options={{headerShown: false}}
+      />
+
+      <InvoiceStack.Screen
+        name="InvoiceReportScreen"
+        component={InvoiceReportScreen}
+        options={{
+          title: 'Invoice Report Table',
+        }}
+      />
+
+      <InvoiceStack.Screen
+        name="InvoiceDetailsScreen"
+        component={InvoiceDetailsScreen}
+        options={{
+          title: 'Invoice Details',
+          headerShown: false, // Since you're using LayoutWrapper
+        }}
+      />
+    </InvoiceStack.Navigator>
+  );
+};
+
 const ReportsStackNavigator = () => {
   return (
     <ReportsStack.Navigator
@@ -166,6 +214,7 @@ const ReportsStackNavigator = () => {
         component={LotReportScreen}
         options={{headerShown: false}}
       />
+
       <ReportsStack.Screen
         name="InwardOutwardReport"
         component={InwardOutwardReportScreen}
@@ -176,11 +225,6 @@ const ReportsStackNavigator = () => {
         component={ReportSummaryScreen}
         options={{headerShown: false}}
       />
-      {/* <ReportsStack.Screen
-        name="ZeroStockReport"
-        component={ZeroStockReportScreen}
-        options={{headerShown: false}}
-      /> */}
     </ReportsStack.Navigator>
   );
 };
@@ -252,6 +296,26 @@ export const TabBar = (props: any) => {
         ),
       label: 'Home',
     },
+
+    {
+      name: 'Invoice',
+      icon:
+        props.route?.name === 'Invoice' ? (
+          <MaterialIcons
+            name="account-balance-wallet"
+            size={24}
+            color="#F48221"
+          />
+        ) : (
+          <MaterialIcons
+            name="account-balance-wallet"
+            size={24}
+            color="black"
+          />
+        ),
+      label: 'Invoice',
+    },
+
     {
       name: 'Orders',
       icon:
@@ -294,7 +358,6 @@ export const TabBar = (props: any) => {
         ),
       label: 'Alerts',
     },
-
   ];
 
   // Enhanced tab press handler with route history
@@ -308,7 +371,7 @@ export const TabBar = (props: any) => {
       addToHistory(props.route.name);
     }
 
-    if (['Home','Orders','Reports','Alert'].includes(routeName)) {
+    if (['Home', 'Orders', 'Invoice', 'Reports', 'Alert'].includes(routeName)) {
       const currentParams = props.route?.params;
       const navigationParams = {
         screen: routeName,
@@ -389,6 +452,20 @@ const BottomTabNavigator: React.FC = () => {
         ) : (
           <FontAwesome name="list-alt" size={size} color={color} />
         );
+      case 'Invoice':
+        return focused ? (
+          <MaterialIcons
+            name="account-balance-wallet"
+            size={size}
+            color={color}
+          />
+        ) : (
+          <MaterialIcons
+            name="account-balance-wallet"
+            size={size}
+            color={color}
+          />
+        );
       case 'Reports':
         return focused ? (
           <MaterialIcons name="assessment" size={size} color={color} />
@@ -440,7 +517,8 @@ const BottomTabNavigator: React.FC = () => {
               headerShown: false,
             }}
           /> */}
-            <Tab.Screen name="Orders" component={OrdersStackNavigator} />
+          <Tab.Screen name="Invoice" component={FinanceStackNavigator} />
+          <Tab.Screen name="Orders" component={OrdersStackNavigator} />
           <Tab.Screen
             name="Reports"
             component={ReportsStackNavigator}

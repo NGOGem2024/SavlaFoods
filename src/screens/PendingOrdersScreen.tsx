@@ -44,6 +44,7 @@ interface PendingOrder {
     itemMarks: string;
     vakalNo: string;
     requestedQty: number;
+    quantity: number;
     availableQty: number;
     status: string;
     unitName: string;

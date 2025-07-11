@@ -18,8 +18,12 @@ import {RootStackParamList} from '../type/type';
 import {useDisplayName} from '../contexts/DisplayNameContext';
 import {API_ENDPOINTS} from '../config/api.config';
 import apiClient from '../utils/apiClient';
-import { getSecureItem, setSecureItem, removeSecureItem } from '../utils/secureStorage';
-import { getSecureOrAsyncItem, migrateKey } from '../utils/migrationHelper';
+import {
+  getSecureItem,
+  setSecureItem,
+  removeSecureItem,
+} from '../utils/secureStorage';
+import {getSecureOrAsyncItem, migrateKey} from '../utils/migrationHelper';
 
 interface ProfileMenuProps {
   displayName: string | null;
@@ -321,7 +325,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
         removeSecureItem('FK_CUST_GROUP_ID'),
         removeSecureItem('customerID'),
       ]);
-      
+
       setShowMenu(false);
       setShowLogoutConfirm(false);
       navigation.reset({
@@ -404,15 +408,9 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
 
         // Store the new account information including the token
         await Promise.all([
-          setSecureItem(
-            'customerID',
-            selectedAccount.customerId.toString(),
-          ),
+          setSecureItem('customerID', selectedAccount.customerId.toString()),
           setSecureItem('Disp_name', selectedAccount.label),
-          setSecureItem(
-            'FK_CUST_GROUP_ID',
-            selectedAccount.groupId.toString(),
-          ),
+          setSecureItem('FK_CUST_GROUP_ID', selectedAccount.groupId.toString()),
           setSecureItem('userToken', selectedAccount.token),
         ]);
 
@@ -485,10 +483,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
 
       // Store the new account information
       await Promise.all([
-        setSecureItem(
-          'customerID',
-          currentAccount.CustomerID.toString(),
-        ),
+        setSecureItem('customerID', currentAccount.CustomerID.toString()),
         setSecureItem('Disp_name', currentAccount.DisplayName),
         setSecureItem(
           'FK_CUST_GROUP_ID',

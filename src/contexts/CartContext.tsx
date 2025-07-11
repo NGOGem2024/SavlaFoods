@@ -1,7 +1,6 @@
 // import React, { createContext, useState, useContext, useCallback } from 'react';
 // import axios from 'axios';
 // import { API_ENDPOINTS } from '../config/api.config';
- 
 
 // interface CartItem {
 //   item_id: number;
@@ -61,7 +60,7 @@
 //   }, []);
 
 //   const removeCartItem = useCallback((itemToRemove: CartItem) => {
-//     setCartItems(prevItems => 
+//     setCartItems(prevItems =>
 //       prevItems.filter(item => item.lot_no !== itemToRemove.lot_no)
 //     );
 //   }, []);
@@ -71,8 +70,8 @@
 //   }, []);
 
 //   const updateCartItemQuantity = useCallback((item: CartItem, newQuantity: number) => {
-//     setCartItems(prevItems => 
-//       prevItems.map(cartItem => 
+//     setCartItems(prevItems =>
+//       prevItems.map(cartItem =>
 //         cartItem.lot_no === item.lot_no
 //           ? { ...cartItem, quantity: newQuantity }
 //           : cartItem
@@ -81,17 +80,17 @@
 //   }, []);
 
 //   const updateCartItemsAfterOrder = useCallback((orderResponse: any) => {
-//     setCartItems(prevItems => 
+//     setCartItems(prevItems =>
 //       prevItems.map(item => {
 //         const matchingOrderItem = orderResponse.data.find(
-//           (orderedItem: any) => 
-//             orderedItem.LOT_NO === item.lot_no && 
+//           (orderedItem: any) =>
+//             orderedItem.LOT_NO === item.lot_no &&
 //             orderedItem.ITEM_ID === item.item_id
 //         );
-  
+
 //         if (matchingOrderItem) {
-//           return { 
-//             ...item, 
+//           return {
+//             ...item,
 //             available_qty: matchingOrderItem.NET_QUANTITY,
 //             quantity: Math.min(item.quantity, matchingOrderItem.NET_QUANTITY)
 //           };
@@ -138,6 +137,9 @@ import axios from 'axios';
 import {API_ENDPOINTS} from '../config/api.config';
 
 interface CartItem {
+  quantityInBox: number;
+  requested_qty: any;
+  ordered_quantity: any;
   item_id: number;
   item_name: string;
   lot_no: string;

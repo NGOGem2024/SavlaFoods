@@ -19,6 +19,8 @@ export type RootStackParamList = {
     fromSearch?: boolean;
     customerID: string;
   };
+  WelcomeScreen: undefined;
+  DemoProductsScreen: undefined;
 };
 
 // Tab Navigation Types

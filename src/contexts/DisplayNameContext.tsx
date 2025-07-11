@@ -7,7 +7,7 @@ type CustomerContextType = {
   setCustomerID: (id: string | null) => void;
 };
 
-const CustomerContext = createContext<CustomerContextType | undefined>(
+export const CustomerContext = createContext<CustomerContextType | undefined>(
   undefined,
 );
 

@@ -8,6 +8,9 @@ export interface Item {
   ITEM_MARKS?: string;
   VAKAL_NO?: string;
   AVAILABLE_QTY: number;
+  REQUESTED_QUANTITY: number;
+  QUANTITY: number;
+  BOX_QUANTITY: number;
   UNIT_NAME: string;
   quantity?: number;
 }
@@ -23,8 +26,9 @@ export type OrderHistoryParams = {
   items: Array<{
     ITEM_ID: number;
     LOT_NO: string;
-    ORDERED_QUANTITY: number;
+    REQUESTED_QUANTITY: number;
     AVAILABLE_QTY: number;
+    BOX_QUANTITY: number;
     ITEM_MARKS: string;
     VAKAL_NO: string;
   }>;
@@ -34,7 +38,8 @@ export type RootStackParamList = {
   SplashScreen: undefined;
   OtpVerificationScreen: undefined;
   // customerID?: string | null;
-
+  WelcomeScreen: undefined;
+  DemoProductsScreen: undefined;
   Main: {
     screen: string;
     params?: {
@@ -86,6 +91,7 @@ export type MainStackParamList = {
       LOT_NO: string;
       ORDERED_QUANTITY: number;
       AVAILABLE_QTY: number;
+      BOX_QUANTITY: number;
       ITEM_MARKS: string;
       VAKAL_NO: string;
       UNIT_NAME: string;
@@ -128,6 +134,7 @@ export type MainStackParamList = {
       LOT_NO: string;
       ORDERED_QUANTITY: number;
       AVAILABLE_QTY: number;
+      BOX_QUANTITY: number;
       ITEM_MARKS: string;
       VAKAL_NO: string;
     }>;
@@ -146,6 +153,8 @@ export type MainStackParamList = {
       LOT_NO: string;
       ORDERED_QUANTITY: number;
       AVAILABLE_QTY: number;
+      QUANTITY: number;
+      BOX_QUANTITY: number;
       ITEM_MARKS: string;
       VAKAL_NO: string;
       UNIT_NAME: string;
@@ -177,6 +186,7 @@ export type MainStackParamList = {
       item_marks?: string;
       unit_name: string;
       box_quantity: number;
+      quantity: number;
     };
   };
   PlaceOrderScreen: {
@@ -186,7 +196,9 @@ export type MainStackParamList = {
       VAKAL_NO: string;
       BALANCE_QTY: any;
       AVAILABLE_QTY: any;
-      ORDERED_QUANTITY: number;
+      QUANTITY: number;
+      BOX_QUANTITY: number;
+      REQUESTED_QUANTITY: number;
       ItemID: number;
       LotNo: string;
       Quantity: number;
@@ -201,6 +213,7 @@ export type MainStackParamList = {
     userMukadamId?: number;
     stockLotLocationId?: number;
     deliveryAddress?: string;
+    CUST_DELIVERY_ADD?: string;
     orderBy?: string;
     unitId?: number;
     finYearId?: number;
@@ -216,8 +229,10 @@ export type MainStackParamList = {
       ITEM_MARKS: string;
       UNIT_NAME: string;
       AVAILABLE_QTY: number;
+      QUANTITY: number;
+      BOX_QUANTITY: number;
       NET_QUANTITY: number;
-      ORDERED_QUANTITY: number;
+      REQUESTED_QUANTITY: number;
       BatchNo?: string | null;
     }>;
     customerID: string;
@@ -267,6 +282,7 @@ export type MainStackParamList = {
       ITEM_MARKS: string;
       UNIT_NAME: string | null;
       AVAILABLE_QUANTITY: number;
+      BOX_QUANTITY: number;
       NET_QUANTITY: number;
       ORDERED_QUANTITY: number;
     }[];

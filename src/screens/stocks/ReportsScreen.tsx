@@ -25,7 +25,7 @@ const ReportsScreen = ({navigation}: {navigation: any}) => {
       title: 'Stock Report',
       icon: 'inventory', // Represents stock/items
       screen: 'StockReportScreen',
-      description: 'View current stock levels and Zero Stock',
+      description: 'View current stock levels and availability',
     },
     {
       title: 'Lot Report',

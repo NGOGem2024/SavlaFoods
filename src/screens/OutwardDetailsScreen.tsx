@@ -232,13 +232,15 @@ const OutwardDetailsScreen: React.FC<OutwardDetailsProps> = ({route}) => {
           <View style={styles.rowContainer}>
             <View style={styles.leftColumn}>
               <Text style={[styles.labelText]}>DATE</Text>
-              <Text style={styles.valueText}>{headerDetails.DELIVERY_CHALLAN_DATE || headerDetails.DC_DATE}</Text>
+              <Text style={styles.valueText}>
+                {headerDetails.DELIVERY_CHALLAN_DATE || headerDetails.DC_DATE}
+              </Text>
 
               <Text style={[styles.labelText, styles.spacer]}>ADDRESS</Text>
               <Text style={styles.addressText}>
                 {formatAddress(headerDetails.ADDRESS)}
               </Text>
-              
+
               {headerDetails.REMARKS && (
                 <>
                   <Text style={[styles.labelText, styles.spacer]}>REMARKS</Text>
@@ -255,13 +257,16 @@ const OutwardDetailsScreen: React.FC<OutwardDetailsProps> = ({route}) => {
         </View>
 
         {/* DC Details Section */}
-        
+
         <View style={styles.detailsTableContainer}>
           <Text style={styles.sectionTitle}>DC DETAILS</Text>
 
           <View style={styles.scrollHintContainer}>
             <MaterialIcons name="swipe" size={18} color="#64748B" />
-            <Text style={styles.scrollHintText} numberOfLines={1} ellipsizeMode="tail">
+            <Text
+              style={styles.scrollHintText}
+              numberOfLines={1}
+              ellipsizeMode="tail">
               Scroll horizontally to view all data
             </Text>
           </View>
@@ -597,4 +602,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default OutwardDetailsScreen; 
+export default OutwardDetailsScreen;

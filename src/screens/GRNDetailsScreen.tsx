@@ -242,13 +242,16 @@ const GrnDetailsScreen: React.FC<GrnDetailsProps> = ({route}) => {
         </View>
 
         {/* GRN Details Section */}
-        
+
         <View style={styles.detailsTableContainer}>
           <Text style={styles.sectionTitle}>GRN DETAILS</Text>
 
           <View style={styles.scrollHintContainer}>
             <MaterialIcons name="swipe" size={18} color="#64748B" />
-            <Text style={styles.scrollHintText} numberOfLines={1} ellipsizeMode="tail">
+            <Text
+              style={styles.scrollHintText}
+              numberOfLines={1}
+              ellipsizeMode="tail">
               Scroll horizontally to view all data
             </Text>
           </View>

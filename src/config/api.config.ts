@@ -32,6 +32,7 @@ export const API_ENDPOINTS = {
   GET_PENDING_ORDERS: `${API_BASE_URL}/order/getPendingOrders`,
   UPDATE_PENDING_ORDER: `${API_BASE_URL}/order/updatePendingOrder`,
   GET_CANCEL_ORDER: `${API_BASE_URL}/order/cancelOrder`,
+  //DeleteOrder
   DELETE_ORDER: `${API_BASE_URL}/order/deleteOrder`,
 
   //Inward/OutwardReport
@@ -61,8 +62,11 @@ export const API_ENDPOINTS = {
 
   //PDF
   GET_STOCK_PDF_REPORT: `${API_BASE_URL}/stocks/getStockpdf`,
-
   GET_ZERO_STOCK_PDF_REPORT: `${API_BASE_URL}/stocks/getZeroStockpdf`,
+
+  GET_INVOICE_REPORT: `${API_BASE_URL}/invoice/getInvoiceReportTable`,
+  GET_TAX_INVOICE_DETAILS: `${API_BASE_URL}/invoice/taxinvoice`,
+  GET_PDF_REPORT: `${API_BASE_URL}/invoice/taxinvoice/pdf`,
 };
 
 export const BASE_IMAGE_PATH = `${API_BASE_URL}/assets/images`;
