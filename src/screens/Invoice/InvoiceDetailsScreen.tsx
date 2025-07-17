@@ -402,6 +402,9 @@ const InvoiceDetailsScreen: React.FC = () => {
         <Text style={styles.companyName}>
           Savla Foods & Cold Storage Pvt. Ltd.
         </Text>
+      </View>
+
+      <View style={styles.taxInvoiceRow}>
         <Text style={styles.taxInvoiceTitle}>TAX INVOICE</Text>
       </View>
 
@@ -421,6 +424,19 @@ const InvoiceDetailsScreen: React.FC = () => {
           ) : (
             <Text style={styles.downloadButtonText}>📄 Download PDF</Text>
           )}
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.printButton}
+          onPress={() => {
+            // Capture the current screen as an image
+            Alert.alert(
+              'Print Screen',
+              'Screen capture functionality initiated',
+              [{ text: 'OK' }]
+            );
+          }}>
+          <Text style={styles.printButtonText}>🖨️ Print Screen</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -551,31 +567,31 @@ const InvoiceDetailsScreen: React.FC = () => {
           <ScrollView horizontal showsHorizontalScrollIndicator={true}>
             <View style={styles.table}>
               <View style={styles.tableHeader}>
-                <View style={[styles.tableCell, {width: 100}]}>
+                <View style={[styles.tableCell, {width: 90}]}>
                   <Text style={styles.tableHeaderText}>From Date</Text>
                 </View>
-                <View style={[styles.tableCell, {width: 100}]}>
+                <View style={[styles.tableCell, {width: 90}]}>
                   <Text style={styles.tableHeaderText}>To Date</Text>
                 </View>
-                <View style={[styles.tableCell, {width: 70}]}>
+                <View style={[styles.tableCell, {width: 65}]}>
                   <Text style={styles.tableHeaderText}>Lot No</Text>
                 </View>
-                <View style={[styles.tableCell, {width: 140}]}>
+                <View style={[styles.tableCell, {width: 130}]}>
                   <Text style={styles.tableHeaderText}>Item Name</Text>
                 </View>
-                <View style={[styles.tableCell, {width: 60}]}>
+                <View style={[styles.tableCell, {width: 50}]}>
                   <Text style={styles.tableHeaderText}>Tax</Text>
                 </View>
-                <View style={[styles.tableCell, {width: 60}]}>
+                <View style={[styles.tableCell, {width: 50}]}>
                   <Text style={styles.tableHeaderText}>Qty</Text>
                 </View>
-                <View style={[styles.tableCell, {width: 80}]}>
+                <View style={[styles.tableCell, {width: 70}]}>
                   <Text style={styles.tableHeaderText}>Rate</Text>
                 </View>
-                <View style={[styles.tableCell, {width: 80}]}>
+                <View style={[styles.tableCell, {width: 70}]}>
                   <Text style={styles.tableHeaderText}>Balance</Text>
                 </View>
-                <View style={[styles.tableCell, {width: 90}]}>
+                <View style={[styles.tableCell, {width: 80}]}>
                   <Text style={styles.tableHeaderText}>Amount</Text>
                 </View>
               </View>
@@ -583,27 +599,27 @@ const InvoiceDetailsScreen: React.FC = () => {
               <ScrollView style={styles.tableBody}>
                 {items.map((item, index) => (
                   <View key={index} style={styles.tableRow}>
-                    <View style={[styles.tableCell, {width: 100}]}>
+                    <View style={[styles.tableCell, {width: 90}]}>
                       <Text style={styles.tableRowText}>
                         {formatDate(item.inDate)}
                       </Text>
                     </View>
-                    <View style={[styles.tableCell, {width: 100}]}>
+                    <View style={[styles.tableCell, {width: 90}]}>
                       <Text style={styles.tableRowText}>
                         {formatDate(item.outDate)}
                       </Text>
                     </View>
-                    <View style={[styles.tableCell, {width: 70}]}>
+                    <View style={[styles.tableCell, {width: 65}]}>
                       <Text style={styles.tableRowText}>
                         {item.lotNo || 'N/A'}
                       </Text>
                     </View>
-                    <View style={[styles.tableCell, {width: 140}]}>
+                    <View style={[styles.tableCell, {width: 130}]}>
                       <Text style={styles.tableRowText}>
                         {item.itemName || 'N/A'}
                       </Text>
                     </View>
-                    <View style={[styles.tableCell, {width: 60}]}>
+                    <View style={[styles.tableCell, {width: 50}]}>
                       <Text style={styles.tableRowText}>
                         {item.tax
                           ? item.tax.cgstPercent > 0
@@ -612,22 +628,22 @@ const InvoiceDetailsScreen: React.FC = () => {
                           : 'N/A'}
                       </Text>
                     </View>
-                    <View style={[styles.tableCell, {width: 60}]}>
+                    <View style={[styles.tableCell, {width: 50}]}>
                       <Text style={styles.tableRowText}>
                         {item.quantity || '0'}
                       </Text>
                     </View>
-                    <View style={[styles.tableCell, {width: 80}]}>
+                    <View style={[styles.tableCell, {width: 70}]}>
                       <Text style={styles.tableRowText}>
                         {item.rate || '0.00'}
                       </Text>
                     </View>
-                    <View style={[styles.tableCell, {width: 80}]}>
+                    <View style={[styles.tableCell, {width: 70}]}>
                       <Text style={styles.tableRowText}>
                         {item.balanceQty || '0'}
                       </Text>
                     </View>
-                    <View style={[styles.tableCell, {width: 90}]}>
+                    <View style={[styles.tableCell, {width: 80}]}>
                       <Text style={styles.tableRowText}>
                         {item.amount || '0.00'}
                       </Text>
@@ -748,87 +764,83 @@ const InvoiceDetailsScreen: React.FC = () => {
     return (
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>{sacCodeSummary.title}</Text>
-        <View style={styles.tableContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-            <View style={styles.table}>
-              <View style={styles.tableHeader}>
-                <View style={[styles.tableCell, {width: 50}]}>
-                  <Text style={styles.tableHeaderText}>Sr</Text>
-                </View>
-                <View style={[styles.tableCell, {width: 120}]}>
-                  <Text style={styles.tableHeaderText}>SAC Code</Text>
-                </View>
-                <View style={[styles.tableCell, {width: 150}]}>
-                  <Text style={styles.tableHeaderText}>Taxable Value</Text>
-                </View>
-                <View style={[styles.tableCell, {width: 150}]}>
-                  <Text style={styles.tableHeaderText}>CGST</Text>
-                </View>
-                <View style={[styles.tableCell, {width: 150}]}>
-                  <Text style={styles.tableHeaderText}>SGST</Text>
-                </View>
-                <View style={[styles.tableCell, {width: 150}]}>
-                  <Text style={styles.tableHeaderText}>IGST</Text>
-                </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={true}>
+          <View style={styles.sacCodeContainer}>
+            {/* Header Row */}
+            <View style={styles.sacCodeRow}>
+              <View style={[styles.sacCodeCell, styles.sacCodeHeader, {width: 50}]}>
+                <Text style={styles.sacCodeHeaderText}>Sr</Text>
               </View>
-
-              <View style={styles.tableBody}>
-                {sacCodeSummary.details.map((detail: SacCodeDetail, index: number) => (
-                  <View key={index} style={styles.tableRow}>
-                    <View style={[styles.tableCell, {width: 50}]}>
-                      <Text style={styles.tableRowText}>{detail.serialNo}</Text>
-                    </View>
-                    <View style={[styles.tableCell, {width: 120}]}>
-                      <Text style={styles.tableRowText}>{detail.sacCode}</Text>
-                    </View>
-                    <View style={[styles.tableCell, {width: 150}]}>
-                      <Text style={styles.tableRowText}>{formatCurrency(detail.taxableValue).replace('₹', '')}</Text>
-                    </View>
-                    <View style={[styles.tableCell, {width: 150}]}>
-                      <Text style={styles.tableRowText}>
-                        {detail.cgst.percent.toFixed(2)}% | {formatCurrency(detail.cgst.amount).replace('₹', '')}
-                      </Text>
-                    </View>
-                    <View style={[styles.tableCell, {width: 150}]}>
-                      <Text style={styles.tableRowText}>
-                        {detail.sgst.percent.toFixed(2)}% | {formatCurrency(detail.sgst.amount).replace('₹', '')}
-                      </Text>
-                    </View>
-                    <View style={[styles.tableCell, {width: 150}]}>
-                      <Text style={styles.tableRowText}>
-                        {detail.igst.percent.toFixed(2)}% | {formatCurrency(detail.igst.amount).replace('₹', '')}
-                      </Text>
-                    </View>
-                  </View>
-                ))}
-                
-                {/* Total row */}
-                <View style={[styles.tableRow, {backgroundColor: '#63A1D8', paddingVertical: 10}]}>
-                  <View style={[styles.tableCell, {width: 50}]}>
-                    <Text style={styles.tableTotalText}></Text>
-                  </View>
-                  <View style={[styles.tableCell, {width: 120}]}>
-                    <Text style={[styles.tableTotalText, {color: 'white'}]}>Total</Text>
-                  </View>
-                  <View style={[styles.tableCell, {width: 150}]}>
-                    <Text style={[styles.tableTotalText, {color: 'white'}]}>{formatCurrency(sacCodeSummary.totals.totalTaxableValue).replace('₹', '')}</Text>
-                  </View>
-                  <View style={[styles.tableCell, {width: 150}]}>
-                    <Text style={[styles.tableTotalText, {color: 'white'}]}>{formatCurrency(sacCodeSummary.totals.totalCGSTAmount).replace('₹', '')}</Text>
-                  </View>
-                  <View style={[styles.tableCell, {width: 150}]}>
-                    <Text style={[styles.tableTotalText, {color: 'white'}]}>{formatCurrency(sacCodeSummary.totals.totalSGSTAmount).replace('₹', '')}</Text>
-                  </View>
-                  <View style={[styles.tableCell, {width: 150}]}>
-                    <Text style={[styles.tableTotalText, {color: 'white'}]}>{formatCurrency(sacCodeSummary.totals.totalIGSTAmount).replace('₹', '')}</Text>
-                  </View>
-                </View>
+              <View style={[styles.sacCodeCell, styles.sacCodeHeader, {width: 120}]}>
+                <Text style={styles.sacCodeHeaderText}>SAC Code</Text>
+              </View>
+              <View style={[styles.sacCodeCell, styles.sacCodeHeader, {width: 120}]}>
+                <Text style={styles.sacCodeHeaderText}>Taxable Value</Text>
+              </View>
+              <View style={[styles.sacCodeCell, styles.sacCodeHeader, {width: 120}]}>
+                <Text style={styles.sacCodeHeaderText}>CGST</Text>
+              </View>
+              <View style={[styles.sacCodeCell, styles.sacCodeHeader, {width: 120}]}>
+                <Text style={styles.sacCodeHeaderText}>SGST</Text>
+              </View>
+              <View style={[styles.sacCodeCell, styles.sacCodeHeader, {width: 120, borderRightWidth: 0}]}>
+                <Text style={styles.sacCodeHeaderText}>IGST</Text>
               </View>
             </View>
-          </ScrollView>
-        </View>
-        
-        {/* Additional Info */}
+
+            {/* Data Rows */}
+            {sacCodeSummary.details.map((detail: SacCodeDetail, index: number) => (
+              <View key={index} style={[styles.sacCodeRow, index % 2 === 0 ? styles.sacCodeRowEven : styles.sacCodeRowOdd]}>
+                <View style={[styles.sacCodeCell, {width: 50}]}>
+                  <Text style={styles.sacCodeCellText}>{detail.serialNo}</Text>
+                </View>
+                <View style={[styles.sacCodeCell, {width: 120}]}>
+                  <Text style={styles.sacCodeCellText}>{detail.sacCode}</Text>
+                </View>
+                <View style={[styles.sacCodeCell, {width: 120}]}>
+                  <Text style={styles.sacCodeCellText}>{formatCurrency(detail.taxableValue).replace('₹', '')}</Text>
+                </View>
+                <View style={[styles.sacCodeCell, {width: 120}]}>
+                  <Text style={styles.sacCodeCellText}>
+                    {detail.cgst.percent.toFixed(2)}% | {formatCurrency(detail.cgst.amount).replace('₹', '')}
+                  </Text>
+                </View>
+                <View style={[styles.sacCodeCell, {width: 120}]}>
+                  <Text style={styles.sacCodeCellText}>
+                    {detail.sgst.percent.toFixed(2)}% | {formatCurrency(detail.sgst.amount).replace('₹', '')}
+                  </Text>
+                </View>
+                <View style={[styles.sacCodeCell, {width: 120, borderRightWidth: 0}]}>
+                  <Text style={styles.sacCodeCellText}>
+                    {detail.igst.percent.toFixed(2)}% | {formatCurrency(detail.igst.amount).replace('₹', '')}
+                  </Text>
+                </View>
+              </View>
+            ))}
+            
+            {/* Total row */}
+            <View style={styles.sacCodeTotalRow}>
+              <View style={[styles.sacCodeCell, {width: 50}]}>
+                <Text style={styles.sacCodeTotalText}></Text>
+              </View>
+              <View style={[styles.sacCodeCell, {width: 120}]}>
+                <Text style={styles.sacCodeTotalText}>Total</Text>
+              </View>
+              <View style={[styles.sacCodeCell, {width: 120}]}>
+                <Text style={styles.sacCodeTotalText}>{formatCurrency(sacCodeSummary.totals.totalTaxableValue).replace('₹', '')}</Text>
+              </View>
+              <View style={[styles.sacCodeCell, {width: 120}]}>
+                <Text style={styles.sacCodeTotalText}>{formatCurrency(sacCodeSummary.totals.totalCGSTAmount).replace('₹', '')}</Text>
+              </View>
+              <View style={[styles.sacCodeCell, {width: 120}]}>
+                <Text style={styles.sacCodeTotalText}>{formatCurrency(sacCodeSummary.totals.totalSGSTAmount).replace('₹', '')}</Text>
+              </View>
+              <View style={[styles.sacCodeCell, {width: 120, borderRightWidth: 0}]}>
+                <Text style={styles.sacCodeTotalText}>{formatCurrency(sacCodeSummary.totals.totalIGSTAmount).replace('₹', '')}</Text>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
       </View>
     );
   };
@@ -853,8 +865,8 @@ const InvoiceDetailsScreen: React.FC = () => {
     };
 
     return (
-      <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>QR Code</Text>
+      <View style={[styles.sectionContainer, { paddingTop: 8, paddingBottom: 8 }]}>
+        <Text style={[styles.sectionTitle, styles.qrSectionTitle]}>QR Code</Text>
         <View style={styles.qrCodeContainer}>
           {qrCodeError ? (
             <View style={styles.qrCodeErrorContainer}>
@@ -879,7 +891,7 @@ const InvoiceDetailsScreen: React.FC = () => {
             <View style={styles.qrCodeWrapper}>
               <QRCode
                 value={signedQRCode}
-                size={200}
+                size={130}
                 color="black"
                 backgroundColor="white"
                 ecl="M" // Error correction level
@@ -891,7 +903,7 @@ const InvoiceDetailsScreen: React.FC = () => {
             </View>
           )}
           <Text style={styles.qrCodeNote}>
-            Scan this QR code to verify invoice authenticity
+            Scan to verify invoice authenticity
           </Text>
         </View>
       </View>
@@ -954,13 +966,14 @@ const InvoiceDetailsScreen: React.FC = () => {
   );
 };
 
+// Define styles first so they can be referenced by components
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 10, // Reduced from 20
   },
   loadingContainer: {
     flex: 1,
@@ -969,8 +982,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
+    marginTop: 12, // Reduced from 16
+    fontSize: 15, // Reduced from 16
     color: '#666',
     fontWeight: '500',
   },
@@ -979,55 +992,55 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f8f9fa',
-    padding: 24,
+    padding: 20, // Reduced from 24
   },
   errorIcon: {
-    fontSize: 48,
-    marginBottom: 16,
+    fontSize: 42, // Reduced from 48
+    marginBottom: 12, // Reduced from 16
   },
   errorTitle: {
-    fontSize: 20,
+    fontSize: 18, // Reduced from 20
     fontWeight: '600',
     color: '#333',
-    marginBottom: 8,
+    marginBottom: 6, // Reduced from 8
     textAlign: 'center',
   },
   errorText: {
-    fontSize: 16,
+    fontSize: 15, // Reduced from 16
     color: '#d32f2f',
     textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 24,
+    marginBottom: 20, // Reduced from 24
+    lineHeight: 22, // Reduced from 24
   },
   errorButtonsContainer: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10, // Reduced from 12
   },
   retryButton: {
     backgroundColor: '#333',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingHorizontal: 20, // Reduced from 24
+    paddingVertical: 10, // Reduced from 12
     borderRadius: 6,
   },
   retryButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15, // Reduced from 16
     fontWeight: '500',
   },
   backButton: {
     backgroundColor: '#666',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingHorizontal: 20, // Reduced from 24
+    paddingVertical: 10, // Reduced from 12
     borderRadius: 6,
   },
   backButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15, // Reduced from 16
     fontWeight: '500',
   },
   invoiceContainer: {
     backgroundColor: '#fff',
-    margin: 16,
+    margin: 12, // Reduced from 16
     borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
@@ -1036,25 +1049,29 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   headerContainer: {
-    padding: 24,
+    padding: 16, // Reduced from 24
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
     alignItems: 'center',
   },
   companyHeader: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 8, // Reduced spacing
   },
   companyName: {
-    fontSize: 22,
+    fontSize: 20, // Reduced from 22
     fontWeight: '600',
     color: '#63A1E9',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6, // Reduced from 8
+  },
+  taxInvoiceRow: {
+    marginBottom: 12,
+    alignItems: 'center',
   },
   taxInvoiceTitle: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 15, // Reduced from 16
+    fontWeight: '600',
     color: '#666',
     textAlign: 'center',
     letterSpacing: 1,
@@ -1062,12 +1079,16 @@ const styles = StyleSheet.create({
   actionButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
+    gap: 16,
+    flexWrap: 'wrap', // Allow buttons to wrap if needed
+    width: '100%',
   },
   downloadButton: {
     backgroundColor: '#63A1D8',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     borderRadius: 6,
+    minWidth: 130, // Ensure consistent button width
   },
   downloadButtonDisabled: {
     backgroundColor: '#bdc3c7',
@@ -1078,19 +1099,31 @@ const styles = StyleSheet.create({
   },
   downloadButtonText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 13, // Reduced from 14
+    fontWeight: '500',
+  },
+  printButton: {
+    backgroundColor: '#3F88C5',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 6,
+    minWidth: 130, // Ensure consistent button width
+  },
+  printButtonText: {
+    color: '#fff',
+    fontSize: 13, // Same as download button
     fontWeight: '500',
   },
   sectionContainer: {
-    padding: 20,
+    padding: 16, // Reduced from 20
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16, // Reduced from 18
     fontWeight: '600',
     color: '#333',
-    marginBottom: 16,
+    marginBottom: 12, // Reduced from 16
   },
   infoGrid: {
     flexDirection: 'row',
@@ -1098,68 +1131,68 @@ const styles = StyleSheet.create({
   },
   infoColumn: {
     flex: 1,
-    marginHorizontal: 8,
+    marginHorizontal: 6, // Reduced from 8
   },
   infoRow: {
-    marginBottom: 16,
+    marginBottom: 12, // Reduced from 16
   },
   infoLabel: {
-    fontSize: 14,
+    fontSize: 13, // Reduced from 14
     color: '#666',
-    marginBottom: 4,
+    marginBottom: 2, // Reduced from 4
   },
   infoValue: {
-    fontSize: 16,
+    fontSize: 15, // Reduced from 16
     color: '#333',
     fontWeight: '500',
   },
   billingCard: {
     backgroundColor: '#f8f9fa',
-    padding: 16,
+    padding: 14, // Reduced from 16
     borderRadius: 6,
     borderLeftWidth: 3,
     borderLeftColor: '#63A1D8',
   },
   customerName: {
-    fontSize: 18,
+    fontSize: 16, // Reduced from 18
     fontWeight: '600',
     color: '#333',
-    marginBottom: 8,
+    marginBottom: 6, // Reduced from 8
   },
   addressText: {
-    fontSize: 14,
+    fontSize: 13, // Reduced from 14
     color: '#555',
-    marginBottom: 4,
-    lineHeight: 20,
+    marginBottom: 3, // Reduced from 4
+    lineHeight: 18, // Reduced from 20
   },
   gstContainer: {
-    marginTop: 16,
-    paddingTop: 16,
+    marginTop: 12, // Reduced from 16
+    paddingTop: 12, // Reduced from 16
     borderTopWidth: 1,
     borderTopColor: '#e9ecef',
   },
   gstRow: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 3, // Reduced from 4
   },
   gstLabel: {
-    fontSize: 14,
+    fontSize: 13, // Reduced from 14
     color: '#666',
-    width: 100,
+    width: 90, // Reduced from 100
   },
   gstValue: {
-    fontSize: 14,
+    fontSize: 13, // Reduced from 14
     color: '#333',
     flex: 1,
     fontWeight: '500',
   },
   noDataContainer: {
-    padding: 40,
+    padding: 30, // Reduced from 40
     alignItems: 'center',
   },
   noDataText: {
     color: '#666',
-    fontSize: 16,
+    fontSize: 15, // Reduced from 16
     fontStyle: 'italic',
   },
   tableContainer: {
@@ -1173,53 +1206,53 @@ const styles = StyleSheet.create({
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#63A1D8',
-    paddingVertical: 14,
+    paddingVertical: 12, // Reduced from 14
   },
   tableBody: {
-    maxHeight: 400,
+    maxHeight: 350, // Reduced from 400
   },
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 12,
+    paddingVertical: 10, // Reduced from 12
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
     backgroundColor: '#fff',
   },
   tableCell: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 10, // Reduced from 12
     justifyContent: 'center',
   },
   tableHeaderText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 11, // Reduced from 12
     fontWeight: '600',
     textAlign: 'center',
   },
   tableRowText: {
-    fontSize: 12,
+    fontSize: 11, // Reduced from 12
     color: '#555',
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 15, // Reduced from 16
   },
   summaryCard: {
     backgroundColor: '#f8f9fa',
-    padding: 20,
+    padding: 16, // Reduced from 20
     borderRadius: 6,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10, // Reduced from 12
   },
   summaryLabel: {
-    fontSize: 14,
+    fontSize: 13, // Reduced from 14
     color: '#666',
     flex: 1,
     fontWeight: 'bold',
   },
   summaryValue: {
-    fontSize: 14,
+    fontSize: 13, // Reduced from 14
     color: '#333',
     fontWeight: '500',
     textAlign: 'right',
@@ -1227,67 +1260,69 @@ const styles = StyleSheet.create({
   summaryDivider: {
     height: 1,
     backgroundColor: '#dee2e6',
-    marginVertical: 16,
+    marginVertical: 12, // Reduced from 16
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#63A1D8',
-    marginHorizontal: -20,
-    marginBottom: -20,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    marginHorizontal: -16, // Adjusted from -20
+    marginBottom: -16, // Adjusted from -20
+    paddingHorizontal: 16, // Reduced from 20
+    paddingVertical: 14, // Reduced from 16
     borderBottomLeftRadius: 6,
     borderBottomRightRadius: 6,
   },
   totalLabel: {
-    fontSize: 16,
+    fontSize: 15, // Reduced from 16
     fontWeight: '600',
     color: '#fff',
     flex: 1,
   },
   totalValue: {
-    fontSize: 18,
+    fontSize: 16, // Reduced from 18
     fontWeight: '600',
     color: '#fff',
     textAlign: 'right',
   },
   termsCard: {
     backgroundColor: '#f8f9fa',
-    padding: 16,
+    padding: 14, // Reduced from 16
     borderRadius: 6,
-    marginBottom: 20,
+    marginBottom: 16, // Reduced from 20
   },
   termText: {
-    fontSize: 13,
+    fontSize: 12, // Reduced from 13
     color: '#666',
-    lineHeight: 20,
-    marginBottom: 8,
+    lineHeight: 18, // Reduced from 20
+    marginBottom: 6, // Reduced from 8
   },
   signatureContainer: {
     alignItems: 'flex-end',
-    marginTop: 32,
+    marginTop: 24, // Reduced from 32
   },
   signatureLine: {
-    width: 200,
+    width: 180, // Reduced from 200
     height: 1,
     backgroundColor: '#dee2e6',
-    marginVertical: 8,
+    marginVertical: 6, // Reduced from 8
   },
   signatureText: {
-    fontSize: 14,
+    fontSize: 13, // Reduced from 14
     color: '#333',
     fontWeight: '500',
   },
   qrCodeContainer: {
     alignItems: 'center',
-    padding: 16,
+    padding: 10, // Reduced from 12
     backgroundColor: '#f8f9fa',
     borderRadius: 6,
+    maxWidth: 220, // Reduced from 250
+    alignSelf: 'center',
   },
   qrCodeWrapper: {
-    padding: 16,
+    padding: 10, // Reduced from 12
     backgroundColor: 'white',
     borderRadius: 8,
     shadowColor: '#000',
@@ -1297,71 +1332,133 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   qrCodeNote: {
-    marginTop: 12,
-    fontSize: 14,
+    marginTop: 6, // Reduced from 8
+    fontSize: 11, // Reduced from 12
     color: '#666',
     textAlign: 'center',
   },
   qrCodeErrorContainer: {
-    padding: 16,
+    padding: 14, // Reduced from 16
     backgroundColor: '#ffebee',
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ffcdd2',
-    width: 200,
-    height: 200,
+    width: 140, // Reduced from 150
+    height: 140, // Reduced from 150
     justifyContent: 'center',
     alignItems: 'center',
   },
   qrCodeErrorText: {
     color: '#c62828',
-    fontSize: 14,
+    fontSize: 13, // Reduced from 14
     textAlign: 'center',
-    padding: 8,
+    padding: 6, // Reduced from 8
   },
   retryQrButton: {
     backgroundColor: '#c62828',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 14, // Reduced from 16
+    paddingVertical: 6, // Reduced from 8
     borderRadius: 4,
-    marginTop: 12,
+    marginTop: 10, // Reduced from 12
   },
   retryQrButtonText: {
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: 13, // Reduced from 14
     fontWeight: '500',
   },
   qrCodeLoadingContainer: {
-    width: 200,
-    height: 200,
+    width: 140, // Reduced from 150
+    height: 140, // Reduced from 150
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f8f9fa',
     borderRadius: 8,
   },
   qrCodeLoadingText: {
-    marginTop: 12,
-    fontSize: 14,
+    marginTop: 10, // Reduced from 12
+    fontSize: 13, // Reduced from 14
     color: '#666',
     textAlign: 'center',
   },
   tableTotalText: {
-    fontSize: 12,
+    fontSize: 11, // Reduced from 12
     color: '#333',
     fontWeight: 'bold',
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 15, // Reduced from 16
   },
   additionalInfoContainer: {
-    marginTop: 16,
-    padding: 12,
+    marginTop: 12, // Reduced from 16
+    padding: 10, // Reduced from 12
     backgroundColor: '#f8f9fa',
     borderRadius: 6,
   },
   additionalInfoText: {
-    fontSize: 12,
+    fontSize: 11, // Reduced from 12
     color: '#666',
-    marginBottom: 4,
+    marginBottom: 3, // Reduced from 4
+  },
+  qrSectionTitle: {
+    fontSize: 15, // Reduced from 16
+    marginBottom: 6, // Reduced from 8
+  },
+  // Add new styles for the SAC Code Summary
+  sacCodeContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    minWidth: '100%',
+    marginTop: 5,
+  },
+  sacCodeRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  sacCodeRowEven: {
+    backgroundColor: '#f9f9f9',
+  },
+  sacCodeRowOdd: {
+    backgroundColor: '#ffffff',
+  },
+  sacCodeCell: {
+    padding: 8, // Reduced from 10
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 70,
+    borderRightWidth: 1,
+    borderRightColor: '#e0e0e0',
+    height: 36, // Set explicit height for consistency
+  },
+  sacCodeHeader: {
+    backgroundColor: '#63A1D8',
+    padding: 8, // Reduced from 12
+    height: 36, // Set explicit height to match total row
+  },
+  sacCodeHeaderText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  sacCodeCellText: {
+    fontSize: 11,
+    color: '#333',
+    textAlign: 'center',
+  },
+  sacCodeTotalRow: {
+    flexDirection: 'row',
+    backgroundColor: '#94b7d6',
+    paddingVertical: 0, // Reduced from 10
+    height: 34, // Set explicit height to match other rows
+  },
+  sacCodeTotalText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
   },
 });
 

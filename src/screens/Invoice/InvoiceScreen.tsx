@@ -223,13 +223,13 @@ const FinanceScreen: React.FC = () => {
 
     try {
       const headers = await getAuthHeaders();
-      const unitsString =
-        formData.units.length > 0 ? formData.units.join(',') : null;
+      // Send units as an array instead of string
+      const unitValue = formData.units.length > 0 ? formData.units : null;
 
       const payload1 = {
         customerName: formData.customerName.trim() || null,
         billNo: formData.billNo.trim() || null,
-        unit: unitsString,
+        unit: unitValue,
         fromDate: formatDate(formData.fromDate),
         toDate: formData.toDate ? formatDate(formData.toDate) : null,
       };
@@ -237,7 +237,7 @@ const FinanceScreen: React.FC = () => {
       const payload2 = {
         customerName: formData.customerName.trim() || null,
         billNo: formData.billNo.trim() || null,
-        unit: unitsString,
+        unit: unitValue,
         fromDate: formatDateForAPI(formData.fromDate),
         toDate: formData.toDate ? formatDateForAPI(formData.toDate) : null,
       };

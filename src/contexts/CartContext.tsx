@@ -143,7 +143,7 @@ interface CartItem {
   item_id: number;
   item_name: string;
   lot_no: string;
-  available_qty: number;
+    available_qty: number;
   quantity: number;
   unit_name: string;
   vakal_no: string;
