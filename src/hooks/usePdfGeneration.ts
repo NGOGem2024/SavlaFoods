@@ -21,7 +21,7 @@ interface UsePdfGenerationProps {
 }
 
 interface ReportFilters {
-  unit: string;
+  unit: string[];  // Changed from string to string[]
   itemCategories: string[];
   itemSubcategories: string[];
 }
@@ -89,7 +89,9 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
 
       // Also sanitize the customer name and other text inputs
       const safeCustName = sanitizeStringForPdf(customerName);
-      const safeUnit = filters.unit ? sanitizeStringForPdf(filters.unit) : '';
+      const safeUnit = filters.unit && filters.unit.length > 0 
+        ? sanitizeStringForPdf(filters.unit.join(', ')) 
+        : '';
 
       // Log current state to help with debugging
       console.log('===== PDF DOWNLOAD STARTED =====');
@@ -109,7 +111,9 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
       const toDateFormatted = formatDateForFilename(toDate);
 
       // Format filters for filename
-      const unitText = filters.unit ? `-${filters.unit}` : '';
+      const unitText = filters.unit && filters.unit.length > 0 
+        ? `-${filters.unit.join('_')}` 
+        : '';
 
       // Generate a filename with proper filter info
       const pdfFilename = `${
@@ -190,7 +194,7 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
       let fontSize =
         totalRows <= 10 ? 9 : totalRows <= 20 ? 8 : totalRows <= 40 ? 7 : 6;
       let headerSize = fontSize + 2;
-      let rowHeight = fontSize * 5;
+      let rowHeight = fontSize * 7; // Increased from 5 to 6 to accommodate more text in cells
       let lineHeight = fontSize * 1.2;
 
       // Landscape A4 dimensions
@@ -220,21 +224,22 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
         totalPages += Math.ceil(remainingRows / rowsPerContinuedPage);
       }
 
-      // Define table columns with widths
+      // Define table columns with widths - adjusted to fit within page width
       const tableColumns = [
-        {title: 'SR.No', width: 48},
-        {title: 'Unit', width: 51},
-        {title: isInward ? 'Inward Date' : 'Outward Date', width: 75},
-        {title: isInward ? 'Inward No' : 'Outward No', width: 65},
+        {title: 'SR.No', width: 40},
+        {title: 'Unit', width: 45},
+        {title: isInward ? 'Inward Date' : 'Outward Date', width: 70},
+        {title: isInward ? 'Inward No' : 'Outward No', width: 60},
         // {title: 'Customer', width: 80},
-        {title: 'Lot No', width: 60},
-        {title: 'Item Name', width: 96},
-        {title: 'Vakkal No', width: 68},
-        {title: 'Item Mark', width: 72},
-        {title: 'Qty', width: 50}, // Increased width to create more space
-        {title: 'Remark', width: 50},
-        {title: 'Vehicle No', width: 68},
-        ...(isInward ? [] : [{title: 'Delivered To', width: 65}]),
+        {title: 'Lot No', width: 55},
+        {title: 'Item Name', width: 85},
+        {title: 'Vakkal No', width: 60},
+        {title: 'Item Mark', width: 65},
+        {title: isInward ? 'Qty' : 'Order Qty', width: 47},
+        ...(isInward ? [] : [{title: 'DC Qty', width: 47}]),
+        {title: 'Remark', width: 45},
+        {title: 'Vehicle No', width: 60},
+        ...(isInward ? [] : [{title: 'Delivered To', width: 130}]), // Reduced from 120 but still larger than original 65
       ];
 
       // Calculate table width
@@ -408,9 +413,8 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
         for (let colIndex = 0; colIndex < tableColumns.length; colIndex++) {
           const column = tableColumns[colIndex];
 
-          // Determine alignment for this column (center for # and Qty)
-          let columnAlign: 'left' | 'center' | 'right' =
-            colIndex === 0 || colIndex === 11 ? 'center' : 'left';
+          // Center align all column headers for consistency
+          let columnAlign: 'left' | 'center' | 'right' = 'center';
 
           drawWrappedText(
             page,
@@ -459,10 +463,8 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
           // Insert data in each cell
           xPosition = margin;
 
-          // Column alignments
-          const columnAlignments = tableColumns.map((_, index) =>
-            index === 0 || index === 11 ? 'center' : 'left',
-          ) as ('left' | 'center' | 'right')[];
+          // Column alignments - center align all columns for consistency
+          const columnAlignments = tableColumns.map(() => 'center') as ('left' | 'center' | 'right')[];
 
           // Render each cell in the row
           // Column 1: Index number
@@ -520,10 +522,19 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
             item.ITEM_NAME || '-',
             item.VAKAL_NO || '-',
             item.ITEM_MARKS || '-',
-            isInward ? item.QUANTITY || '-' : item.DC_QTY || '-',
+            isInward ? item.QUANTITY || '-' : item.ORDER_QUANTITY || '-',
+            ...(isInward ? [] : [item.DC_QTY || '-']),
             item.REMARK || item.REMARKS || '-',
             item.VEHICLE_NO || '-',
-            ...(isInward ? [] : [item.DELIVERED_TO || '-']),
+            ...(isInward ? [] : [
+              // Format the delivered to address to have better line breaks
+              item.DELIVERED_TO 
+                ? item.DELIVERED_TO
+                    .replace(/,\s*/g, ',\n') // Add line breaks after commas
+                    .replace(/\s+NEXT TO\s+/g, '\nNEXT TO ') // Add line break before NEXT TO
+                    .replace(/\s+OPP\.\s*/g, '\nOPP. ') // Add line break before OPP.
+                : '-'
+            ]),
           ];
 
           for (let c = 0; c < remainingColumns.length; c++) {
@@ -560,7 +571,7 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
           const totalQty = sanitizedReportData.reduce((total, item) => {
             const qty = isInward
               ? parseFloat(item.QUANTITY || '0')
-              : parseFloat(item.DC_QTY || '0');
+              : parseFloat(item.DC_QTY || '0'); // For outward reports, use DC_QTY for the total
             return total + (isNaN(qty) ? 0 : qty);
           }, 0);
 
