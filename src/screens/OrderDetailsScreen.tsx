@@ -27,7 +27,7 @@ import {LayoutWrapper} from '../components/AppLayout';
 import {useCustomer} from '../contexts/DisplayNameContext'; // Import useCustomer hook
 
 interface OrderItem {
- Quantity: number;
+ QUANTITY: number;
  detailId?: number;
  itemId?: number;
  itemName: string;
@@ -35,7 +35,7 @@ interface OrderItem {
  itemMarks: string;
  vakalNo: string;
  requestedQty: number;
- availableQty: number;
+ AVAILABLE_QTY: number;
  quantity: number;
  status: string;
  unitName?: string;
@@ -653,7 +653,7 @@ const OrderDetailsScreen = ({
  <View style={styles.quantityContainerNew}>
  <View style={styles.quantityBox}>
  <Text style={styles.quantityLabelNew}>Quantity</Text>
- <Text style={styles.quantityValueNew}>{item.Quantity}</Text>
+ <Text style={styles.quantityValueNew}>{item.QUANTITY}</Text>
  </View>
  <View style={styles.quantityDividerNew} />
  <View style={styles.quantityBox}>
@@ -661,12 +661,12 @@ const OrderDetailsScreen = ({
  <Text
  style={[
  styles.quantityValueNew,
- item.Quantity - item.requestedQty < 0 &&
+ item.AVAILABLE_QTY < 0 &&
  styles.negativeQuantity,
- item.Quantity - item.requestedQty > 0 &&
+ item.AVAILABLE_QTY > 0 &&
  styles.positiveQuantity,
  ]}>
- {item.Quantity - item.requestedQty}
+ {item.AVAILABLE_QTY}
  </Text>
  </View>
  <View style={styles.quantityDividerNew} />
