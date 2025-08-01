@@ -67,6 +67,9 @@ export const API_ENDPOINTS = {
   GET_INVOICE_REPORT: `${API_BASE_URL}/invoice/getInvoiceReportTable`,
   GET_TAX_INVOICE_DETAILS: `${API_BASE_URL}/invoice/taxinvoice`,
   GET_PDF_REPORT: `${API_BASE_URL}/invoice/taxinvoice/pdf`,
+
+  //All CatSubcat
+  GET_ALL_CATEGORIES_SUBCATEGORIES: `${API_BASE_URL}/search/CategorySubAvailability`,
 };
 
 export const BASE_IMAGE_PATH = `${API_BASE_URL}/assets/images`;

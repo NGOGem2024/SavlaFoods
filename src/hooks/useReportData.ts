@@ -1,6 +1,6 @@
 import {useState, useEffect} from 'react';
 import {Alert, Platform} from 'react-native';
-import {getSecureItem} from '../utils/secureStorage';
+import {getSecureItem, setSecureItem} from '../utils/secureStorage';
 import {getSecureOrAsyncItem} from '../utils/migrationHelper';
 import axios from 'axios';
 import {API_ENDPOINTS, DEFAULT_HEADERS} from '../config/api.config';
@@ -35,7 +35,7 @@ export interface ReportFilters {
   toDate: Date;
   itemCategories: string[];
   itemSubcategories: string[];
-  unit: string;
+  unit: string[]; // Changed from string to string[]
 }
 
 interface UseReportDataProps {
@@ -51,6 +51,8 @@ export const useReportData = ({isInward}: UseReportDataProps) => {
   );
   const [apiData, setApiData] = useState<CategoryItem[]>([]);
   const [customerName, setCustomerName] = useState('');
+  // Add customerID state
+  const [customerID, setCustomerID] = useState('');
 
   // State for report data
   const [reportData, setReportData] = useState<any[]>([]);
@@ -186,24 +188,65 @@ export const useReportData = ({isInward}: UseReportDataProps) => {
     }
   };
 
-  // Fetch customer name from secure storage
-  const fetchCustomerName = async () => {
+  // Fetch customer data (name and ID) from secure storage
+  const fetchCustomerData = async () => {
     try {
-      const storedCustomerName = await getSecureOrAsyncItem('CUSTOMER_NAME');
-      if (storedCustomerName) {
-        setCustomerName(storedCustomerName);
+      // Fetch customer ID
+      const storedCustomerID = await getSecureOrAsyncItem('customerID');
+      if (storedCustomerID) {
+        console.log('Found customer ID in secure storage:', storedCustomerID);
+        setCustomerID(storedCustomerID);
       } else {
-        // Fallback if CUSTOMER_NAME is not in secure storage
-        const displayName = await getSecureOrAsyncItem('displayName');
-        if (displayName) {
-          setCustomerName(displayName);
+        console.error('No customer ID found in secure storage');
+      }
+
+      // First try to get the display name from Disp_name, as this is the current user's name
+      // This is what OtpVerificationScreen.tsx stores during login
+      const storedDisplayName = await getSecureOrAsyncItem('Disp_name');
+
+      if (storedDisplayName) {
+        console.log(
+          'Found display name in secure storage (Disp_name):',
+          storedDisplayName,
+        );
+        setCustomerName(storedDisplayName);
+
+        // Also store under displayName for compatibility
+        await setSecureItem('displayName', storedDisplayName);
+      } else {
+        // Then try the alternate key if Disp_name is not available
+        const altDisplayName = await getSecureOrAsyncItem('displayName');
+        if (altDisplayName) {
+          console.log(
+            'Found display name in secure storage (displayName):',
+            altDisplayName,
+          );
+          setCustomerName(altDisplayName);
+
+          // Store under Disp_name for consistency
+          await setSecureItem('Disp_name', altDisplayName);
         } else {
-          // Default fallback if neither is available
-          setCustomerName('UNICORP ENTERPRISES');
+          // If display name is not available, try the legacy CUSTOMER_NAME
+          const storedCustomerName = await getSecureOrAsyncItem(
+            'CUSTOMER_NAME',
+          );
+          if (storedCustomerName) {
+            console.log(
+              'Found CUSTOMER_NAME in secure storage:',
+              storedCustomerName,
+            );
+            setCustomerName(storedCustomerName);
+          } else {
+            // Only use this as a last resort fallback
+            console.log(
+              'No customer name found, using default: UNICORP ENTERPRISES',
+            );
+            setCustomerName('UNICORP ENTERPRISES');
+          }
         }
       }
     } catch (error) {
-      console.error('Error fetching customer name:', error);
+      console.error('Error fetching customer data:', error);
       // Default fallback
       setCustomerName('UNICORP ENTERPRISES');
     }
@@ -258,7 +301,7 @@ export const useReportData = ({isInward}: UseReportDataProps) => {
       const requestData = {
         fromDate: formatDateForApi(filters.fromDate),
         toDate: formatDateForApi(filters.toDate),
-        customerName: customerName, // Use customer name from state
+        customerID: customerID, // Use customerID instead of customerName
         itemCategoryName:
           filters.itemCategories.length > 0
             ? filters.itemCategories.map(cat => cat.trim())
@@ -267,7 +310,7 @@ export const useReportData = ({isInward}: UseReportDataProps) => {
           filters.itemSubcategories.length > 0
             ? filters.itemSubcategories.map(subcat => subcat.trim())
             : null,
-        unitName: filters.unit ? filters.unit.trim() : null,
+        unitName: filters.unit.length > 0 ? filters.unit : null, // Changed to handle array
       };
 
       console.log('==== REQUEST DATA DETAILS ====');
@@ -301,34 +344,11 @@ export const useReportData = ({isInward}: UseReportDataProps) => {
 
       // Update client-side filtering to handle optional fields (null values)
       if (response.data && response.data.success) {
-        // Filter the data based on provided filters only
-        const filteredData = response.data.data.filter((item: any) => {
-          // Always filter by customer name
-          const customerMatch = item.CUSTOMER_NAME === requestData.customerName;
+        // No filtering needed - use the API response data directly
+        const filteredData = response.data.data;
+        console.log('API returned data count:', filteredData.length);
 
-          // Only apply filters for fields that were provided (not null)
-          const unitMatch =
-            requestData.unitName === null ||
-            item.UNIT_NAME === requestData.unitName;
-
-          // Check if item's category is in the selected categories array
-          const categoryMatch =
-            requestData.itemCategoryName === null ||
-            requestData.itemCategoryName.includes(item.ITEM_CATEG_NAME);
-
-          // Check if item's subcategory is in the selected subcategories array
-          const subcategoryMatch =
-            requestData.itemSubCategoryName === null ||
-            requestData.itemSubCategoryName.includes(item.SUB_CATEGORY_NAME);
-
-          return (
-            customerMatch && unitMatch && categoryMatch && subcategoryMatch
-          );
-        });
-
-        console.log('Client-side filtered count:', filteredData.length);
-
-        // Use the filtered data instead of all results
+        // Use the data from the API response directly
         setReportData(filteredData);
 
         if (filteredData.length === 0) {
@@ -362,7 +382,7 @@ export const useReportData = ({isInward}: UseReportDataProps) => {
   // Initialize data on mount
   useEffect(() => {
     fetchCategoriesAndSubcategories();
-    fetchCustomerName();
+    fetchCustomerData();
   }, []);
 
   return {
@@ -371,6 +391,7 @@ export const useReportData = ({isInward}: UseReportDataProps) => {
     apiSubcategories,
     reportData,
     customerName,
+    customerID, // Add customerID to the returned values
 
     // Loading states
     loading,

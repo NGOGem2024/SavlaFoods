@@ -17,6 +17,7 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import axios, {AxiosError} from 'axios';
 import RNFS from 'react-native-fs';
 import FileViewer from 'react-native-file-viewer';
+import QRCode from 'react-native-qrcode-svg';
 import {
   API_ENDPOINTS,
   getAuthHeaders,
@@ -27,7 +28,7 @@ import {LayoutWrapper} from '../../components/AppLayout';
 // Define navigation param list
 type RootStackParamList = {
   InvoiceDetailsScreen: {invoiceNo: string};
-  InvoiceReportScreen: any; // Add other routes as needed
+  InvoiceReportScreen: any;
 };
 
 // Define types for invoice data
@@ -35,6 +36,10 @@ interface InvoiceHeader {
   invoiceNo: string;
   invoiceDate: string;
   period: string;
+  signedQRCode?: string;
+  irnNo?: string;
+  ackNumber?: string;
+  ackDate?: string;
 }
 
 interface BillingAddress {
@@ -45,7 +50,7 @@ interface BillingAddress {
   pincode: string;
   country: string;
   gstin: string;
-  stateCode: string; // Fixed typo from 'verschwTS' to 'string'
+  stateCode: string;
 }
 
 interface CustomerDetails {
@@ -68,6 +73,16 @@ interface InvoiceItem {
   amount: string;
 }
 
+interface SACSummaryItem {
+  serialNo: number;
+  sacCode: string;
+  sacCodeDescription: string;
+  taxableValue: string;
+  cgst: {percent: number; amount: string};
+  sgst: {percent: number; amount: string};
+  igst: {percent: number; amount: string};
+}
+
 interface InvoiceSummary {
   totalInvoiceItemAmount: string;
   totalSGSTAmount: string;
@@ -84,6 +99,20 @@ interface InvoiceData {
   customerDetails: CustomerDetails;
   invoiceItems: InvoiceItem[];
   invoiceSummary: InvoiceSummary;
+  sacCodeSummary: {
+    title: string;
+    details: SACSummaryItem[];
+    totals: {
+      totalTaxableValue: string;
+      totalCGSTAmount: string;
+      totalSGSTAmount: string;
+      totalIGSTAmount: string;
+    };
+    additionalInfo: {
+      whetherTaxPayableUnderReverseCharges: string;
+      errorAndOmissionsExcepted: boolean;
+    };
+  };
 }
 
 interface ApiResponse {
@@ -95,7 +124,6 @@ interface ApiResponse {
 const {width} = Dimensions.get('window');
 
 const InvoiceDetailsScreen: React.FC = () => {
-  // Corrected typing for useRoute
   const route =
     useRoute<RouteProp<RootStackParamList, 'InvoiceDetailsScreen'>>();
   const navigation =
@@ -681,6 +709,158 @@ const InvoiceDetailsScreen: React.FC = () => {
     );
   };
 
+  const renderSACSummaryTable = () => {
+    if (!invoiceData?.sacCodeSummary) return null;
+
+    const {sacCodeSummary} = invoiceData;
+
+    return (
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>{sacCodeSummary.title}</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={true}>
+          <View style={styles.sacCodeContainer}>
+            {/* Header Row */}
+            <View style={styles.sacCodeRow}>
+              <View
+                style={[styles.sacCodeCell, styles.sacCodeHeader, {width: 50}]}>
+                <Text style={styles.sacCodeHeaderText}>Sr</Text>
+              </View>
+              <View
+                style={[
+                  styles.sacCodeCell,
+                  styles.sacCodeHeader,
+                  {width: 120},
+                ]}>
+                <Text style={styles.sacCodeHeaderText}>SAC Code</Text>
+              </View>
+              <View
+                style={[
+                  styles.sacCodeCell,
+                  styles.sacCodeHeader,
+                  {width: 120},
+                ]}>
+                <Text style={styles.sacCodeHeaderText}>Taxable Value</Text>
+              </View>
+              <View
+                style={[
+                  styles.sacCodeCell,
+                  styles.sacCodeHeader,
+                  {width: 120},
+                ]}>
+                <Text style={styles.sacCodeHeaderText}>CGST</Text>
+              </View>
+              <View
+                style={[
+                  styles.sacCodeCell,
+                  styles.sacCodeHeader,
+                  {width: 120},
+                ]}>
+                <Text style={styles.sacCodeHeaderText}>SGST</Text>
+              </View>
+              <View
+                style={[
+                  styles.sacCodeCell,
+                  styles.sacCodeHeader,
+                  {width: 120, borderRightWidth: 0},
+                ]}>
+                <Text style={styles.sacCodeHeaderText}>IGST</Text>
+              </View>
+            </View>
+
+            {/* Data Rows */}
+            {sacCodeSummary.details.map(
+              (detail: SACSummaryItem, index: number) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.sacCodeRow,
+                    index % 2 === 0
+                      ? styles.sacCodeRowEven
+                      : styles.sacCodeRowOdd,
+                  ]}>
+                  <View style={[styles.sacCodeCell, {width: 50}]}>
+                    <Text style={styles.sacCodeCellText}>
+                      {detail.serialNo}
+                    </Text>
+                  </View>
+                  <View style={[styles.sacCodeCell, {width: 120}]}>
+                    <Text style={styles.sacCodeCellText}>{detail.sacCode}</Text>
+                  </View>
+                  <View style={[styles.sacCodeCell, {width: 120}]}>
+                    <Text style={styles.sacCodeCellText}>
+                      {formatCurrency(detail.taxableValue).replace('₹', '')}
+                    </Text>
+                  </View>
+                  <View style={[styles.sacCodeCell, {width: 120}]}>
+                    <Text style={styles.sacCodeCellText}>
+                      {detail.cgst.percent.toFixed(2)}% |{' '}
+                      {formatCurrency(detail.cgst.amount).replace('₹', '')}
+                    </Text>
+                  </View>
+                  <View style={[styles.sacCodeCell, {width: 120}]}>
+                    <Text style={styles.sacCodeCellText}>
+                      {detail.sgst.percent.toFixed(2)}% |{' '}
+                      {formatCurrency(detail.sgst.amount).replace('₹', '')}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.sacCodeCell,
+                      {width: 120, borderRightWidth: 0},
+                    ]}>
+                    <Text style={styles.sacCodeCellText}>
+                      {detail.igst.percent.toFixed(2)}% |{' '}
+                      {formatCurrency(detail.igst.amount).replace('₹', '')}
+                    </Text>
+                  </View>
+                </View>
+              ),
+            )}
+
+            {/* Total row */}
+            <View style={styles.sacCodeTotalRow}>
+              <View style={[styles.sacCodeCell, {width: 50}]}>
+                <Text style={styles.sacCodeTotalText}></Text>
+              </View>
+              <View style={[styles.sacCodeCell, {width: 120}]}>
+                <Text style={styles.sacCodeTotalText}>Total</Text>
+              </View>
+              <View style={[styles.sacCodeCell, {width: 120}]}>
+                <Text style={styles.sacCodeTotalText}>
+                  {formatCurrency(
+                    sacCodeSummary.totals.totalTaxableValue,
+                  ).replace('₹', '')}
+                </Text>
+              </View>
+              <View style={[styles.sacCodeCell, {width: 120}]}>
+                <Text style={styles.sacCodeTotalText}>
+                  {formatCurrency(
+                    sacCodeSummary.totals.totalCGSTAmount,
+                  ).replace('₹', '')}
+                </Text>
+              </View>
+              <View style={[styles.sacCodeCell, {width: 120}]}>
+                <Text style={styles.sacCodeTotalText}>
+                  {formatCurrency(
+                    sacCodeSummary.totals.totalSGSTAmount,
+                  ).replace('₹', '')}
+                </Text>
+              </View>
+              <View
+                style={[styles.sacCodeCell, {width: 120, borderRightWidth: 0}]}>
+                <Text style={styles.sacCodeTotalText}>
+                  {formatCurrency(
+                    sacCodeSummary.totals.totalIGSTAmount,
+                  ).replace('₹', '')}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  };
+
   const renderFooter = () => (
     <View style={styles.sectionContainer}>
       <Text style={styles.sectionTitle}>Terms & Conditions</Text>
@@ -701,6 +881,56 @@ const InvoiceDetailsScreen: React.FC = () => {
           • All disputes shall be limited to Mumbai and shall be subject to
           Mumbai Jurisdiction only.
         </Text>
+      </View>
+
+      {/* QR Code and IRN Details Section */}
+      <View style={styles.qrIrnContainer}>
+        <Text style={styles.sectionTitle}>E-Invoice Details</Text>
+        <View style={styles.qrIrnWrapper}>
+          {/* QR Code Section - Left */}
+          <View style={styles.qrCodeSection}>
+            <Text style={styles.qrCodeTitle}>QR Code</Text>
+            {invoiceData?.invoiceHeader?.signedQRCode ? (
+              <View style={styles.qrCodeWrapper}>
+                <QRCode
+                  value={invoiceData.invoiceHeader.signedQRCode}
+                  size={80}
+                  backgroundColor="#fff"
+                  color="#000"
+                />
+              </View>
+            ) : (
+              <Text style={styles.noDataText}>No QR Code available</Text>
+            )}
+          </View>
+
+          {/* IRN Details Section - Right */}
+          <View style={styles.irnDetailsSection}>
+            {/* <Text style={styles.irnDetailsTitle}>IRN Details</Text> */}
+            <View style={styles.irnDetailsCard}>
+              <View style={styles.irnDetailRow}>
+                <Text style={styles.irnDetailLabel}>IRN No:</Text>
+                <Text style={styles.irnDetailValue}>
+                  {invoiceData?.invoiceHeader?.irnNo || 'N/A'}
+                </Text>
+              </View>
+              <View style={styles.irnDetailRow}>
+                <Text style={styles.irnDetailLabel}>ACK No:</Text>
+                <Text style={styles.irnDetailValue}>
+                  {invoiceData?.invoiceHeader?.ackNumber || 'N/A'}
+                </Text>
+              </View>
+              <View style={styles.irnDetailRow}>
+                <Text style={styles.irnDetailLabel}>ACK Date:</Text>
+                <Text style={styles.irnDetailValue}>
+                  {invoiceData?.invoiceHeader?.ackDate
+                    ? formatDate(invoiceData.invoiceHeader.ackDate)
+                    : 'N/A'}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
       </View>
     </View>
   );
@@ -752,6 +982,7 @@ const InvoiceDetailsScreen: React.FC = () => {
           {renderBillingInfo()}
           {renderItemsTable()}
           {renderSummary()}
+          {renderSACSummaryTable()}
           {renderFooter()}
         </View>
       </ScrollView>
@@ -887,15 +1118,15 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   sectionContainer: {
-    padding: 20,
+    padding: 16, // Reduced from 20
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16, // Reduced from 18
     fontWeight: '600',
     color: '#333',
-    marginBottom: 16,
+    marginBottom: 12, // Reduced from 16
   },
   infoGrid: {
     flexDirection: 'row',
@@ -978,7 +1209,7 @@ const styles = StyleSheet.create({
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#63A1D8',
-    paddingVertical: 14,
+    paddingVertical: 10,
   },
   tableBody: {
     maxHeight: 400,
@@ -1005,6 +1236,64 @@ const styles = StyleSheet.create({
     color: '#555',
     textAlign: 'center',
     lineHeight: 16,
+  },
+  // Add new styles for the SAC Code Summary
+  sacCodeContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    minWidth: '100%',
+    marginTop: 5,
+  },
+  sacCodeRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  sacCodeRowEven: {
+    backgroundColor: '#f9f9f9',
+  },
+  sacCodeRowOdd: {
+    backgroundColor: '#ffffff',
+  },
+  sacCodeCell: {
+    padding: 8, // Reduced from 10
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 70,
+    borderRightWidth: 1,
+    borderRightColor: '#e0e0e0',
+    height: 36, // Set explicit height for consistency
+  },
+  sacCodeHeader: {
+    backgroundColor: '#63A1D8',
+    padding: 8, // Reduced from 12
+    height: 36, // Set explicit height to match total row
+  },
+  sacCodeHeaderText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  sacCodeCellText: {
+    fontSize: 11,
+    color: '#333',
+    textAlign: 'center',
+  },
+  sacCodeTotalRow: {
+    flexDirection: 'row',
+    // backgroundColor: '#94b7d6',
+    paddingVertical: 0, // Reduced from 10
+    height: 34, // Set explicit height to match other rows
+  },
+  sacCodeTotalText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: 'black',
+    textAlign: 'center',
   },
   summaryCard: {
     backgroundColor: '#f8f9fa',
@@ -1042,18 +1331,18 @@ const styles = StyleSheet.create({
     marginHorizontal: -20,
     marginBottom: -20,
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 12,
     borderBottomLeftRadius: 6,
     borderBottomRightRadius: 6,
   },
   totalLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#fff',
     flex: 1,
   },
   totalValue: {
-    fontSize: 18,
+    fontSize: 13,
     fontWeight: '600',
     color: '#fff',
     textAlign: 'right',
@@ -1070,20 +1359,94 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 8,
   },
-  signatureContainer: {
-    alignItems: 'flex-end',
-    marginTop: 32,
+  additionalInfoContainer: {
+    padding: 10,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
   },
-  signatureLine: {
-    width: 200,
-    height: 1,
-    backgroundColor: '#dee2e6',
-    marginVertical: 8,
+  additionalInfoText: {
+    fontSize: 12,
+    color: '#555',
+    marginBottom: 4,
   },
-  signatureText: {
+  qrIrnContainer: {
+    marginTop: 20,
+  },
+  qrIrnWrapper: {
+    flexDirection: 'row',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 15,
+    marginTop: 10,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  qrCodeSection: {
+    flex: 0.3,
+    alignItems: 'center',
+  },
+  qrCodeTitle: {
     fontSize: 14,
+    fontWeight: '600',
     color: '#333',
-    fontWeight: '500',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  qrCodeWrapper: {
+    padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+  },
+  irnDetailsSection: {
+    flex: 0.75,
+    paddingLeft: 15,
+  },
+  irnDetailsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
+  },
+  irnDetailsCard: {
+    // backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 12,
+    // elevation: 2,
+    // shadowColor: '#000',
+    // shadowOffset: {
+    //   width: 0,
+    //   height: 1,
+    // },
+    // shadowOpacity: 0.2,
+    // shadowRadius: 1.41,
+  },
+  irnDetailRow: {
+    marginBottom: 8,
+  },
+  irnDetailLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#222',
+    marginBottom: 2,
+  },
+  irnDetailValue: {
+    fontSize: 11,
+    color: '#333',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    flexWrap: 'wrap',
+  },
+  qrCodeContainer: {
+    marginTop: 20,
+    alignItems: 'center',
   },
 });
 

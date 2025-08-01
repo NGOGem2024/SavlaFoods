@@ -19,6 +19,7 @@ import {API_ENDPOINTS} from '../config/api.config';
 import apiClient from '../utils/apiClient';
 import {RootStackParamList} from '../type/type';
 import {LayoutWrapper} from '../components/AppLayout';
+import {useCustomer} from '../contexts/DisplayNameContext'; // Import the context hook
 
 // Updated API response type definitions
 interface LotDetails {
@@ -27,6 +28,7 @@ interface LotDetails {
   DESCRIPTION: string;
   ITEM_MARKS: string;
   VAKAL_NO: string;
+  QUANTITY: string;
   AVAILABLE_QTY: number;
   BALANCE_QTY: number;
   CATEGORY_NAME?: string;
@@ -101,12 +103,12 @@ interface LotReportResponse {
 const LotReportScreen = () => {
   const route = useRoute<RouteProp<RootStackParamList, 'LotReportScreen'>>();
   const navigation = useNavigation<any>();
-  const {lotNo: initialLotNo, customerID: routeCustomerId} = route.params || {};
+  const {lotNo: initialLotNo} = route.params || {};
+  const {customerID} = useCustomer(); // Get customerID from context
   const [showNumberPad, setShowNumberPad] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'Inwards' | 'Outwards'>(
     'Inwards',
   );
-  // Add this ref for the horizontal ScrollView
   const horizontalScrollRef = useRef(null);
   const [lotDetails, setLotDetails] = useState<LotDetails | null>(null);
   const [inwardTransactions, setInwardTransactions] = useState<
@@ -124,28 +126,30 @@ const LotReportScreen = () => {
   const [summaryModalVisible, setSummaryModalVisible] =
     useState<boolean>(false);
 
-  // Load the report data when the screen is first mounted with a lotNo from navigation
+  // Load the report data when the screen is first mounted with a lotNo
   useEffect(() => {
-    if (initialLotNo && routeCustomerId) {
+    if (initialLotNo && customerID) {
       fetchLotReport(initialLotNo.toString());
     }
-  }, [initialLotNo, routeCustomerId]);
+  }, [initialLotNo, customerID]);
 
   const fetchLotReport = async (lotNo: string) => {
     if (!lotNo || lotNo.trim() === '') {
       Alert.alert('Error', 'Please enter a Lot Number');
       return;
     }
+    if (!customerID) {
+      Alert.alert('Error', 'Customer ID is missing. Please log in again.');
+      setError('Customer ID is missing');
+      return;
+    }
 
     try {
       setLoading(true);
       setError(null);
-      // Use the customerId from route params if available, otherwise use a default
-      const customerId = routeCustomerId || '1279';
-
-      const response = await apiClient.get<LotReportResponse>(
-        `${API_ENDPOINTS.GET_LOT_REPORT}/${lotNo}?customerId=${customerId}`,
-      );
+      const url = `${API_ENDPOINTS.GET_LOT_REPORT}/${lotNo}?customerId=${customerID}`;
+      console.log('Request URL:', url); // Log the URL for debugging
+      const response = await apiClient.get<LotReportResponse>(url);
 
       if (response && response.success) {
         setLotDetails(response.lotDetails);
@@ -161,7 +165,6 @@ const LotReportScreen = () => {
             'CUSTOMER_ID' in response.inward.data[0],
           );
         }
-
         if (response.outward.data && response.outward.data.length > 0) {
           console.log('Sample outward transaction:', response.outward.data[0]);
           console.log(
@@ -173,10 +176,15 @@ const LotReportScreen = () => {
         setError('Failed to load lot details');
         Alert.alert('Error', 'Failed to load lot details');
       }
-    } catch (err) {
-      console.error('Error fetching lot report:', err);
-      setError('An error occurred while fetching data');
-      Alert.alert('Error', 'An error occurred while fetching data');
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || 'An error occurred while fetching data';
+      console.error(
+        'Error fetching lot report:',
+        err.response?.data || err.message,
+      );
+      setError(errorMessage);
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -195,9 +203,8 @@ const LotReportScreen = () => {
     fetchLotReport(searchLotNo);
   };
 
-  const handleTabChange = tab => {
+  const handleTabChange = (tab: 'Inwards' | 'Outwards') => {
     setSelectedTab(tab);
-    // Reset horizontal scroll position to start
     if (horizontalScrollRef.current) {
       horizontalScrollRef.current.scrollTo({x: 0, animated: true});
     }
@@ -218,22 +225,19 @@ const LotReportScreen = () => {
   const handleDocumentNumberPress = (
     item: InwardTransaction | OutwardTransaction,
   ) => {
+    const customerId = (item as any).CUSTOMER_ID || customerID; // Use context customerID as fallback
     if ('GRN_NO' in item) {
-      // For inward items, navigate to GrnDetailsScreen with the GRN_NO
-      console.log('Navigating to GrnDetailsScreen with GRN_NO:', item.GRN_NO);
-
-      // Ensure GRN_NO is a string
-      const grnNo = String(item.GRN_NO);
-
-      // Use item.CUSTOMER_ID if available, otherwise fall back to routeCustomerId
-      const customerId = (item as any).CUSTOMER_ID || routeCustomerId;
-      console.log('Using customerId:', customerId);
-
+      console.log(
+        'Navigating to GrnDetailsScreen with GRN_NO:',
+        item.GRN_NO,
+        'CustomerID:',
+        customerId,
+      );
       try {
         navigation.navigate('GrnDetailsScreen', {
-          grnNo: grnNo,
-          customerId: customerId,
-          item: item,
+          grnNo: String(item.GRN_NO),
+          customerId,
+          item,
         });
       } catch (error) {
         console.error('Navigation error:', error);
@@ -244,25 +248,19 @@ const LotReportScreen = () => {
         );
       }
     } else if ('OUTWARD_NO' in item) {
-      // For outward items
-      console.log('Clicked on outward with OUTWARD_NO:', item.OUTWARD_NO);
-
-      // Ensure OUTWARD_NO is a string
-      const outwardNo = String(item.OUTWARD_NO);
-
-      // Use item.CUSTOMER_ID if available, otherwise fall back to routeCustomerId
-      const customerId = (item as any).CUSTOMER_ID || routeCustomerId;
-      console.log('Using customerId:', customerId);
-
-      // Check if OutwardDetailsScreen exists in the navigation stack
+      console.log(
+        'Navigating to OutwardDetailsScreen with OUTWARD_NO:',
+        item.OUTWARD_NO,
+        'CustomerID:',
+        customerId,
+      );
       try {
         navigation.navigate('OutwardDetailsScreen', {
-          outwardNo: outwardNo,
-          customerId: customerId,
-          item: item,
+          outwardNo: String(item.OUTWARD_NO),
+          customerId,
+          item,
         });
       } catch (error) {
-        // If navigation fails, show an alert that the screen is under development
         Alert.alert(
           'Feature Coming Soon',
           'Outward Details screen is under development.',
@@ -287,45 +285,33 @@ const LotReportScreen = () => {
                 <MaterialIcons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
-
             {summary ? (
               <View style={styles.summaryContainer}>
-                {/* Inward Count */}
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Inward Count:</Text>
                   <Text style={[styles.summaryValue, {color: '#F28C28'}]}>
                     {summary.inwardCount}
                   </Text>
                 </View>
-
-                {/* Inward Quantity */}
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Total Inward Qty:</Text>
                   <Text style={[styles.summaryValue, {color: '#F28C28'}]}>
                     {summary.inwardTotalQuantity}
                   </Text>
                 </View>
-
-                {/* Outward Count */}
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Outward Count:</Text>
                   <Text style={[styles.summaryValue, {color: '#007bff'}]}>
                     {summary.outwardCount}
                   </Text>
                 </View>
-
-                {/* Outward Quantity */}
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Total Outward Qty:</Text>
                   <Text style={[styles.summaryValue, {color: '#007bff'}]}>
                     {summary.outwardTotalQuantity}
                   </Text>
                 </View>
-
-                {/* Divider */}
                 <View style={styles.divider} />
-
-                {/* Net Balance */}
                 <View style={styles.balanceRow}>
                   <Text style={styles.balanceLabel}>Net Balance:</Text>
                   <Text style={[styles.balanceValue, {color: '#888'}]}>
@@ -344,7 +330,6 @@ const LotReportScreen = () => {
     );
   };
 
-  // Render the transactions table rows
   const renderTransactionRows = () => {
     if (currentTransactions.length === 0) {
       return (
@@ -378,9 +363,7 @@ const LotReportScreen = () => {
                 style={[
                   styles.tableCell,
                   styles.clickableCell,
-                  {
-                    color: inwardItem.GRN_NO ? getThemeColor() : '#334155',
-                  },
+                  {color: inwardItem.GRN_NO ? getThemeColor() : '#334155'},
                 ]}>
                 {inwardItem.GRN_NO || '-'}
               </Text>
@@ -425,7 +408,9 @@ const LotReportScreen = () => {
             <Text style={styles.tableCell}>
               {outwardItem.ITEM_MARKS || '-'}
             </Text>
-            <Text style={styles.tableCell}>{outwardItem.DC_QTY || '-'}</Text>
+            <Text style={styles.tableCell}>
+              {outwardItem.ORDER_QUANTITY || '-'}
+            </Text>
             <Text style={styles.tableCell}>{outwardItem.REMARK || '-'}</Text>
             <Text style={styles.tableCell}>
               {outwardItem.VEHICLE_NO || '-'}
@@ -442,12 +427,9 @@ const LotReportScreen = () => {
   return (
     <LayoutWrapper showHeader={true} showTabBar={false} route={route}>
       <View style={styles.container}>
-        {/* Title */}
         <View style={styles.titleContainer}>
           <Text style={styles.titleText}>Lot Report</Text>
         </View>
-
-        {/* Fixed Search Container at the top */}
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
             <MaterialIcons
@@ -462,7 +444,6 @@ const LotReportScreen = () => {
               placeholderTextColor="#777"
               value={searchLotNo}
               onChangeText={text => {
-                // Allow only numbers by removing non-numeric characters
                 const cleanedText = text.replace(/[^0-9]/g, '');
                 setSearchLotNo(cleanedText);
               }}
@@ -479,8 +460,6 @@ const LotReportScreen = () => {
             <MaterialIcons name="refresh" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
-
-        {/* Content with Keyboard Handling */}
         <KeyboardAvoidingView
           style={{flex: 1}}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -513,7 +492,6 @@ const LotReportScreen = () => {
                     <MaterialIcons name="bar-chart" size={26} color="#F28C28" />
                   </TouchableOpacity>
                 </View>
-
                 <Text style={styles.detailText}>
                   Unit Name:{' '}
                   <Text style={styles.detailBold}>{lotDetails?.UNIT_NAME}</Text>
@@ -553,10 +531,8 @@ const LotReportScreen = () => {
                   </Text>
                 )}
                 <Text style={styles.detailText}>
-                  Available Qty:{' '}
-                  <Text style={styles.detailBold}>
-                    {lotDetails?.AVAILABLE_QTY}
-                  </Text>
+                  Quantity:{' '}
+                  <Text style={styles.detailBold}>{lotDetails?.QUANTITY}</Text>
                 </Text>
                 {lotDetails?.EXPIRY_DATE && (
                   <Text style={styles.detailText}>
@@ -573,7 +549,6 @@ const LotReportScreen = () => {
                   </Text>
                 )}
               </View>
-
               <View style={styles.tabContainer}>
                 <TouchableOpacity
                   style={[
@@ -604,7 +579,6 @@ const LotReportScreen = () => {
                   </Text>
                 </TouchableOpacity>
               </View>
-
               <View
                 style={[
                   styles.scrollHintContainer,
@@ -615,43 +589,38 @@ const LotReportScreen = () => {
                   Swipe horizontally to see all columns
                 </Text>
               </View>
-
               <ScrollView
                 ref={horizontalScrollRef}
                 horizontal
                 showsHorizontalScrollIndicator={true}>
                 <View style={styles.tableContainer}>
                   {selectedTab === 'Inwards' ? (
-                    <>
-                      <View style={styles.inwardTableHeader}>
-                        <Text style={styles.headerCell}>Unit Name</Text>
-                        <Text style={styles.headerCell}>GRN Date</Text>
-                        <Text style={styles.headerCell}>GRN No</Text>
-                        <Text style={styles.headerCell}>Vakal No</Text>
-                        <Text style={styles.headerCell}>Item Marks</Text>
-                        <Text style={styles.headerCell}>Quantity</Text>
-                        <Text style={styles.headerCell}>Remarks</Text>
-                        <Text style={styles.headerCell}>Vehicle No</Text>
-                      </View>
-                    </>
+                    <View style={styles.inwardTableHeader}>
+                      <Text style={styles.headerCell}>Unit Name</Text>
+                      <Text style={styles.headerCell}>GRN Date</Text>
+                      <Text style={styles.headerCell}>GRN No</Text>
+                      <Text style={styles.headerCell}>Vakal No</Text>
+                      <Text style={styles.headerCell}>Item Marks</Text>
+                      <Text style={styles.headerCell}>Quantity</Text>
+                      <Text style={styles.headerCell}>Remarks</Text>
+                      <Text style={styles.headerCell}>Vehicle No</Text>
+                    </View>
                   ) : (
-                    <>
-                      <View style={styles.outwardTableHeader}>
-                        <Text style={styles.headerCell}>Unit Name</Text>
-                        <Text style={[styles.headerCell, {width: 110}]}>
-                          Delivery Challan Date
-                        </Text>
-                        <Text style={[styles.headerCell, {width: 110}]}>
-                          Delivery{'\n'}Challan No
-                        </Text>
-                        <Text style={styles.headerCell}>Vakal No</Text>
-                        <Text style={styles.headerCell}>Item Marks</Text>
-                        <Text style={styles.headerCell}>Quantity</Text>
-                        <Text style={styles.headerCell}>Remarks</Text>
-                        <Text style={styles.headerCell}>Vehicle No</Text>
-                        <Text style={styles.headerCell}>Delivered To</Text>
-                      </View>
-                    </>
+                    <View style={styles.outwardTableHeader}>
+                      <Text style={styles.headerCell}>Unit Name</Text>
+                      <Text style={[styles.headerCell, {width: 110}]}>
+                        Delivery Challan Date
+                      </Text>
+                      <Text style={[styles.headerCell, {width: 110}]}>
+                        Delivery{'\n'}Challan No
+                      </Text>
+                      <Text style={styles.headerCell}>Vakal No</Text>
+                      <Text style={styles.headerCell}>Item Marks</Text>
+                      <Text style={styles.headerCell}>Ordered Quantity</Text>
+                      <Text style={styles.headerCell}>Remarks</Text>
+                      <Text style={styles.headerCell}>Vehicle No</Text>
+                      <Text style={styles.headerCell}>Delivered To</Text>
+                    </View>
                   )}
                   {renderTransactionRows()}
                 </View>
@@ -796,7 +765,6 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
-
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -932,11 +900,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   activeInwardTab: {
-    backgroundColor: '#F28C28', // Orange for inward
+    backgroundColor: '#F28C28',
     borderColor: '#e67e22',
   },
   activeOutwardTab: {
-    backgroundColor: '#007bff', // Blue for outward
+    backgroundColor: '#007bff',
     borderColor: '#0069d9',
   },
   tabText: {
@@ -949,12 +917,12 @@ const styles = StyleSheet.create({
   },
   inwardTableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#F28C28', // Orange for inward
+    backgroundColor: '#F28C28',
     padding: 12,
   },
   outwardTableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#007bff', // Blue for outward
+    backgroundColor: '#007bff',
     padding: 12,
   },
   headerCell: {

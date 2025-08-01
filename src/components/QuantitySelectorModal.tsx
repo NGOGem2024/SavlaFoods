@@ -47,6 +47,7 @@ const QuantitySelectorModal: React.FC<QuantitySelectorModalProps> = ({
 
   useEffect(() => {
     if (isVisible) {
+      // Always start with 1 as the default input value
       setInputValue('1');
       setShowSuccessModal(false);
     }
@@ -56,7 +57,7 @@ const QuantitySelectorModal: React.FC<QuantitySelectorModalProps> = ({
     const cleanedValue = value.replace(/[^0-9]/g, '');
 
     if (cleanedValue === '' || cleanedValue === '0') {
-      setInputValue('');
+      setInputValue('1'); // Don't allow empty or zero values
       return;
     }
 
@@ -86,13 +87,16 @@ const QuantitySelectorModal: React.FC<QuantitySelectorModalProps> = ({
     if (currentValue > 1) {
       setInputValue((currentValue - 1).toString());
     }
+    // If value is 1 or less, keep it at 1 (minimum value)
+    else {
+      setInputValue('1');
+    }
   };
 
   const handleConfirm = () => {
-    const quantity = parseInt(inputValue) || 0;
+    const quantity = parseInt(inputValue) || 1; // Default to 1 if parsing fails
 
     if (quantity <= 0) {
-      Alert.alert('Invalid Quantity', 'Please enter a quantity greater than 0');
       setInputValue('1');
       return;
     }
@@ -105,7 +109,7 @@ const QuantitySelectorModal: React.FC<QuantitySelectorModalProps> = ({
       return;
     }
 
-    // Create cart item with proper quantity
+    // Create cart item with requested quantity for cart, but preserve original quantity
     const cartItem = {
       item_id: item.item_id,
       item_name: item.item_name,
@@ -114,8 +118,12 @@ const QuantitySelectorModal: React.FC<QuantitySelectorModalProps> = ({
       item_marks: item.item_marks || '',
       unit_name: item.unit_name,
       available_qty: item.available_qty,
-      quantity: quantity,
+      quantity: item.quantity, // Preserve original quantity for display in PlaceOrderScreen
+      quantityInBox: item.box_quantity || 0,
+      requested_qty: quantity, // User-selected quantity
+      ordered_quantity: quantity, // User-selected quantity
       customerID: item.customerID,
+      addedTimestamp: Date.now(), // Add current timestamp
     };
 
     // Add to cart

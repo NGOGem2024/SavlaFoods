@@ -21,6 +21,8 @@ interface ReportItem {
   VAKKAL_NO?: string;
   ITEM_MARK?: string;
   QTY?: string | number;
+  ORDER_QUANTITY?: string | number;
+  DC_QTY?: string | number;
   REMARK?: string;
   VEHICLE_NO?: string;
   DELIVERED_TO?: string;
@@ -44,15 +46,16 @@ const ReportTable = ({
     number: 65,
     unit: 70,
     date: 100,
-    inwardOutwardNo: 100,
+    inwardOutwardNo: 110, // Increased from 100 to 110 for better alignment
     lotNo: 80,
     itemName: 150,
     vakkalNo: 110,
     itemMark: 120,
-    qty: 60,
+    qty: 100, // Increased from 60 to 100 to fit "Order Qty" text
+    dcQty: 80, // Added for DC Qty column
     remark: 100,
     vehicle: 100,
-    deliveredTo: 120,
+    deliveredTo: 220, // Increased from 120 to 200 to accommodate longer content
   };
 
   // Helper function for theme colors
@@ -180,8 +183,17 @@ const ReportTable = ({
               styles.tableHeaderCell,
               {width: columnWidths.qty, color: getThemeColor()},
             ]}>
-            Qty
+            {isInward ? 'Qty' : 'Order Qty'}
           </Text>
+          {!isInward && (
+            <Text
+              style={[
+                styles.tableHeaderCell,
+                {width: columnWidths.dcQty, color: getThemeColor()},
+              ]}>
+              DC Qty
+            </Text>
+          )}
           <Text
             style={[
               styles.tableHeaderCell,
@@ -268,10 +280,7 @@ const ReportTable = ({
                           width: '100%',
                         },
                       ]}>
-                      {Platform.OS === 'ios' &&
-                        onInwardOutwardNoPress &&
-                        item.GRN_NO}
-                      {/* {item.GRN_NO || '-'} */}
+                      {item.GRN_NO || '-'}
                     </Text>
                   </TouchableOpacity>
                 ) : (
@@ -296,9 +305,7 @@ const ReportTable = ({
                           width: '100%',
                         },
                       ]}>
-                      {Platform.OS === 'ios' &&
-                        onInwardOutwardNoPress &&
-                        item.OUTWARD_NO}
+                      {item.OUTWARD_NO || '-'}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -318,8 +325,13 @@ const ReportTable = ({
                   {item.ITEM_MARK || '-'}
                 </Text>
                 <Text style={[styles.tableCell, {width: columnWidths.qty}]}>
-                  {item.QTY || '-'}
+                  {item.QTY || item.ORDER_QUANTITY || '-'}
                 </Text>
+                {!isInward && (
+                  <Text style={[styles.tableCell, {width: columnWidths.dcQty}]}>
+                    {item.DC_QTY || '-'}
+                  </Text>
+                )}
                 <Text style={[styles.tableCell, {width: columnWidths.remark}]}>
                   {item.REMARK || '-'}
                 </Text>
@@ -330,6 +342,7 @@ const ReportTable = ({
                   <Text
                     style={[
                       styles.tableCell,
+                      styles.deliveredToCell,
                       {width: columnWidths.deliveredTo},
                     ]}>
                     {item.DELIVERED_TO || '-'}
@@ -380,6 +393,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0',
+    alignItems: 'center', // Added to ensure vertical alignment
   },
   tableCell: {
     fontSize: 14,
@@ -395,6 +409,11 @@ const styles = StyleSheet.create({
   clickableCell: {
     textDecorationLine: 'underline',
     fontWeight: '500',
+  },
+  deliveredToCell: {
+    fontSize: 12, // Reduced font size for Delivered To column
+    flexWrap: 'wrap', // Allow text to wrap
+    paddingHorizontal: 4, // Slightly reduced padding to fit more text
   },
 });
 

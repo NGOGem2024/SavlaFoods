@@ -193,14 +193,6 @@ const ReportsStackNavigator = () => {
       <ReportsStack.Screen
         name="Reports"
         component={ReportsScreen}
-        // options={{
-        //   title: 'Reports',
-        //   headerTitleStyle: {
-        //     fontSize: 24, // set your desired font size here
-        //     fontWeight: 'bold', // optional
-        //     color: '#000', // optional
-        //   },
-        // }}
         options={{headerShown: false}}
       />
 

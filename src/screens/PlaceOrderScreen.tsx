@@ -43,7 +43,9 @@ interface OrderItem {
   NET_QUANTITY: number;
   QUANTITY: number;
   ORDERED_QUANTITY: number;
+  BOX_QUANTITY?: number;
   BatchNo?: string | null;
+  UPDATED_QTY?: any[];
 }
 
 interface GroupedItems {
@@ -95,17 +97,22 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
       const combinedItems = [
         ...(Array.isArray(selectedItems) ? selectedItems : []),
         ...cartItems.map(cartItem => ({
-          LOT_NO: cartItem.lot_no || '',
+          REQUESTED_QUANTITY: cartItem.requested_qty || 1,
           ITEM_ID: cartItem.item_id,
           ITEM_NAME: cartItem.item_name,
+          LOT_NO: cartItem.lot_no || '',
           VAKAL_NO: cartItem.vakal_no || '',
           ITEM_MARKS: cartItem.item_marks || '',
           UNIT_NAME: cartItem.unit_name || '',
-          QUANTITY: cartItem.available_qty, // Added quantity field
+          QUANTITY: cartItem.quantity, // Use original quantity that was displayed in HomeScreen
           AVAILABLE_QTY: cartItem.available_qty,
-          NET_QUANTITY: Math.max(0, cartItem.available_qty - cartItem.quantity),
-          UPDATED_QTY: [cartItem.quantity],
-          ORDERED_QUANTITY: cartItem.quantity,
+          NET_QUANTITY: Math.max(
+            0,
+            cartItem.quantity - (cartItem.requested_qty || 1),
+          ),
+          ORDERED_QUANTITY: cartItem.requested_qty || 1,
+          BOX_QUANTITY: cartItem.quantityInBox || 0,
+          UPDATED_QTY: [cartItem.requested_qty || 1],
         })),
       ] as OrderItem[];
 
@@ -140,9 +147,10 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
           if (change === 'increment') {
             newQuantity = item.ORDERED_QUANTITY + 1;
           } else if (change === 'decrement') {
-            newQuantity = Math.max(0, item.ORDERED_QUANTITY - 1);
+            newQuantity = Math.max(1, item.ORDERED_QUANTITY - 1); // Ensure minimum value of 1
           } else {
-            newQuantity = parseFloat(change) || 0;
+            newQuantity = parseFloat(change) || 1; // Default to 1 if parse fails
+            newQuantity = Math.max(1, newQuantity); // Ensure minimum value of 1
           }
 
           newQuantity = Math.min(newQuantity, item.AVAILABLE_QTY);
@@ -326,7 +334,7 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
           <DetailRow label="Item Marks" value={item.ITEM_MARKS} />
           <DetailRow
             label="Quantity" // Changed from "Available Quantity"
-            value={`${item.QUANTITY}`} // Using QUANTITY field
+            value={`${item.QUANTITY}`} // Using original QUANTITY field from the HomeScreen
           />
         </View>
         <View style={styles.detailColumn}>
@@ -341,10 +349,14 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
             {/* Changed label */}
             <View style={styles.quantityContainer}>
               <TouchableOpacity
-                style={styles.quantityButton}
+                style={[
+                  styles.quantityButton,
+                  item.ORDERED_QUANTITY <= 1 && styles.disabledQuantityButton,
+                ]}
                 onPress={() =>
                   handleQuantityChange(groupName, item.LOT_NO, 'decrement')
-                }>
+                }
+                disabled={item.ORDERED_QUANTITY <= 1}>
                 <Text style={styles.quantityButtonText}>-</Text>
               </TouchableOpacity>
               <TextInput

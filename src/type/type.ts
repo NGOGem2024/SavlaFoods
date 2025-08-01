@@ -232,7 +232,7 @@ export type MainStackParamList = {
       QUANTITY: number;
       BOX_QUANTITY: number;
       NET_QUANTITY: number;
-      REQUESTED_QUANTITY: number;
+      ORDERED_QUANTITY: number;
       BatchNo?: string | null;
     }>;
     customerID: string;

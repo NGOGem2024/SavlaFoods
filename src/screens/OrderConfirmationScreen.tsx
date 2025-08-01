@@ -397,6 +397,11 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
     let errorMessage =
       'Please complete the following fields before proceeding:';
 
+    if (!orderBy.trim()) {
+      errorMessage += '\nOrder Creator name is required';
+      hasError = true;
+    }
+
     if (!transporterDetails.name.trim()) {
       errorMessage += '\nTransporter Name is required';
       hasError = true;
@@ -409,11 +414,6 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
     // Delivery Location validation
     if (!orderDetails.CUST_DELIVERY_ADD.trim()) {
       errorMessage += '\nDelivery Location is required';
-      hasError = true;
-    }
-
-    if (!orderBy.trim()) {
-      errorMessage += '\nOrder Creator name is required';
       hasError = true;
     }
 
@@ -453,13 +453,11 @@ const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = ({
         items: orderItems.map((item: OrderItem) => ({
           ItemID: item.ITEM_ID,
           LotNo: item.LOT_NO,
-
-          Quantity: item.ORDERED_QUANTITY,
+          requestedQuantity: item.ORDERED_QUANTITY,
           BatchNo: item.BatchNo === '**null**' ? null : item.BatchNo,
           ItemMarks: item.ITEM_MARKS || '',
           VakalNo: item.VAKAL_NO || '',
           UnitName: item.UNIT_NAME,
-          Quantity: item.QUANTITY,
           // UnitID: item.UNIT_ID || unitId,
         })),
         orderDate: orderDetails.orderDate,

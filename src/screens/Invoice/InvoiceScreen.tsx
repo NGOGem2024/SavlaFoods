@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import axios, {AxiosError} from 'axios';
@@ -222,13 +223,13 @@ const FinanceScreen: React.FC = () => {
 
     try {
       const headers = await getAuthHeaders();
-      const unitsString =
-        formData.units.length > 0 ? formData.units.join(',') : null;
+      // Send units as an array instead of string
+      const unitValue = formData.units.length > 0 ? formData.units : null;
 
       const payload1 = {
         customerName: formData.customerName.trim() || null,
         billNo: formData.billNo.trim() || null,
-        unit: unitsString,
+        unit: unitValue,
         fromDate: formatDate(formData.fromDate),
         toDate: formData.toDate ? formatDate(formData.toDate) : null,
       };
@@ -236,7 +237,7 @@ const FinanceScreen: React.FC = () => {
       const payload2 = {
         customerName: formData.customerName.trim() || null,
         billNo: formData.billNo.trim() || null,
-        unit: unitsString,
+        unit: unitValue,
         fromDate: formatDateForAPI(formData.fromDate),
         toDate: formData.toDate ? formatDateForAPI(formData.toDate) : null,
       };
@@ -295,7 +296,7 @@ const FinanceScreen: React.FC = () => {
             'API endpoint not found. Please check with your backend team.';
         } else {
           errorMessage =
-            axiosError.response.data?.message ||
+            (axiosError.response.data as any)?.message ||
             `Server Error: ${axiosError.response.status}`;
         }
       } else if (axiosError.request) {
@@ -610,7 +611,8 @@ const FinanceScreen: React.FC = () => {
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={[styles.button, styles.clearButton]}
-              onPress={handleClearForm}>
+              onPress={handleClearForm}
+              activeOpacity={0.8}>
               <Text style={styles.clearButtonText}>Clear</Text>
             </TouchableOpacity>
 
@@ -621,7 +623,8 @@ const FinanceScreen: React.FC = () => {
                 loading && styles.disabledButton,
               ]}
               onPress={handleSubmit}
-              disabled={loading}>
+              disabled={loading}
+              activeOpacity={0.8}>
               {loading ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
@@ -730,13 +733,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 10,
+    marginHorizontal: -5, // Compensate for button margins
   },
   button: {
     flex: 1,
-    padding: 14,
+    padding: Platform.OS === 'android' ? 9 : 12,
     borderRadius: 8,
     alignItems: 'center',
     marginHorizontal: 5,
+    elevation: 3, // Add elevation for Android shadow
+    justifyContent: 'center', // Center content vertically
+    minHeight: 45, // Reduced height for more compact appearance
+    ...Platform.select({
+      android: {
+        overflow: 'hidden',
+      },
+    }),
   },
   clearButton: {
     backgroundColor: '#95a5a6',
@@ -745,6 +757,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+    textAlign: 'center', // Ensure text is centered
   },
   submitButton: {
     backgroundColor: '#3498db',
@@ -753,6 +766,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+    textAlign: 'center', // Ensure text is centered
   },
   disabledButton: {
     backgroundColor: '#bdc3c7',
