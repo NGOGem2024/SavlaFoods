@@ -377,7 +377,7 @@ const OrderDetailsScreen = ({
  API_ENDPOINTS.GET_CANCEL_ORDER,
  {
  orderNo: order.orderNo,
- cancelRemarks: cancelRemark,
+ cancelRemark: cancelRemark,
  cancelledBy: 'MOBILE_USER',
  },
  {
