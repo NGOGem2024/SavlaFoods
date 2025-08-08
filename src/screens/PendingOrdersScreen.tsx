@@ -22,7 +22,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useCustomer} from '../contexts/DisplayNameContext'; // Import the customer context
 import {MainStackParamList} from '../../src/type/type'; // Import the typed parameter list
 import {LayoutWrapper} from '../components/AppLayout';
- 
+
 interface PendingOrder {
   orderId: number;
   orderNo: string;
@@ -50,7 +50,7 @@ interface PendingOrder {
     unitName: string;
   }>;
 }
- 
+
 interface PendingOrderResponse {
   success: boolean;
   message: string;
@@ -64,7 +64,7 @@ interface PendingOrderResponse {
     };
   };
 }
- 
+
 const PendingOrdersScreen = () => {
   const navigation = useNavigation<StackNavigationProp<MainStackParamList>>();
   const route = useRoute();
@@ -75,10 +75,10 @@ const PendingOrdersScreen = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
- 
+
   // Get customerID from context instead of hardcoding
   const {customerID} = useCustomer();
- 
+
   const fetchPendingOrder = useCallback(
     async (pageNum = 1, refresh = false) => {
       try {
@@ -87,16 +87,16 @@ const PendingOrdersScreen = () => {
           setIsLoading(false);
           return;
         }
- 
+
         if (refresh) {
           setIsLoading(true);
           setPage(1);
         } else if (pageNum > 1) {
           setIsLoadingMore(true);
         }
- 
+
         setError(null);
- 
+
         const response = await axios.get(
           `${API_ENDPOINTS.GET_PENDING_ORDERS}`,
           {
@@ -107,12 +107,12 @@ const PendingOrdersScreen = () => {
             },
           },
         );
- 
+
         const result: PendingOrderResponse = response.data;
         console.log('API Response:', JSON.stringify(result, null, 2));
         console.log('Orders Count:', result.data?.orders?.length || 0);
         console.log('Pagination Info:', result.data?.pagination);
- 
+
         if (result.success) {
           // Process orders to normalize date format
           const normalizedOrders = result.data.orders.map(order => {
@@ -122,24 +122,24 @@ const PendingOrdersScreen = () => {
               // Extract just the date part if it's an ISO string
               return dateString.split('T')[0];
             };
- 
+
             order.items.forEach((item, index) => {
               console.log(`Item ${index + 1} unit:`, item.unitName);
             });
- 
+
             return {
               ...order,
               orderDate: normalizeDate(order.orderDate),
               deliveryDate: normalizeDate(order.deliveryDate),
             };
           });
- 
+
           if (refresh || pageNum === 1) {
             setOrders(normalizedOrders);
           } else {
             setOrders(prevOrders => [...prevOrders, ...normalizedOrders]);
           }
- 
+
           setTotalPages(result.data.pagination.totalPages);
           setPage(result.data.pagination.page);
         } else {
@@ -148,7 +148,7 @@ const PendingOrdersScreen = () => {
       } catch (err: any) {
         console.error('Error fetching Pending Orders:', err);
         setError(err.message || 'Failed to load pending orders ');
- 
+
         // Using mock data for demonstration if the API fails
         if (pageNum === 1) {
           const mockOrders = generateMockData();
@@ -163,30 +163,30 @@ const PendingOrdersScreen = () => {
     },
     [customerID],
   );
- 
+
   useEffect(() => {
     fetchPendingOrder();
   }, [fetchPendingOrder]);
- 
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchPendingOrder(1, true);
   };
- 
+
   // Add useFocusEffect to refresh data when screen is focused
   useFocusEffect(
     useCallback(() => {
       console.log('PendingOrdersScreen focused');
       // Fetch data immediately every time the screen is focused
       fetchPendingOrder(1, true);
- 
+
       // No need for the additional navigation listener since we're refreshing immediately
       return () => {
         // Cleanup if needed
       };
     }, [fetchPendingOrder]),
   );
- 
+
   const loadMoreOrders = () => {
     if (!isLoadingMore && page < totalPages) {
       fetchPendingOrder(page + 1);
@@ -195,82 +195,29 @@ const PendingOrdersScreen = () => {
   const backHandler = () => {
     navigation.goBack();
   };
- 
+
   const handleOrderPress = (order: PendingOrder) => {
     // Use "as any" to bypass the type checking since the component
     // expects a different structure than the type definition
     navigation.navigate('OrderDetailsScreen' as any, {order});
   };
- 
+
   const formatDate = (dateString: string) => {
     try {
       if (!dateString) return '';
- 
+
       // Extract date parts from string
       let year, month, day;
- 
-      // For YYYY-MM-DD format
-      if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        [year, month, day] = dateString.split('-');
- 
-        // Add 1 to the day to fix the timezone offset issue
-        let monthIndex = parseInt(month, 10) - 1;
-        let dayNum = parseInt(day, 10) + 1;
-        let yearNum = parseInt(year, 10);
- 
-        // Handle month/year rollover if day exceeds month length
-        const daysInMonth = new Date(yearNum, monthIndex + 1, 0).getDate();
-        if (dayNum > daysInMonth) {
-          dayNum = 1;
-          if (monthIndex === 11) {
-            monthIndex = 0;
-            yearNum++;
-          } else {
-            monthIndex++;
-          }
-        }
- 
-        // Convert month number to month name
-        const monthNames = [
-          'January',
-          'February',
-          'March',
-          'April',
-          'May',
-          'June',
-          'July',
-          'August',
-          'September',
-          'October',
-          'November',
-          'December',
-        ];
- 
-        // Format the date manually without creating a Date object
-        return `${monthNames[monthIndex]} ${dayNum}, ${yearNum}`;
-      }
-      // For ISO format with time component
-      else if (dateString.includes('T')) {
+
+      // For YYYY-MM-DD format or ISO format with time component
+      if (dateString.match(/^\d{4}-\d{2}-\d{2}$/) || dateString.includes('T')) {
         const [datePart] = dateString.split('T');
         [year, month, day] = datePart.split('-');
- 
-        // Add 1 to the day to fix the timezone offset issue
-        let monthIndex = parseInt(month, 10) - 1;
-        let dayNum = parseInt(day, 10) + 1;
-        let yearNum = parseInt(year, 10);
- 
-        // Handle month/year rollover if day exceeds month length
-        const daysInMonth = new Date(yearNum, monthIndex + 1, 0).getDate();
-        if (dayNum > daysInMonth) {
-          dayNum = 1;
-          if (monthIndex === 11) {
-            monthIndex = 0;
-            yearNum++;
-          } else {
-            monthIndex++;
-          }
-        }
- 
+
+        // Parse month and year
+        const monthIndex = parseInt(month, 10) - 1;
+        const yearNum = parseInt(year, 10);
+
         // Convert month number to month name
         const monthNames = [
           'January',
@@ -286,33 +233,130 @@ const PendingOrdersScreen = () => {
           'November',
           'December',
         ];
- 
-        // Format the date manually without creating a Date object
-        return `${monthNames[monthIndex]} ${dayNum}, ${yearNum}`;
+
+        // Format the date without modifying the day
+        return `${monthNames[monthIndex]} ${parseInt(day, 10)}, ${yearNum}`;
       }
-      // Invalid format
-      else {
-        return dateString;
-      }
+
+      // Return original string if format is invalid
+      return dateString;
     } catch (error) {
       console.log('Error formatting date:', error, dateString);
       return dateString;
     }
   };
- 
+
+  // const formatDate = (dateString: string) => {
+  //   try {
+  //     if (!dateString) return '';
+
+  //     // Extract date parts from string
+  //     let year, month, day;
+
+  //     // For YYYY-MM-DD format
+  //     if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+  //       [year, month, day] = dateString.split('-');
+
+  //       // Add 1 to the day to fix the timezone offset issue
+  //       let monthIndex = parseInt(month, 10) - 1;
+  //       let dayNum = parseInt(day, 10) + 1;
+  //       let yearNum = parseInt(year, 10);
+
+  //       // Handle month/year rollover if day exceeds month length
+  //       const daysInMonth = new Date(yearNum, monthIndex + 1, 0).getDate();
+  //       if (dayNum > daysInMonth) {
+  //         dayNum = 1;
+  //         if (monthIndex === 11) {
+  //           monthIndex = 0;
+  //           yearNum++;
+  //         } else {
+  //           monthIndex++;
+  //         }
+  //       }
+
+  //       // Convert month number to month name
+  //       const monthNames = [
+  //         'January',
+  //         'February',
+  //         'March',
+  //         'April',
+  //         'May',
+  //         'June',
+  //         'July',
+  //         'August',
+  //         'September',
+  //         'October',
+  //         'November',
+  //         'December',
+  //       ];
+
+  //       // Format the date manually without creating a Date object
+  //       return `${monthNames[monthIndex]} ${dayNum}, ${yearNum}`;
+  //     }
+  //     // For ISO format with time component
+  //     else if (dateString.includes('T')) {
+  //       const [datePart] = dateString.split('T');
+  //       [year, month, day] = datePart.split('-');
+
+  //       // Add 1 to the day to fix the timezone offset issue
+  //       let monthIndex = parseInt(month, 10) - 1;
+  //       let dayNum = parseInt(day, 10) + 1;
+  //       let yearNum = parseInt(year, 10);
+
+  //       // Handle month/year rollover if day exceeds month length
+  //       const daysInMonth = new Date(yearNum, monthIndex + 1, 0).getDate();
+  //       if (dayNum > daysInMonth) {
+  //         dayNum = 1;
+  //         if (monthIndex === 11) {
+  //           monthIndex = 0;
+  //           yearNum++;
+  //         } else {
+  //           monthIndex++;
+  //         }
+  //       }
+
+  //       // Convert month number to month name
+  //       const monthNames = [
+  //         'January',
+  //         'February',
+  //         'March',
+  //         'April',
+  //         'May',
+  //         'June',
+  //         'July',
+  //         'August',
+  //         'September',
+  //         'October',
+  //         'November',
+  //         'December',
+  //       ];
+
+  //       // Format the date manually without creating a Date object
+  //       return `${monthNames[monthIndex]} ${dayNum}, ${yearNum}`;
+  //     }
+  //     // Invalid format
+  //     else {
+  //       return dateString;
+  //     }
+  //   } catch (error) {
+  //     console.log('Error formatting date:', error, dateString);
+  //     return dateString;
+  //   }
+  // };
+
   // const handleViewDetails = (order: PendingOrder) => {
   //   // Use "as any" to bypass the type checking since the component
   //   // expects a different structure than the type definition
   //   navigation.navigate('OrderDetailsScreen' as any, {order});
   // };
- 
+
   const handleViewDetails = (order: PendingOrder) => {
     navigation.navigate('OrderDetailsScreen' as any, {
       order,
       unitName: order.unitName, // Add this line
     });
   };
- 
+
   const renderOrderCard = ({item}: {item: PendingOrder}) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -332,7 +376,7 @@ const PendingOrdersScreen = () => {
           </View>
         </View> */}
       </View>
- 
+
       <View style={styles.dateContainer}>
         <View style={styles.dateBox}>
           <Text style={styles.dateLabel}>Order Date</Text>
@@ -344,7 +388,7 @@ const PendingOrdersScreen = () => {
           <Text style={styles.dateValue}>{formatDate(item.deliveryDate)}</Text>
         </View>
       </View>
- 
+
       <View style={styles.bottomRow}>
         <Text style={styles.transporterValue} numberOfLines={1}>
           {item.transporterName || 'No transporter'}
@@ -359,10 +403,10 @@ const PendingOrdersScreen = () => {
       </View>
     </View>
   );
- 
+
   const renderFooter = () => {
     if (!isLoadingMore) return null;
- 
+
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color="#0284C7" />
@@ -370,7 +414,7 @@ const PendingOrdersScreen = () => {
       </View>
     );
   };
- 
+
   if (isLoading) {
     return (
       <View style={styles.centered}>
@@ -378,7 +422,7 @@ const PendingOrdersScreen = () => {
       </View>
     );
   }
- 
+
   if (error && orders.length === 0) {
     return (
       <View style={styles.centered}>
@@ -391,12 +435,12 @@ const PendingOrdersScreen = () => {
       </View>
     );
   }
- 
+
   return (
     <LayoutWrapper showHeader={true} showTabBar={false} route={route}>
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#f3f4f6" />
- 
+
         <FlatList
           // data={orders}
           // keyExtractor={item => `order-${item.orderId}`}
@@ -422,7 +466,7 @@ const PendingOrdersScreen = () => {
     </LayoutWrapper>
   );
 };
- 
+
 // Mock data generation function for demonstration
 const generateMockData = (): PendingOrder[] => {
   const mockOrders: PendingOrder[] = [];
@@ -430,10 +474,10 @@ const generateMockData = (): PendingOrder[] => {
     // Create dates without time component to avoid timezone issues
     const orderDate = new Date();
     orderDate.setDate(orderDate.getDate() - i * 3);
- 
+
     const deliveryDate = new Date(orderDate);
     deliveryDate.setDate(deliveryDate.getDate() + 2);
- 
+
     // Format dates as YYYY-MM-DD to avoid timezone issues
     const formatDateToString = (date: Date) => {
       const year = date.getFullYear();
@@ -441,10 +485,10 @@ const generateMockData = (): PendingOrder[] => {
       const day = String(date.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     };
- 
+
     const totalItems = Math.floor(Math.random() * 5) + 1;
     const items = [];
- 
+
     for (let j = 1; j <= totalItems; j++) {
       items.push({
         detailId: j,
@@ -459,7 +503,7 @@ const generateMockData = (): PendingOrder[] => {
         unitName: '',
       });
     }
- 
+
     mockOrders.push({
       orderId: i,
       orderNo: `ORD-${2025}${i.toString().padStart(4, '0')}`,
@@ -478,7 +522,7 @@ const generateMockData = (): PendingOrder[] => {
   }
   return mockOrders;
 };
- 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -645,5 +689,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
- 
+
 export default PendingOrdersScreen;

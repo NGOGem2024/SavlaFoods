@@ -21,7 +21,7 @@ interface UsePdfGenerationProps {
 }
 
 interface ReportFilters {
-  unit: string[];  // Changed from string to string[]
+  unit: string[]; // Changed from string to string[]
   itemCategories: string[];
   itemSubcategories: string[];
 }
@@ -89,9 +89,10 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
 
       // Also sanitize the customer name and other text inputs
       const safeCustName = sanitizeStringForPdf(customerName);
-      const safeUnit = filters.unit && filters.unit.length > 0 
-        ? sanitizeStringForPdf(filters.unit.join(', ')) 
-        : '';
+      const safeUnit =
+        filters.unit && filters.unit.length > 0
+          ? sanitizeStringForPdf(filters.unit.join(', '))
+          : '';
 
       // Log current state to help with debugging
       console.log('===== PDF DOWNLOAD STARTED =====');
@@ -111,9 +112,10 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
       const toDateFormatted = formatDateForFilename(toDate);
 
       // Format filters for filename
-      const unitText = filters.unit && filters.unit.length > 0 
-        ? `-${filters.unit.join('_')}` 
-        : '';
+      const unitText =
+        filters.unit && filters.unit.length > 0
+          ? `-${filters.unit.join('_')}`
+          : '';
 
       // Generate a filename with proper filter info
       const pdfFilename = `${
@@ -464,7 +466,11 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
           xPosition = margin;
 
           // Column alignments - center align all columns for consistency
-          const columnAlignments = tableColumns.map(() => 'center') as ('left' | 'center' | 'right')[];
+          const columnAlignments = tableColumns.map(() => 'center') as (
+            | 'left'
+            | 'center'
+            | 'right'
+          )[];
 
           // Render each cell in the row
           // Column 1: Index number
@@ -526,15 +532,16 @@ export const usePdfGeneration = ({isInward}: UsePdfGenerationProps) => {
             ...(isInward ? [] : [item.DC_QTY || '-']),
             item.REMARK || item.REMARKS || '-',
             item.VEHICLE_NO || '-',
-            ...(isInward ? [] : [
-              // Format the delivered to address to have better line breaks
-              item.DELIVERED_TO 
-                ? item.DELIVERED_TO
-                    .replace(/,\s*/g, ',\n') // Add line breaks after commas
-                    .replace(/\s+NEXT TO\s+/g, '\nNEXT TO ') // Add line break before NEXT TO
-                    .replace(/\s+OPP\.\s*/g, '\nOPP. ') // Add line break before OPP.
-                : '-'
-            ]),
+            ...(isInward
+              ? []
+              : [
+                  // Format the delivered to address to have better line breaks
+                  item.DELIVERED_TO
+                    ? item.DELIVERED_TO.replace(/,\s*/g, ',\n') // Add line breaks after commas
+                        .replace(/\s+NEXT TO\s+/g, '\nNEXT TO ') // Add line break before NEXT TO
+                        .replace(/\s+OPP\.\s*/g, '\nOPP. ') // Add line break before OPP.
+                    : '-',
+                ]),
           ];
 
           for (let c = 0; c < remainingColumns.length; c++) {

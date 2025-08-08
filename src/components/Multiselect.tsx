@@ -14,9 +14,262 @@ import {
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
+// interface MultiSelectOption {
+//   label: string;
+//   value: string;
+// }
+
+// interface MultiSelectProps {
+//   options: MultiSelectOption[];
+//   selectedValues: string[];
+//   onSelectChange: (values: string[]) => void;
+//   placeholder: string;
+//   disabled?: boolean;
+//   primaryColor?: string;
+//   showSelectAll?: boolean;
+//   searchPlaceholder?: string;
+// }
+
+// const MultiSelect = ({
+//   options,
+//   selectedValues,
+//   onSelectChange,
+//   placeholder,
+//   disabled = false,
+//   primaryColor = '#F48221',
+//   showSelectAll = true,
+//   searchPlaceholder = 'Search options...',
+// }: MultiSelectProps) => {
+//   const [isVisible, setIsVisible] = useState(false);
+//   const [searchQuery, setSearchQuery] = useState('');
+
+//   // Filter options based on search query
+//   const filteredOptions = useMemo(() => {
+//     if (!searchQuery.trim()) return options;
+//     return options.filter(option =>
+//       option.label.toLowerCase().includes(searchQuery.toLowerCase()),
+//     );
+//   }, [options, searchQuery]);
+
+//   // Get display text for selected items
+//   const getDisplayText = () => {
+//     if (selectedValues.length === 0) return placeholder;
+//     if (selectedValues.length === 1) {
+//       return (
+//         options.find(option => option.value === selectedValues[0])?.label || ''
+//       );
+//     }
+//     return `${selectedValues.length} items selected`;
+//   };
+
+//   // Handle press with keyboard dismiss
+//   const handlePress = () => {
+//     if (!disabled) {
+//       Keyboard.dismiss();
+//       setIsVisible(true);
+//     }
+//   };
+
+//   // Handle modal close
+//   const handleClose = () => {
+//     setIsVisible(false);
+//     setSearchQuery(''); // Clear search when closing
+//   };
+
+//   // Toggle selection of an item
+//   const toggleItem = (value: string) => {
+//     if (selectedValues.includes(value)) {
+//       onSelectChange(selectedValues.filter(v => v !== value));
+//     } else {
+//       onSelectChange([...selectedValues, value]);
+//     }
+//   };
+
+//   // Handle Select All functionality (based on filtered results)
+//   const handleSelectAll = () => {
+//     const filteredValues = filteredOptions.map(option => option.value);
+//     const filteredSelectedValues = selectedValues.filter(value =>
+//       filteredValues.includes(value),
+//     );
+//     const allFilteredSelected =
+//       filteredSelectedValues.length === filteredOptions.length;
+
+//     if (allFilteredSelected) {
+//       // If all filtered items are selected, deselect them
+//       const remainingValues = selectedValues.filter(
+//         value => !filteredValues.includes(value),
+//       );
+//       onSelectChange(remainingValues);
+//     } else {
+//       // If not all filtered items are selected, select all filtered items
+//       const newSelectedValues = [
+//         ...new Set([...selectedValues, ...filteredValues]),
+//       ];
+//       onSelectChange(newSelectedValues);
+//     }
+//   };
+
+//   // Check if all filtered items are selected
+//   const isAllFilteredSelected = useMemo(() => {
+//     if (filteredOptions.length === 0) return false;
+//     const filteredValues = filteredOptions.map(option => option.value);
+//     return filteredValues.every(value => selectedValues.includes(value));
+//   }, [filteredOptions, selectedValues]);
+
+//   // Render Select All Header Component
+//   const renderSelectAllHeader = () => {
+//     if (!showSelectAll || filteredOptions.length === 0) return null;
+
+//     return (
+//       <View style={styles.selectAllContainer}>
+//         <TouchableOpacity
+//           style={[styles.optionItem, styles.selectAllItem]}
+//           onPress={handleSelectAll}>
+//           <Text style={[styles.optionText, styles.selectAllText]}>
+//             {searchQuery.trim() ? 'Select All Filtered' : 'Select All'}
+//           </Text>
+//           <MaterialIcons
+//             name={
+//               isAllFilteredSelected ? 'check-box' : 'check-box-outline-blank'
+//             }
+//             size={24}
+//             color={isAllFilteredSelected ? primaryColor : '#CBD5E0'}
+//           />
+//         </TouchableOpacity>
+//         <View style={styles.separator} />
+//       </View>
+//     );
+//   };
+
+//   const renderItem = ({item}: {item: MultiSelectOption}) => {
+//     return (
+//       <TouchableOpacity
+//         style={styles.optionItem}
+//         onPress={() => toggleItem(item.value)}>
+//         <Text style={styles.optionText}>{item.label}</Text>
+//         <MaterialIcons
+//           name={
+//             selectedValues.includes(item.value)
+//               ? 'check-box'
+//               : 'check-box-outline-blank'
+//           }
+//           size={24}
+//           color={selectedValues.includes(item.value) ? primaryColor : '#CBD5E0'}
+//         />
+//       </TouchableOpacity>
+//     );
+//   };
+
+//   const renderEmptyState = () => (
+//     <View style={styles.emptyContainer}>
+//       <MaterialIcons name="search-off" size={48} color="#CBD5E0" />
+//       <Text style={styles.emptyText}>No options found</Text>
+//       <Text style={styles.emptySubtext}>Try adjusting your search terms</Text>
+//     </View>
+//   );
+
+//   return (
+//     <View style={[styles.container, disabled && styles.disabled]}>
+//       <TouchableOpacity
+//         style={styles.inputContainer}
+//         onPress={handlePress}
+//         disabled={disabled}>
+//         <Text
+//           style={[
+//             selectedValues.length > 0
+//               ? styles.selectedText
+//               : styles.placeholderText,
+//             {color: selectedValues.length > 0 ? '#333333' : '#94A3B8'},
+//           ]}
+//           numberOfLines={1}
+//           ellipsizeMode="tail">
+//           {getDisplayText()}
+//         </Text>
+//         <MaterialIcons name="arrow-drop-down" size={24} color="#555" />
+//       </TouchableOpacity>
+
+//       <Modal
+//         visible={isVisible}
+//         transparent={true}
+//         animationType="slide"
+//         onRequestClose={handleClose}>
+//         <View style={styles.modalOverlay}>
+//           <SafeAreaView style={styles.modalContent}>
+//             <View style={styles.modalHeader}>
+//               <Text style={styles.modalTitle}>Select Items</Text>
+//               <TouchableOpacity onPress={handleClose}>
+//                 <Text style={[styles.doneButton, {color: primaryColor}]}>
+//                   Done
+//                 </Text>
+//               </TouchableOpacity>
+//             </View>
+
+//             {/* Search Bar */}
+//             <View style={styles.searchContainer}>
+//               <View style={styles.searchInputContainer}>
+//                 <MaterialIcons
+//                   name="search"
+//                   size={20}
+//                   color="#94A3B8"
+//                   style={styles.searchIcon}
+//                 />
+//                 <TextInput
+//                   style={styles.searchInput}
+//                   placeholder={searchPlaceholder}
+//                   placeholderTextColor="#94A3B8"
+//                   value={searchQuery}
+//                   onChangeText={setSearchQuery}
+//                   autoCapitalize="none"
+//                   autoCorrect={false}
+//                 />
+//                 {searchQuery.length > 0 && (
+//                   <TouchableOpacity
+//                     onPress={() => setSearchQuery('')}
+//                     style={styles.clearButton}>
+//                     <MaterialIcons name="clear" size={20} color="#94A3B8" />
+//                   </TouchableOpacity>
+//                 )}
+//               </View>
+//             </View>
+
+//             {/* Results Count */}
+//             {searchQuery.trim() && (
+//               <View style={styles.resultsContainer}>
+//                 <Text style={styles.resultsText}>
+//                   {filteredOptions.length} of {options.length} options
+//                 </Text>
+//               </View>
+//             )}
+
+//             <FlatList
+//               data={filteredOptions}
+//               keyExtractor={item => item.value}
+//               keyboardShouldPersistTaps="handled"
+//               keyboardDismissMode="on-drag"
+//               renderItem={renderItem}
+//               ListHeaderComponent={renderSelectAllHeader}
+//               stickyHeaderIndices={
+//                 showSelectAll && filteredOptions.length > 0 ? [0] : []
+//               }
+//               contentContainerStyle={[
+//                 styles.optionsList,
+//                 filteredOptions.length === 0 && styles.emptyList,
+//               ]}
+//               ListEmptyComponent={searchQuery.trim() ? renderEmptyState : null}
+//               showsVerticalScrollIndicator={true}
+//               bounces={true}
+//             />
+//           </SafeAreaView>
+//         </View>
+//       </Modal>
+//     </View>
+//   );
+// };
+
 interface MultiSelectOption {
   label: string;
   value: string;
+  disabled?: boolean; // Add disabled property
 }
 
 interface MultiSelectProps {
@@ -77,7 +330,10 @@ const MultiSelect = ({
   };
 
   // Toggle selection of an item
-  const toggleItem = (value: string) => {
+  const toggleItem = (value: string, isDisabled: boolean) => {
+    if (isDisabled) {
+      return; // Prevent selection of disabled items
+    }
     if (selectedValues.includes(value)) {
       onSelectChange(selectedValues.filter(v => v !== value));
     } else {
@@ -85,23 +341,25 @@ const MultiSelect = ({
     }
   };
 
-  // Handle Select All functionality (based on filtered results)
+  // Handle Select All functionality (only select enabled items)
   const handleSelectAll = () => {
-    const filteredValues = filteredOptions.map(option => option.value);
+    const filteredValues = filteredOptions
+      .filter(option => !option.disabled) // Only include enabled options
+      .map(option => option.value);
     const filteredSelectedValues = selectedValues.filter(value =>
       filteredValues.includes(value),
     );
     const allFilteredSelected =
-      filteredSelectedValues.length === filteredOptions.length;
+      filteredSelectedValues.length === filteredValues.length;
 
     if (allFilteredSelected) {
-      // If all filtered items are selected, deselect them
+      // If all filtered enabled items are selected, deselect them
       const remainingValues = selectedValues.filter(
         value => !filteredValues.includes(value),
       );
       onSelectChange(remainingValues);
     } else {
-      // If not all filtered items are selected, select all filtered items
+      // Select all enabled filtered items
       const newSelectedValues = [
         ...new Set([...selectedValues, ...filteredValues]),
       ];
@@ -109,10 +367,12 @@ const MultiSelect = ({
     }
   };
 
-  // Check if all filtered items are selected
+  // Check if all filtered enabled items are selected
   const isAllFilteredSelected = useMemo(() => {
     if (filteredOptions.length === 0) return false;
-    const filteredValues = filteredOptions.map(option => option.value);
+    const filteredValues = filteredOptions
+      .filter(option => !option.disabled)
+      .map(option => option.value);
     return filteredValues.every(value => selectedValues.includes(value));
   }, [filteredOptions, selectedValues]);
 
@@ -142,11 +402,28 @@ const MultiSelect = ({
   };
 
   const renderItem = ({item}: {item: MultiSelectOption}) => {
+    // Debug logging for disabled items
+    if (item.disabled) {
+      console.log(`Rendering disabled item: ${item.label} - disabled: ${item.disabled}`);
+    }
+    
     return (
       <TouchableOpacity
-        style={styles.optionItem}
-        onPress={() => toggleItem(item.value)}>
-        <Text style={styles.optionText}>{item.label}</Text>
+        style={[styles.optionItem, item.disabled && styles.disabledOption]}
+        onPress={() => toggleItem(item.value, item.disabled || false)}
+        disabled={item.disabled}>
+        <View style={styles.optionContent}>
+          <Text
+            style={[
+              styles.optionText,
+              item.disabled && styles.disabledOptionText,
+            ]}>
+            {item.label}
+          </Text>
+          {item.disabled && (
+            <Text style={styles.disabledIndicator}> (Unavailable)</Text>
+          )}
+        </View>
         <MaterialIcons
           name={
             selectedValues.includes(item.value)
@@ -154,7 +431,13 @@ const MultiSelect = ({
               : 'check-box-outline-blank'
           }
           size={24}
-          color={selectedValues.includes(item.value) ? primaryColor : '#CBD5E0'}
+          color={
+            item.disabled
+              ? '#E2E8F0' // Grey for disabled
+              : selectedValues.includes(item.value)
+              ? primaryColor
+              : '#CBD5E0'
+          }
         />
       </TouchableOpacity>
     );
@@ -432,6 +715,25 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     marginTop: 8,
     textAlign: 'center',
+  },
+  disabledOption: {
+    opacity: 0.6, // More visible watermark effect for disabled options
+    backgroundColor: '#F1F5F9', // Slightly different background for disabled
+  },
+  disabledOptionText: {
+    color: '#94A3B8', // Greyed out text for disabled options
+    // Removed italic styling to make disabled options appear normal
+  },
+  optionContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  disabledIndicator: {
+    fontSize: 12,
+    color: '#94A3B8',
+    // Removed italic styling to make disabled indicator appear normal
+    marginLeft: 4,
   },
 });
 

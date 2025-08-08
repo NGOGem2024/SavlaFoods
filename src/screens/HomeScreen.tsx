@@ -1,4 +1,3 @@
-//With Search Result  Mine
 import React, {useCallback, useEffect, useState} from 'react';
 import {
   Alert,
@@ -13,6 +12,8 @@ import {
   ActivityIndicator,
   Animated,
   BackHandler,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import {
   useNavigation,
@@ -59,6 +60,7 @@ type CategoryItem = {
 };
 
 type SearchResultItem = {
+  QUANTITY: number;
   LOT_NO: string;
   ITEM_MARKS: string;
   VAKAL_NO: string;
@@ -82,7 +84,6 @@ type SearchResultItem = {
   SUB_CATEGORY_NAME: string;
   CATEGORY_IMAGE_NAME: string;
   SUBCATEGORY_IMAGE_NAME: string;
-
   imageUrl?: any;
 };
 
@@ -132,20 +133,14 @@ const HomeScreen: React.FC = () => {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        // Check if there's a search query active
         if (searchQuery.trim()) {
-          // Clear the search query to return to home screen view
           setSearchQuery('');
           setSearchResults([]);
-          return true; // Prevent default behavior
+          return true;
         }
 
-        // If no search is active, show exit app dialog
-        // Check if user is authenticated
         const isAuthenticated = CustomerID !== null;
-
         if (isAuthenticated) {
-          // If authenticated, prevent going back to login screen
           Alert.alert(
             'Exit App',
             'Do you want to exit the app?',
@@ -159,17 +154,13 @@ const HomeScreen: React.FC = () => {
             ],
             {cancelable: true},
           );
-          return true; // Prevent default behavior
+          return true;
         }
 
-        // Default behavior (allow back navigation)
         return false;
       };
 
-      // Add back button handler
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
-
-      // Cleanup function
       return () =>
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
     }, [CustomerID, searchQuery]),
@@ -185,7 +176,6 @@ const HomeScreen: React.FC = () => {
   const fetchCustomerID = useCallback(async () => {
     try {
       const storedId = await getSecureOrAsyncItem('customerID');
-      // Also get the stored display name
       const storedDisplayName = await getSecureOrAsyncItem('displayName');
 
       if (storedDisplayName) {
@@ -209,7 +199,6 @@ const HomeScreen: React.FC = () => {
           setCustomerID(newId);
           fetchCategories(newId);
 
-          // If there's a display name in the response, save and set it
           if (response.displayName) {
             await setSecureItem('displayName', response.displayName);
             setDisplayName(response.displayName);
@@ -278,7 +267,6 @@ const HomeScreen: React.FC = () => {
           [],
         );
 
-        // Sort categories alphabetically by CATDESC
         const sortedCategories = [...uniqueCategories].sort((a, b) =>
           a.CATDESC.localeCompare(b.CATDESC),
         );
@@ -292,7 +280,6 @@ const HomeScreen: React.FC = () => {
     }
   }, []);
 
-  // New function to search items with lot details
   const searchItems = useCallback(
     async (searchTerm: string) => {
       if (!CustomerID || !searchTerm.trim()) {
@@ -312,20 +299,12 @@ const HomeScreen: React.FC = () => {
           {
             searchTerm: searchTerm,
             CustomerID: CustomerID,
-            includeStockDetails: true, // Make sure backend supports this flag
+            includeStockDetails: true,
           },
           {timeout: 10000},
         );
 
         if (response?.success && response?.data) {
-          // Map results and add image URLs
-          // const resultsWithImages = response.data.map(
-          //   (item: SearchResultItem) => ({
-          //     ...item,
-          //     imageUrl: getCategoryImage(item.ITEM_CATEG_ID),
-          //   }),
-          // );
-
           const resultsWithImages = response.data.map((item: any) => ({
             ...item,
             Quantity:
@@ -338,13 +317,9 @@ const HomeScreen: React.FC = () => {
               item.BOX_QUANTITY ?? item.box_quantity ?? item.Box_Quantity ?? 0,
             AVAILABLE_QTY:
               item.AVAILABLE_QTY ?? item.available_qty ?? item.Quantity ?? 0,
-
             imageUrl: getCategoryImage(item.ITEM_CATEG_ID),
           }));
 
-          console.log('Search API Raw Response:', response.data[0]);
-
-          // Setup animations for cart buttons
           const animations: {[key: string]: Animated.Value} = {};
           resultsWithImages.forEach((item: {LOT_NO: any}) => {
             animations[item.LOT_NO || ''] = new Animated.Value(0);
@@ -406,11 +381,6 @@ const HomeScreen: React.FC = () => {
     setModalVisible(true);
   };
 
-  // const formatQuantity = (quantity: number | null | undefined) => {
-  //   if (quantity === null || quantity === undefined) return 'N/A';
-  //   return quantity.toLocaleString();
-  // };
-
   const formatQuantity = (quantity: any) => {
     const num = Number(quantity);
     if (isNaN(num) || quantity === null || quantity === undefined) return 'N/A';
@@ -444,7 +414,6 @@ const HomeScreen: React.FC = () => {
     [navigation, CustomerID],
   );
 
-  // Updated render function for search results - removed ItemName and CategoryName
   const renderSearchItem = useCallback(
     ({item, index}: {item: SearchResultItem; index: number}) => {
       return (
@@ -466,7 +435,6 @@ const HomeScreen: React.FC = () => {
           <View style={styles.stockHeader}>
             <View style={styles.lotNoContainer}>
               <Text style={styles.lotNoLabel}>LOT NO:</Text>
-
               <TouchableOpacity
                 style={styles.lotNoValueContainer}
                 onPress={() => {
@@ -534,36 +502,14 @@ const HomeScreen: React.FC = () => {
                 <Text style={styles.detailLabel}>Item Marks</Text>
                 <Text style={styles.detailValue}>{item.ITEM_MARKS || ''}</Text>
               </View>
-              {/* <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Batch No</Text>
-                <Text style={styles.detailValue}>{item.BATCH_NO || ''}</Text>
-              </View> */}
-              {/* <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Box Quantity:</Text>
-                <Text style={styles.detailValue}>
-                  {formatQuantity(item.BOX_QUANTITY)}
-                </Text>
-              </View> */}
-              {/* <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Box Quantity:</Text>
-                <Text style={styles.detailValue}>
-                  {formatQuantity(item.BOX_QUANTITY)}
-                </Text>
-              </View> */}
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Quantity</Text>
                 <Text style={styles.detailValue}>
                   {formatQuantity(item.Quantity)}
                 </Text>
-              </View>{' '}
+              </View>
             </View>
             <View style={styles.detailRow}>
-              {/* <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Available Quantity</Text>
-                <Text style={styles.detailValue}>
-                  {formatQuantity(item.Quantity)}
-                </Text>
-              </View>{' '} */}
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Remarks</Text>
                 <Text style={styles.detailValue}>{item.REMARKS || ''}</Text>
@@ -581,11 +527,9 @@ const HomeScreen: React.FC = () => {
       setSearchQuery(text);
 
       if (text.trim() === '') {
-        // When search is cleared, show all categories
         setSearchResults([]);
-        setFilteredCategories(categories); // Reset to show all categories
+        setFilteredCategories(categories);
       } else {
-        // When searching, call the API
         searchItems(text);
       }
     },
@@ -603,16 +547,11 @@ const HomeScreen: React.FC = () => {
       try {
         let id: string | null = null;
 
-        // Handle account switching
         if (route.params?.switchedAccount && route.params?.newCustomerId) {
           id = route.params.newCustomerId;
-        }
-        // Handle initial login
-        else if (route.params?.initialLogin && route.params?.customerID) {
+        } else if (route.params?.initialLogin && route.params?.customerID) {
           id = route.params.customerID;
-        }
-        // Use stored CustomerID as fallback
-        else {
+        } else {
           id = await getSecureOrAsyncItem('customerID');
         }
 
@@ -649,9 +588,7 @@ const HomeScreen: React.FC = () => {
     loadImageMappings();
   }, []);
 
-  // Register data refresh callback when network is restored
   useEffect(() => {
-    // If we have a CustomerID, register a callback to refetch data
     if (CustomerID) {
       const refreshData = () => {
         console.log('Network restored, refreshing home screen data...');
@@ -661,13 +598,8 @@ const HomeScreen: React.FC = () => {
         }
       };
 
-      // Register the callback
       addRetryCallback('homescreen-refresh', refreshData);
-
-      // Cleanup - remove the callback when component unmounts
-      return () => {
-        removeRetryCallback('homescreen-refresh');
-      };
+      return () => removeRetryCallback('homescreen-refresh');
     }
   }, [
     CustomerID,
@@ -678,137 +610,139 @@ const HomeScreen: React.FC = () => {
     searchItems,
   ]);
 
-  // Monitor network connectivity changes for UI feedback
   useEffect(() => {
     if (isConnected === false) {
-      // Network is disconnected
       setWasDisconnected(true);
     } else if (isConnected === true && wasDisconnected) {
-      // Network was disconnected before but now connected again
-      // UI will update automatically via the callback
       setWasDisconnected(false);
     }
   }, [isConnected, wasDisconnected]);
 
   return (
     <LayoutWrapper showTabBar={false} route={route}>
-      <View style={styles.searchContainer}>
-        <TouchableOpacity
-          activeOpacity={0.9}
-          style={styles.searchInputContainer}
-          onPress={handleSearchSubmit}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search lot no, item marks, vakal no.."
-            placeholderTextColor={'#999'}
-            value={searchQuery}
-            onChangeText={handleSearch}
-            onSubmitEditing={handleSearchSubmit}
-            returnKeyType="search"
-            textAlignVertical="center"
-            numberOfLines={1}
-          />
-          {isSearching ? (
-            <ActivityIndicator
-              size="small"
-              color="#F48221"
-              style={styles.searchIcon}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
+        <View style={styles.searchContainer}>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={styles.searchInputContainer}
+            onPress={handleSearchSubmit}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search lot no, item marks, vakal no.."
+              placeholderTextColor={'#999'}
+              value={searchQuery}
+              onChangeText={handleSearch}
+              onSubmitEditing={handleSearchSubmit}
+              returnKeyType="search"
+              textAlignVertical="center"
+              numberOfLines={1}
             />
-          ) : (
-            <Icon
-              name="search"
-              size={24}
-              color="#555"
-              style={styles.searchIcon}
+            {isSearching ? (
+              <ActivityIndicator
+                size="small"
+                color="#F48221"
+                style={styles.searchIcon}
+              />
+            ) : (
+              <Icon
+                name="search"
+                size={24}
+                color="#555"
+                style={styles.searchIcon}
+              />
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {!searchQuery.trim() && (
+          <>
+            <Carousel />
+            <View style={styles.headingContainer}>
+              <Text style={styles.headingText}>Categories</Text>
+              <TouchableOpacity onPress={() => setShowAllCards(!showAllCards)}>
+                <Text style={styles.moreText}>
+                  {showAllCards ? 'Less' : 'More->'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={
+                showAllCards
+                  ? filteredCategories
+                  : filteredCategories.slice(0, 6)
+              }
+              renderItem={renderCardItem}
+              numColumns={2}
+              keyExtractor={item => item.CATID}
+              contentContainerStyle={[
+                styles.cardContainer,
+                filteredCategories.length === 0 && styles.emptyContainer,
+              ]}
+              scrollEnabled={true}
+              ListEmptyComponent={
+                <View style={styles.emptyMessage}>
+                  <Text>No Categories Found</Text>
+                </View>
+              }
             />
-          )}
-        </TouchableOpacity>
-      </View>
+          </>
+        )}
 
-      {!searchQuery.trim() && (
-        <>
-          <Carousel />
-
-          <View style={styles.headingContainer}>
-            <Text style={styles.headingText}>Categories</Text>
-            <TouchableOpacity onPress={() => setShowAllCards(!showAllCards)}>
-              <Text style={styles.moreText}>
-                {showAllCards ? 'Less' : 'More->'}
+        {searchQuery.trim() && (
+          <>
+            <View style={styles.headingContainer}>
+              <Text style={styles.headingText}>Search Results</Text>
+              <Text style={styles.resultCountText}>
+                {searchResults.length} items found
               </Text>
-            </TouchableOpacity>
-          </View>
+            </View>
 
-          <FlatList
-            data={
-              showAllCards ? filteredCategories : filteredCategories.slice(0, 6)
-            }
-            renderItem={renderCardItem}
-            numColumns={2}
-            keyExtractor={item => item.CATID}
-            contentContainerStyle={[
-              styles.cardContainer,
-              filteredCategories.length === 0 && styles.emptyContainer,
-            ]}
-            scrollEnabled={true}
-            ListEmptyComponent={
-              <View style={styles.emptyMessage}>
-                <Text>No Categories Found</Text>
-              </View>
-            }
+            <FlatList
+              data={searchResults}
+              renderItem={renderSearchItem}
+              numColumns={1}
+              keyExtractor={(item, index) =>
+                `${item.ITEM_ID}-${item.LOT_NO}-${index}`
+              }
+              contentContainerStyle={[
+                styles.cardContainer,
+                searchResults.length === 0 && styles.emptyContainer,
+              ]}
+              scrollEnabled={true}
+              ListEmptyComponent={
+                <View style={styles.emptyMessage}>
+                  {isSearching ? (
+                    <ActivityIndicator size="large" color="#F48221" />
+                  ) : (
+                    <Text>No items found matching your search</Text>
+                  )}
+                </View>
+              }
+            />
+          </>
+        )}
+
+        {selectedStockItem && (
+          <QuantitySelectorModal
+            isVisible={isModalVisible}
+            item={selectedStockItem}
+            onClose={() => {
+              setModalVisible(false);
+              setSelectedStockItem(null);
+            }}
           />
-        </>
-      )}
-
-      {searchQuery.trim() && (
-        <>
-          <View style={styles.headingContainer}>
-            <Text style={styles.headingText}>Search Results</Text>
-            <Text style={styles.resultCountText}>
-              {searchResults.length} items found
-            </Text>
-          </View>
-
-          <FlatList
-            data={searchResults}
-            renderItem={renderSearchItem}
-            numColumns={1}
-            keyExtractor={(item, index) =>
-              `${item.ITEM_ID}-${item.LOT_NO}-${index}`
-            }
-            contentContainerStyle={[
-              styles.cardContainer,
-              searchResults.length === 0 && styles.emptyContainer,
-            ]}
-            scrollEnabled={true}
-            ListEmptyComponent={
-              <View style={styles.emptyMessage}>
-                {isSearching ? (
-                  <ActivityIndicator size="large" color="#F48221" />
-                ) : (
-                  <Text>No items found matching your search</Text>
-                )}
-              </View>
-            }
-          />
-        </>
-      )}
-
-      {selectedStockItem && (
-        <QuantitySelectorModal
-          isVisible={isModalVisible}
-          item={selectedStockItem}
-          onClose={() => {
-            setModalVisible(false);
-            setSelectedStockItem(null);
-          }}
-        />
-      )}
+        )}
+      </KeyboardAvoidingView>
     </LayoutWrapper>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
   },
   searchContainer: {
@@ -913,8 +847,6 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 14,
   },
-
-  // Styles for lot detail cards
   stockCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -1015,7 +947,6 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 14,
-    // color: '#F48221',
     fontWeight: 'bold',
     color: '#007BFA',
   },

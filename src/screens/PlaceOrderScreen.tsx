@@ -106,7 +106,10 @@ const PlaceOrderScreen: React.FC<PlaceOrderScreenProps> = ({
           UNIT_NAME: cartItem.unit_name || '',
           QUANTITY: cartItem.quantity, // Use original quantity that was displayed in HomeScreen
           AVAILABLE_QTY: cartItem.available_qty,
-          NET_QUANTITY: Math.max(0, cartItem.quantity - (cartItem.requested_qty || 1)),
+          NET_QUANTITY: Math.max(
+            0,
+            cartItem.quantity - (cartItem.requested_qty || 1),
+          ),
           ORDERED_QUANTITY: cartItem.requested_qty || 1,
           BOX_QUANTITY: cartItem.quantityInBox || 0,
           UPDATED_QTY: [cartItem.requested_qty || 1],

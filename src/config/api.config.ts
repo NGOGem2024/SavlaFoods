@@ -30,6 +30,8 @@ export const API_ENDPOINTS = {
   GET_PLACEORDER_DETAILS: `${API_BASE_URL}/order/placeOrder`,
   GET_ORDER_HISTORY: `${API_BASE_URL}/order/getOrderHistory`,
   GET_PENDING_ORDERS: `${API_BASE_URL}/order/getPendingOrders`,
+  GET_PENDING_ORDERS_WITH_STATUS: `${API_BASE_URL}/order/getPendingOrderswithstatus`,
+
   UPDATE_PENDING_ORDER: `${API_BASE_URL}/order/updatePendingOrder`,
   GET_CANCEL_ORDER: `${API_BASE_URL}/order/cancelOrder`,
   //DeleteOrder
@@ -67,6 +69,18 @@ export const API_ENDPOINTS = {
   GET_INVOICE_REPORT: `${API_BASE_URL}/invoice/getInvoiceReportTable`,
   GET_TAX_INVOICE_DETAILS: `${API_BASE_URL}/invoice/taxinvoice`,
   GET_PDF_REPORT: `${API_BASE_URL}/invoice/taxinvoice/pdf`,
+
+  //All CatSubcat
+  GET_ALL_CATEGORIES_SUBCATEGORIES: `${API_BASE_URL}/search/CategorySubAvailability`,
+  GET_ALL_CATEGORIES_SUBCATEGORIES_OUTWARD: `${API_BASE_URL}/search/OutwardCategorySubAvailability`,
+
+  //Stock Report
+  GET_STOCK_CATEGORIES: `${API_BASE_URL}/stocks/StockCategorySubAvailability`,
+
+  //zero stock report
+  GET_ZERO_CATEGORIES: `${API_BASE_URL}/zerostock/ZeroStockCatSubAvailability`,
+
+  //stock report
 };
 
 export const BASE_IMAGE_PATH = `${API_BASE_URL}/assets/images`;

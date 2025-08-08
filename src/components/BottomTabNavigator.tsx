@@ -2,7 +2,7 @@ import React, {createContext, useContext, useState} from 'react';
 import {StyleSheet, View, TouchableOpacity, Text} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createStackNavigator} from '@react-navigation/stack';
-import {useNavigation} from '@react-navigation/native'; 
+import {useNavigation, CommonActions, useRoute} from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
@@ -22,7 +22,7 @@ import LotReportScreen from '../screens/LotReportScreen';
 import ReportSummaryScreen from '../screens/stocks/ReportSummaryScreen';
 import EditOrderScreen from './EditOrderScreen';
 import OrderDetailsScreen from '../screens/OrderDetailsScreen';
-//  import {LayoutWrapper} from './AppLayout';
+import {LayoutWrapper} from './AppLayout';
 import ReportsScreen from '../screens/stocks/ReportsScreen';
 
 // Import new Finance/Billing screens
@@ -193,14 +193,6 @@ const ReportsStackNavigator = () => {
       <ReportsStack.Screen
         name="Reports"
         component={ReportsScreen}
-        // options={{
-        //   title: 'Reports',
-        //   headerTitleStyle: {
-        //     fontSize: 24, // set your desired font size here
-        //     fontWeight: 'bold', // optional
-        //     color: '#000', // optional
-        //   },
-        // }}
         options={{headerShown: false}}
       />
 

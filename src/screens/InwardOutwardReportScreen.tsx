@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {
   StyleSheet,
   View,
@@ -273,6 +273,9 @@ const InwardOutwardReportScreen = () => {
     fetchReport,
     formatDate,
     formatDateForFilename,
+    getCategoryOptions,
+    getSubcategoryOptions,
+    fetchCategoriesAndSubcategories,
   } = useReportData({isInward});
 
   const {
@@ -442,6 +445,13 @@ const InwardOutwardReportScreen = () => {
     setShowToDatePicker(Platform.OS === 'ios');
     setToDate(currentDate);
   };
+
+  // Call fetchCategoriesAndSubcategories when both dates are selected
+  useEffect(() => {
+    if (fromDate && toDate) {
+      fetchCategoriesAndSubcategories(fromDate, toDate);
+    }
+  }, [fromDate, toDate]);
 
   // Helper function to show picker modal (for iOS)
   const openPicker = (pickerName: string) => {
@@ -1046,7 +1056,7 @@ const InwardOutwardReportScreen = () => {
     } else {
       // Get all available subcategories based on selected categories
       const availableSubcategories = getAvailableSubcategories().map(
-        option => option.value,
+        (option: any) => option.value,
       );
 
       // Filter out subcategories that are no longer available
@@ -1054,35 +1064,29 @@ const InwardOutwardReportScreen = () => {
         availableSubcategories.includes(subcat),
       );
 
-      // Update the subcategories state
+      // Update the subcategories state only if there's an actual change
       if (filteredSubcategories.length !== itemSubcategories.length) {
         setItemSubcategories(filteredSubcategories);
-        console.log(
-          'Updated subcategories after category change:',
-          filteredSubcategories,
-        );
       }
     }
-  }, [itemCategories, apiSubcategories]);
+  }, [itemCategories]); // Removed apiSubcategories from dependencies to prevent infinite loop
 
   // Configure notifications on component mount
   useEffect(() => {
-    // Initialize push notifications
-    PushNotification.configure({
-      // (required) Called when a remote or local notification is opened or received
-      onNotification: function (notification: any) {
-        console.log('NOTIFICATION:', notification);
+            // Initialize push notifications
+        PushNotification.configure({
+          // (required) Called when a remote or local notification is opened or received
+          onNotification: function (notification: any) {
+            // Try to open the PDF file when notification is pressed
+            if (notification.userInfo?.filePath) {
+              openPdf(notification.userInfo.filePath);
+            }
 
-        // Try to open the PDF file when notification is pressed
-        if (notification.userInfo?.filePath) {
-          openPdf(notification.userInfo.filePath);
-        }
-
-        // Required on iOS only
-        if (Platform.OS === 'ios') {
-          notification.finish(PushNotificationIOS.FetchResult.NoData);
-        }
-      },
+            // Required on iOS only
+            if (Platform.OS === 'ios') {
+              notification.finish(PushNotificationIOS.FetchResult.NoData);
+            }
+          },
 
       // Android only: GCM or FCM Sender ID
       senderID: '',
@@ -1157,8 +1161,8 @@ const InwardOutwardReportScreen = () => {
   };
 
   // Implement getAvailableSubcategories function
-  const getAvailableSubcategories = () => {
-    let allSubcategories: string[] = [];
+  const getAvailableSubcategories = useCallback(() => {
+    let allSubcategories: any[] = [];
 
     // If no categories selected, return empty array
     if (itemCategories.length === 0) {
@@ -1167,20 +1171,17 @@ const InwardOutwardReportScreen = () => {
 
     // Collect subcategories from all selected categories
     itemCategories.forEach(category => {
-      if (apiSubcategories[category]) {
-        allSubcategories = [...allSubcategories, ...apiSubcategories[category]];
-      }
+      const categorySubcategories = getSubcategoryOptions(category);
+      allSubcategories = [...allSubcategories, ...categorySubcategories];
     });
 
-    // Remove duplicates
-    const uniqueSubcategories = [...new Set(allSubcategories)];
+    // Remove duplicates based on value
+    const uniqueSubcategories = allSubcategories.filter((subcat, index, self) => 
+      index === self.findIndex(s => s.value === subcat.value)
+    );
 
-    // Convert to option format
-    return uniqueSubcategories.map(subcat => ({
-      label: subcat,
-      value: subcat,
-    }));
-  };
+    return uniqueSubcategories;
+  }, [itemCategories, getSubcategoryOptions]);
 
   // Helper function to sync unit array and unitString
   const syncUnitState = (newUnit: string[]) => {
@@ -1972,12 +1973,12 @@ const InwardOutwardReportScreen = () => {
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Categories</Text>
                 <MultiSelect
-                  options={apiCategories.map(category => ({
-                    label: category,
-                    value: category,
-                  }))}
+                  options={getCategoryOptions()}
                   selectedValues={itemCategories}
-                  onSelectChange={values => setItemCategories(values)}
+                  onSelectChange={values => {
+                    console.log('Selected categories:', values);
+                    setItemCategories(values);
+                  }}
                   placeholder="Select Items"
                   primaryColor={isInward ? '#F48221' : '#4682B4'}
                 />
@@ -2014,6 +2015,11 @@ const InwardOutwardReportScreen = () => {
                   placeholder="Select Units"
                   primaryColor={isInward ? '#F48221' : '#4682B4'}
                 />
+              </View>
+
+              {/* Debug Button - Remove this in production */}
+              <View style={styles.formGroup}>
+
               </View>
 
               {/* Buttons */}

@@ -158,6 +158,8 @@ interface SubCategoryItem {
   SUBCATDESC: string;
   CATEGORY_IMAGE_NAME?: string;
   SUBCATEGORY_IMAGE_NAME?: string;
+  available: boolean; // Added available property
+  name: string; // Added name property
 }
 
 interface ErrorResponse {
@@ -362,37 +364,66 @@ const StockReportScreen: React.FC = () => {
     }
   }, [stockData]);
 
-  // Fetch subcategories from API
+  // Fetch subcategories from StockCategorySubAvailability or ZeroStockCatSubAvailability API
   useEffect(() => {
     const fetchSubCategories = async () => {
       try {
         setSubCategoryLoading(true);
 
         const customerID = await getSecureOrAsyncItem('customerID');
-        if (!customerID) {
-          console.error('Customer ID not found');
+        const customerName = await getSecureOrAsyncItem('Disp_name');
+        if (!customerID || !customerName) {
+          console.error('Customer ID or Name not found');
           return;
         }
 
+        // Use current date range or fallback
+        const from = fromDate ? formatApiDate(fromDate) : null;
+        const to = toDate ? formatApiDate(toDate) : null;
+
+        if (!from || !to) {
+          setSubCategories([]);
+          setSubCategoryLoading(false);
+          console.log('[SubCategory API] Skipped fetch: fromDate or toDate not selected.');
+          return;
+        }
+
+        const payload = {
+          customerID: Number(customerID),
+          customerName: customerName,
+          lotNo: null,
+          vakaNo: null,
+          itemSubCategory: null,
+          itemMarks: null,
+          unit: null,
+          fromDate: from,
+          toDate: to,
+          qtyLessThan: null,
+        };
+
+        const endpoint = isZeroStock
+          ? API_ENDPOINTS.GET_ZERO_CATEGORIES
+          : API_ENDPOINTS.GET_STOCK_CATEGORIES;
+
+        console.log('[SubCategory API] Using endpoint:', endpoint);
+        console.log('[SubCategory API] Payload:', JSON.stringify(payload, null, 2));
+
         const response = await axios.post(
-          API_ENDPOINTS.ITEM_CATEGORIES,
-          {CustomerID: customerID},
-          {headers: DEFAULT_HEADERS},
+          endpoint,
+          payload,
+          { headers: DEFAULT_HEADERS }
         );
 
-        if (
-          response.data &&
-          response.data.output &&
-          Array.isArray(response.data.output)
-        ) {
-          setSubCategories(response.data.output);
+        console.log('[SubCategory API] Response:', response.data);
+
+        if (response.data && Array.isArray(response.data.allSubCategories)) {
+          setSubCategories(response.data.allSubCategories);
         } else {
-          console.error(
-            'Invalid response format for subcategories:',
-            response.data,
-          );
+          setSubCategories([]);
+          console.error('Invalid response format for subcategories:', response.data);
         }
       } catch (error) {
+        setSubCategories([]);
         console.error('Error fetching subcategories:', error);
       } finally {
         setSubCategoryLoading(false);
@@ -400,7 +431,8 @@ const StockReportScreen: React.FC = () => {
     };
 
     fetchSubCategories();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromDate, toDate, isZeroStock]);
 
   // Fetch display name and customer ID
   useEffect(() => {
@@ -431,14 +463,18 @@ const StockReportScreen: React.FC = () => {
     {label: displayName, value: displayName},
   ];
 
-  // Update item subcategory options to use API data
-  const itemSubCategoryOptions = subCategories
-    .slice()
-    .sort((a, b) => a.SUBCATDESC.localeCompare(b.SUBCATDESC))
-    .map(item => ({
-      label: item.SUBCATDESC,
-      value: item.SUBCATDESC, // Use description as value for API
-    }));
+  // Update item subcategory options to use API data (with disabled/greyed-out logic)
+  const itemSubCategoryOptions =
+    (!fromDate || !toDate)
+      ? [{ label: 'Select From and To Date first', value: '', disabled: true }]
+      : subCategories
+          .slice()
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map(item => ({
+            label: item.name,
+            value: item.name, // Use name as value for selection
+            disabled: item.available === false,
+          }));
 
   const unitOptions = [
     {label: 'D-39', value: 'D-39'},
@@ -454,6 +490,8 @@ const StockReportScreen: React.FC = () => {
       // Clear previous results when toggling
       setStockData([]);
       setAllStockData([]);
+      // Clear selected subcategories when toggling
+      setItemSubCategory([]);
 
       return newState;
     });
