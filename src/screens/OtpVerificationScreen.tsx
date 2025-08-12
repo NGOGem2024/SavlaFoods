@@ -573,6 +573,9 @@ import axios from 'axios';
 import {API_ENDPOINTS, DEFAULT_HEADERS} from '../config/api.config';
 import {useCustomer} from '../contexts/DisplayNameContext';
 import {getSecureItem, setSecureItem} from '../utils/secureStorage';
+import { useAuthorization } from '../contexts/AuthorizationContext';
+import { parseRARString } from '../type/authorization';
+import { useDisplayName } from '../contexts/DisplayNameContext';
 
 // Get screen dimensions
 const {height: SCREEN_HEIGHT, width: SCREEN_WIDTH} = Dimensions.get('window');
@@ -631,6 +634,8 @@ const OtpVerificationScreen: React.FC<{
   const passwordInputRef = useRef<TextInput>(null);
   const navigation = useNavigation<OtpVerificationScreenNavigationProp>();
   const {setCustomerID} = useCustomer();
+  const { setUserAuthorization, clearAuthorization } = useAuthorization();
+  const { setDisplayName } = useDisplayName();
 
   useFocusEffect(
     useCallback(() => {
@@ -776,6 +781,7 @@ const OtpVerificationScreen: React.FC<{
 
         console.log('🟢 Received Token:', token);
         console.log('🟢 Received RAR:', RAR);
+        console.log('🟢 Received DisplayName:', DisplayName);
 
         if (!token) {
           console.error('❌ Token is undefined or empty!');
@@ -791,6 +797,23 @@ const OtpVerificationScreen: React.FC<{
           setSecureItem('FK_CUST_GROUP_ID', CustomerGroupID.toString()),
           setSecureItem('RAR', RAR || ''), // Store RAR value
         ]);
+
+        // Update display name in context
+        setDisplayName(DisplayName);
+        console.log('🟢 Display name set in context:', DisplayName);
+
+        // Parse and set authorization in context
+        const rarValues = parseRARString(RAR || '');
+        console.log('🟢 Parsed RAR values:', rarValues);
+        
+        if (rarValues.length > 0) {
+          await setUserAuthorization(rarValues);
+          console.log('🟢 User authorization set successfully');
+        } else {
+          console.log('⚠️ No valid RAR values found, user will have no permissions');
+          // Clear any existing authorization
+          await clearAuthorization();
+        }
 
         // Also check that Keychain is working properly
         const storedID = await getSecureItem('customerID');

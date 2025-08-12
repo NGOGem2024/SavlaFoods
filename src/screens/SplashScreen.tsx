@@ -5,11 +5,13 @@ import {RootStackParamList} from '../type/type';
 import {migrateAllSecureKeys} from '../utils/migrationHelper';
 import {getSecureItem} from '../utils/secureStorage';
 import axios from 'axios';
+import { useAuthorization } from '../contexts/AuthorizationContext';
 
 const SplashScreen: React.FC = () => {
   const navigation =
     useNavigation<NavigationProp<RootStackParamList, 'SplashScreen'>>();
   const [migrationComplete, setMigrationComplete] = useState(false);
+  const { initializeAuthorization, isLoading: authLoading } = useAuthorization();
 
   useEffect(() => {
     const initialize = async () => {
@@ -26,6 +28,8 @@ const SplashScreen: React.FC = () => {
         if (token) {
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           console.log('Token set in axios defaults on app startup');
+          await initializeAuthorization();
+          console.log('Authorization initialized');
         }
         
         // Navigate to appropriate screen after a short delay
@@ -68,6 +72,9 @@ const SplashScreen: React.FC = () => {
       <Text style={styles.text}>Savla Foods and Cold Storage</Text>
       {!migrationComplete && (
         <ActivityIndicator style={styles.loader} size="large" color="#63A1D8" />
+      )}
+      {migrationComplete && authLoading && (
+        <Text style={styles.text}>Loading permissions...</Text>
       )}
     </View>
   );

@@ -24,6 +24,7 @@ import EditOrderScreen from './EditOrderScreen';
 import OrderDetailsScreen from '../screens/OrderDetailsScreen';
 import {LayoutWrapper} from './AppLayout';
 import ReportsScreen from '../screens/stocks/ReportsScreen';
+import { useAuthorization } from '../contexts/AuthorizationContext';
 
 // Import new Finance/Billing screens
 import InvoiceScreen from '../screens/Invoice/InvoiceScreen';
@@ -76,6 +77,7 @@ type OrdersStackParamList = {
 
 type FinanceStackParamList = {
   InvoiceHome: undefined;
+  InvoiceReportScreen: undefined;
   InvoiceDetailsScreen: {invoiceNo: string};
 };
 
@@ -101,11 +103,20 @@ type TabParamList = {
 } & ParamListBase;
 
 // Create Stack Navigator for Orders section
-const OrdersStack = createStackNavigator<TabParamList>();
-const ReportsStack = createStackNavigator<TabParamList>();
-const InvoiceStack = createStackNavigator<TabParamList>();
+const OrdersStack = createStackNavigator<OrdersStackParamList>();
 
-const OrdersStackNavigator = () => {
+type ReportsStackParamList = {
+  Reports: undefined;
+  StockReportScreen: undefined;
+  LotReport: undefined;
+  InwardOutwardReport: undefined;
+  ReportSummary: undefined;
+};
+
+const ReportsStack = createStackNavigator<ReportsStackParamList>();
+const InvoiceStack = createStackNavigator<FinanceStackParamList>();
+
+export const OrdersStackNavigator = () => {
   return (
     <OrdersStack.Navigator
       screenOptions={{
@@ -122,12 +133,12 @@ const OrdersStackNavigator = () => {
       />
       <OrdersStack.Screen
         name="OrderDetails" // Make sure this screen is registered
-        component={OrderDetailsScreen}
+        component={OrderDetailsScreen as unknown as React.ComponentType<any>}
         options={{headerShown: false}}
       />
       <OrdersStack.Screen
         name="EditOrderScreen"
-        component={EditOrderScreen}
+        component={EditOrderScreen as unknown as React.ComponentType<any>}
         options={{headerShown: false}}
       />
 
@@ -146,7 +157,7 @@ const OrdersStackNavigator = () => {
   );
 };
 
-const FinanceStackNavigator = () => {
+export const FinanceStackNavigator = () => {
   return (
     <InvoiceStack.Navigator
       screenOptions={{
@@ -163,7 +174,7 @@ const FinanceStackNavigator = () => {
 
       <InvoiceStack.Screen
         name="InvoiceReportScreen"
-        component={InvoiceReportScreen}
+        component={InvoiceReportScreen as unknown as React.ComponentType<any>}
         options={{
           title: 'Invoice Report Table',
         }}
@@ -181,7 +192,7 @@ const FinanceStackNavigator = () => {
   );
 };
 
-const ReportsStackNavigator = () => {
+export const ReportsStackNavigator = () => {
   return (
     <ReportsStack.Navigator
       screenOptions={{
@@ -421,6 +432,7 @@ export const TabBar = (props: any) => {
 };
 
 const BottomTabNavigator: React.FC = () => {
+  const { hasModuleAccess } = useAuthorization();
   const getTabBarIcon = (
     route: any,
     focused: boolean,
@@ -509,13 +521,15 @@ const BottomTabNavigator: React.FC = () => {
               headerShown: false,
             }}
           /> */}
-          <Tab.Screen name="Invoice" component={FinanceStackNavigator} />
-          <Tab.Screen name="Orders" component={OrdersStackNavigator} />
-          <Tab.Screen
-            name="Reports"
-            component={ReportsStackNavigator}
-            options={{title: 'Reports'}}
-          />
+          {hasModuleAccess(2) && <Tab.Screen name="Invoice" component={FinanceStackNavigator} />}
+          {hasModuleAccess(1) && <Tab.Screen name="Orders" component={OrdersStackNavigator} />}
+          {hasModuleAccess(5) && (
+            <Tab.Screen
+              name="Reports"
+              component={ReportsStackNavigator}
+              options={{title: 'Reports'}}
+            />
+          )}
           <Tab.Screen name="Alert" component={AlertScreen} />
         </Tab.Navigator>
       </NavigationHistoryProvider>

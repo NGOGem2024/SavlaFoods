@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import QuantitySelectorModal from '../components/QuantitySelectorModal';
 import {LayoutWrapper} from '../components/AppLayout';
+import { useIsStockViewerOnly, useCanAddToCart } from '../contexts/AuthorizationContext';
 
 interface ItemDetails {
   DESCRIPTION: string;
@@ -137,6 +138,9 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
   const [highlightedLotNoIndex, setHighlightedLotNoIndex] = useState<
     number | null
   >(null);
+
+  const isStockViewerOnly = useIsStockViewerOnly();
+  const canAddToCart = useCanAddToCart();
 
   // Function to navigate to LotReportScreen with the selected lot number
   const handleLotNoPress = (lotNo: string | null) => {
@@ -412,32 +416,33 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
                     </Text>
                   </TouchableOpacity>
                 </View>
-
-                <Animated.View
-                  style={[
-                    styles.addToCartContainer,
-                    {
-                      transform: [
-                        {
-                          scale:
-                            cartAnimations[stock.LOT_NO || '']?.interpolate({
-                              inputRange: [0, 0.5, 1],
-                              outputRange: [1, 1.2, 1],
-                            }) || 1,
-                        },
-                      ],
-                    },
-                  ]}>
-                  <TouchableOpacity
-                    style={styles.addToCartButton}
-                    onPress={() => handleAddToCart(stock.LOT_NO)}>
-                    <Image
-                      source={require('../assets/images/cart.png')}
-                      style={{width: 32, height: 32, alignSelf: 'center'}}
-                      resizeMode="contain"
-                    />
-                  </TouchableOpacity>
-                </Animated.View>
+                {canAddToCart && (
+                  <Animated.View
+                    style={[
+                      styles.addToCartContainer,
+                      {
+                        transform: [
+                          {
+                            scale:
+                              cartAnimations[stock.LOT_NO || '']?.interpolate({
+                                inputRange: [0, 0.5, 1],
+                                outputRange: [1, 1.2, 1],
+                              }) || 1,
+                          },
+                        ],
+                      },
+                    ]}>
+                    <TouchableOpacity
+                      style={styles.addToCartButton}
+                      onPress={() => handleAddToCart(stock.LOT_NO)}>
+                      <Image
+                        source={require('../assets/images/cart.png')}
+                        style={{width: 32, height: 32, alignSelf: 'center'}}
+                        resizeMode="contain"
+                      />
+                    </TouchableOpacity>
+                  </Animated.View>
+                )}
               </View>
               <View style={styles.detailsContainer}>
                 <View style={styles.detailRow}>
@@ -536,7 +541,9 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
               <Text style={[styles.tableHeaderCell, {width: 100}]}>
                 Remarks
               </Text>
-              <Text style={[styles.tableHeaderCell, {width: 80}]}>Action</Text>
+              {canAddToCart && (
+                <Text style={[styles.tableHeaderCell, {width: 80}]}>Action</Text>
+              )}
             </View>
             <ScrollView
               style={styles.verticalScrollView}
@@ -599,17 +606,19 @@ const ItemDetailsExpanded: React.FC<ItemDetailsExpandedProps> = ({
                         {stock.REMARKS || 'N/A'}
                       </Text>
                     </View>
-                    <View style={[styles.tableCellContainer, {width: 80}]}>
-                      <TouchableOpacity
-                        style={styles.tableAddToCartButton}
-                        onPress={() => handleAddToCart(stock.LOT_NO)}>
-                        <Image
-                          source={require('../assets/images/cart.png')}
-                          style={{width: 32, height: 32, alignSelf: 'center'}}
-                          resizeMode="contain"
-                        />
-                      </TouchableOpacity>
-                    </View>
+                    {canAddToCart && (
+                      <View style={[styles.tableCellContainer, {width: 80}]}>
+                        <TouchableOpacity
+                          style={styles.tableAddToCartButton}
+                          onPress={() => handleAddToCart(stock.LOT_NO)}>
+                          <Image
+                            source={require('../assets/images/cart.png')}
+                            style={{width: 32, height: 32, alignSelf: 'center'}}
+                            resizeMode="contain"
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    )}
                   </View>
                 );
               })}

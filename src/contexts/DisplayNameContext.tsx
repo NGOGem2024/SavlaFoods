@@ -56,6 +56,32 @@ export const DisplayNameProvider: React.FC<{children: React.ReactNode}> = ({
 }) => {
   const [displayName, setDisplayName] = useState<string | null>(null);
 
+  useEffect(() => {
+    // Load display name from secure storage when the app starts
+    const loadDisplayName = async () => {
+      try {
+        // First try to get from Disp_name (current login format)
+        let storedName = await getSecureOrAsyncItem('Disp_name');
+        
+        // If not found, try displayName (legacy format)
+        if (!storedName) {
+          storedName = await getSecureOrAsyncItem('displayName');
+        }
+        
+        if (storedName) {
+          console.log('Loaded display name from storage:', storedName);
+          setDisplayName(storedName);
+        } else {
+          console.log('No display name found in storage');
+        }
+      } catch (error) {
+        console.error('Error loading display name:', error);
+      }
+    };
+    
+    loadDisplayName();
+  }, []);
+
   return (
     <DisplayNameContext.Provider
       value={{

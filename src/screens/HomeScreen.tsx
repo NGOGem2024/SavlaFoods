@@ -41,6 +41,7 @@ import {useDisplayName} from '../contexts/DisplayNameContext';
 import {LayoutWrapper} from '../components/AppLayout';
 import QuantitySelectorModal from '../components/QuantitySelectorModal';
 import {useNetwork} from '../contexts/NetworkContext';
+import { useIsStockViewerOnly, useCanAddToCart } from '../contexts/AuthorizationContext';
 
 interface HomeScreenParams {
   initialLogin?: boolean;
@@ -125,6 +126,8 @@ const HomeScreen: React.FC = () => {
   } | null>(null);
   const {isConnected, addRetryCallback, removeRetryCallback} = useNetwork();
   const [wasDisconnected, setWasDisconnected] = useState(false);
+  const isStockViewerOnly = useIsStockViewerOnly();
+  const canAddToCart = useCanAddToCart();
 
   const {cartItems, clearCart} = useCart() || {};
   const cartItemCount = cartItems?.length || 0;
@@ -176,11 +179,6 @@ const HomeScreen: React.FC = () => {
   const fetchCustomerID = useCallback(async () => {
     try {
       const storedId = await getSecureOrAsyncItem('customerID');
-      const storedDisplayName = await getSecureOrAsyncItem('displayName');
-
-      if (storedDisplayName) {
-        setDisplayName(storedDisplayName);
-      }
 
       if (storedId) {
         setCustomerID(storedId);
@@ -198,43 +196,16 @@ const HomeScreen: React.FC = () => {
           await setSecureItem('customerID', newId);
           setCustomerID(newId);
           fetchCategories(newId);
-
-          if (response.displayName) {
-            await setSecureItem('displayName', response.displayName);
-            setDisplayName(response.displayName);
-          }
         }
       }
     } catch (error) {
       console.error('Error fetching CustomerID:', error);
       Alert.alert('Error', 'Failed to fetch customer ID');
     }
-  }, [setDisplayName]);
+  }, []);
 
-  const fetchDisplayName = useCallback(async () => {
-    try {
-      let name = await getSecureOrAsyncItem('Disp_name');
-      if (name) {
-        setDisplayName(name);
-      } else {
-        interface CustomerInfoResponse {
-          Disp_name: string;
-        }
-        const response = await apiClient.get<CustomerInfoResponse>(
-          API_ENDPOINTS.GET_CUSTOMER_INFO,
-        );
-        name = response.Disp_name;
-        setDisplayName(name);
-        await setSecureItem('Disp_name', name || '');
-      }
-    } catch (error) {
-      console.error('Error fetching Display Name:', error);
-    }
-  }, [setDisplayName]);
-
-  useEffect(() => {
-    fetchDisplayName();
-  }, [route.params]);
+  // Remove fetchDisplayName function and its useEffect call
+  // Display name is now handled by DisplayNameContext
 
   const fetchCategories = useCallback(async (customerId: string) => {
     try {
@@ -451,32 +422,33 @@ const HomeScreen: React.FC = () => {
                 <Text style={styles.lotNoValue}>{item.LOT_NO || 'N/A'}</Text>
               </TouchableOpacity>
             </View>
-
-            <Animated.View
-              style={[
-                styles.addToCartContainer,
-                {
-                  transform: [
-                    {
-                      scale:
-                        cartAnimations[item.LOT_NO]?.interpolate({
-                          inputRange: [0, 0.5, 1],
-                          outputRange: [1, 1.2, 1],
-                        }) || 1,
-                    },
-                  ],
-                },
-              ]}>
-              <TouchableOpacity
-                style={styles.addToCartButton}
-                onPress={() => handleAddToCart(item)}>
-                <Image
-                  source={require('../assets/images/cart.png')}
-                  style={{width: 32, height: 32, alignSelf: 'center'}}
-                  resizeMode="contain"
-                />
-              </TouchableOpacity>
-            </Animated.View>
+            {canAddToCart && (
+              <Animated.View
+                style={[
+                  styles.addToCartContainer,
+                  {
+                    transform: [
+                      {
+                        scale:
+                          cartAnimations[item.LOT_NO]?.interpolate({
+                            inputRange: [0, 0.5, 1],
+                            outputRange: [1, 1.2, 1],
+                          }) || 1,
+                      },
+                    ],
+                  },
+                ]}>
+                <TouchableOpacity
+                  style={styles.addToCartButton}
+                  onPress={() => handleAddToCart(item)}>
+                  <Image
+                    source={require('../assets/images/cart.png')}
+                    style={{width: 32, height: 32, alignSelf: 'center'}}
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
+              </Animated.View>
+            )}
           </View>
 
           <View style={styles.itemNameContainer}>
@@ -519,7 +491,7 @@ const HomeScreen: React.FC = () => {
         </Animated.View>
       );
     },
-    [navigation, CustomerID, fadeAnim, cartAnimations],
+    [navigation, CustomerID, fadeAnim, cartAnimations, canAddToCart],
   );
 
   const handleSearch = useCallback(
